@@ -118,20 +118,26 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="courseApplied">Course Applied For <span>*</span></label>
-            <select id="courseApplied" class="form-select" required>
-              <option value="">Select Course</option>
-              <option>B.Tech Computer Science Engineering</option>
-              <option>B.Tech Information Technology</option>
-              <option>B.Tech Electronics & Communication</option>
-              <option>B.Tech Mechanical Engineering</option>
-              <option>B.Tech Civil Engineering</option>
-              <option>BCA (Bachelor of Computer Applications)</option>
-              <option>BSc Computer Science</option>
-              <option>BBA (Bachelor of Business Administration)</option>
-              <option>B.Com (Bachelor of Commerce)</option>
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="mathsMarks">12th Maths Marks <span>*</span></label>
+              <input type="number" id="mathsMarks" class="form-input" placeholder="e.g. 85" min="0" max="100" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="courseApplied">Course Applied For <span>*</span></label>
+              <select id="courseApplied" class="form-select" required>
+                <option value="">Select Course</option>
+                <option>B.Tech Computer Science Engineering</option>
+                <option>B.Tech Information Technology</option>
+                <option>B.Tech Electronics & Communication</option>
+                <option>B.Tech Mechanical Engineering</option>
+                <option>B.Tech Civil Engineering</option>
+                <option>BCA (Bachelor of Computer Applications)</option>
+                <option>BSc Computer Science</option>
+                <option>BBA (Bachelor of Business Administration)</option>
+                <option>B.Com (Bachelor of Commerce)</option>
+              </select>
+            </div>
           </div>
           <div style="display:flex; justify-content:space-between; margin-top:8px;">
             <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(1)">← Back</button>
@@ -162,6 +168,17 @@
               </div>
               <p id="idName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
             </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">12th Result / Marksheet <span>*</span></label>
+            <div class="upload-area" id="resultUpload">
+              <input type="file" id="resultFile" accept="image/*,.pdf" onchange="handleFileUpload('resultFile','resultPreview','resultName')" />
+              <div class="upload-icon">📄</div>
+              <div class="upload-text">12th Board Marksheet<br><strong>JPG, PNG, PDF</strong> · Max 5MB</div>
+              <div id="resultPreview" class="upload-preview"></div>
+            </div>
+            <p id="resultName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
           </div>
 
           <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px; margin:16px 0;">
@@ -210,6 +227,7 @@
     let currentStep = 1;
     let photoData = null;
     let idData = null;
+    let resultData = null;
 
     function showAlert(msg, type) {
       document.getElementById('alertBox').innerHTML = `
@@ -230,7 +248,8 @@
         }
         document.getElementById(nameId).textContent = '✅ ' + file.name;
         if (inputId === 'photoFile') photoData = e.target.result;
-        else idData = e.target.result;
+        else if (inputId === 'idFile') idData = e.target.result;
+        else if (inputId === 'resultFile') resultData = e.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -274,9 +293,11 @@
         const board = document.getElementById('board').value.trim();
         const year = document.getElementById('yearOfPassing').value;
         const stream = document.getElementById('stream').value;
+        const maths = document.getElementById('mathsMarks').value;
         const course = document.getElementById('courseApplied').value;
-        if (!pct || !board || !year || !stream || !course) { showAlert('⚠ Please fill all required fields.', 'warning'); return false; }
+        if (!pct || !board || !year || !stream || !maths || !course) { showAlert('⚠ Please fill all required fields.', 'warning'); return false; }
         if (parseFloat(pct) < 0 || parseFloat(pct) > 100) { showAlert('⚠ Please enter valid percentage (0-100).', 'warning'); return false; }
+        if (parseFloat(maths) < 0 || parseFloat(maths) > 100) { showAlert('⚠ Please enter valid Maths marks (0-100).', 'warning'); return false; }
       }
       return true;
     }
@@ -291,8 +312,10 @@
 
       const photoFile = document.getElementById('photoFile').files[0];
       const idFile = document.getElementById('idFile').files[0];
+      const resultFile = document.getElementById('resultFile').files[0];
       if (!photoFile) { showAlert('⚠ Please upload your passport photo.', 'warning'); return; }
       if (!idFile) { showAlert('⚠ Please upload your ID proof.', 'warning'); return; }
+      if (!resultFile) { showAlert('⚠ Please upload your 12th Result/Marksheet.', 'warning'); return; }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
@@ -309,9 +332,11 @@
           board: document.getElementById('board').value.trim(),
           yearOfPassing: document.getElementById('yearOfPassing').value,
           stream: document.getElementById('stream').value,
+          mathsMarks: document.getElementById('mathsMarks').value,
           courseApplied: document.getElementById('courseApplied').value,
           photoData: photoData,
           idData: idData,
+          resultData: resultData,
         });
 
         document.getElementById('appIdDisplay').textContent = student.id;

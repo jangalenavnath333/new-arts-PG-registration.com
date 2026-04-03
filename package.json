@@ -5,9 +5,12 @@
   "main": "index.html",
   "scripts": {
     "start": "npx serve .",
-    "dev": "npx live-server --port=3000"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "serve": "^14.2.1"
+    "serve": "^14.2.1",
+    "vite": "^5.0.0"
   }
 }

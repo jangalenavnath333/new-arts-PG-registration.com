@@ -40,27 +40,27 @@
 
       <nav class="sidebar-nav">
         <div class="nav-group">
-          <p class="nav-group-label">Main Menu</p>
-          <button class="nav-item active" onclick="showTab('overview')" id="nav-overview">
+          <p class="nav-group-label" style="font-size: 11px;">Quick Jump</p>
+          <a href="#section-overview" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Overview
-          </button>
-          <button class="nav-item" onclick="showTab('status')" id="nav-status">
+          </a>
+          <a href="#section-status" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Application Status
-          </button>
-          <button class="nav-item" onclick="showTab('schedule')" id="nav-schedule">
+          </a>
+          <a href="#section-schedule" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Exam Schedule
-          </button>
-          <button class="nav-item" onclick="showTab('rules')" id="nav-rules">
+          </a>
+          <a href="#section-rules" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             Exam Rules
-          </button>
-          <button class="nav-item" onclick="showTab('result')" id="nav-result">
+          </a>
+          <a href="#section-result" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             My Result
-          </button>
+          </a>
         </div>
       </nav>
 
@@ -98,7 +98,7 @@
       <div class="content-body">
 
         <!-- OVERVIEW TAB -->
-        <div class="tab-content active" id="tab-overview">
+        <div id="section-overview" style="margin-bottom: 40px; padding-top: 10px;">
           <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
             <div class="stat-widget blue">
               <div class="stat-widget-icon">
@@ -143,10 +143,10 @@
                 <div><p class="card-title">Quick Actions</p></div>
               </div>
               <div style="display:flex; flex-direction:column; gap:12px;">
-                <button onclick="showTab('status')" class="btn btn-primary-sm" style="justify-content:flex-start;">📋 View Application Status</button>
-                <button onclick="showTab('schedule')" class="btn btn-primary-sm" style="justify-content:flex-start;">📅 Check Exam Schedule</button>
-                <button onclick="showTab('rules')" class="btn btn-primary-sm" style="justify-content:flex-start;">📜 Read Exam Rules</button>
-                <button onclick="showTab('result')" class="btn btn-primary-sm" style="justify-content:flex-start;">🏆 View Result</button>
+                <button onclick="scrollToSection('status')" class="btn btn-primary-sm" style="justify-content:flex-start;">📋 View Application Status</button>
+                <button onclick="scrollToSection('schedule')" class="btn btn-primary-sm" style="justify-content:flex-start;">📅 Check Exam Schedule</button>
+                <button onclick="scrollToSection('rules')" class="btn btn-primary-sm" style="justify-content:flex-start;">📜 Read Exam Rules</button>
+                <button onclick="scrollToSection('result')" class="btn btn-primary-sm" style="justify-content:flex-start;">🏆 View Result</button>
                 <button onclick="startExam()" id="startExamBtn" class="btn btn-solid" style="display:none; justify-content:flex-start;">🚀 Start Exam Now</button>
               </div>
             </div>
@@ -154,7 +154,7 @@
         </div>
 
         <!-- STATUS TAB -->
-        <div class="tab-content" id="tab-status">
+        <div id="section-status" style="margin-bottom: 40px; padding-top: 40px; border-top: 1px solid var(--card-border);">
           <div class="card">
             <div class="card-header">
               <div><p class="card-title">Application Status</p><p class="card-subtitle">Track your application progress</p></div>
@@ -169,7 +169,7 @@
         </div>
 
         <!-- SCHEDULE TAB -->
-        <div class="tab-content" id="tab-schedule">
+        <div id="section-schedule" style="margin-bottom: 40px; padding-top: 40px; border-top: 1px solid var(--card-border);">
           <div class="card" id="scheduleCard">
             <div class="card-header">
               <div><p class="card-title">Exam Schedule</p><p class="card-subtitle">Your upcoming CET examination details</p></div>
@@ -179,7 +179,7 @@
         </div>
 
         <!-- RULES TAB -->
-        <div class="tab-content" id="tab-rules">
+        <div id="section-rules" style="margin-bottom: 40px; padding-top: 40px; border-top: 1px solid var(--card-border);">
           <div class="card">
             <div class="card-header">
               <div><p class="card-title">⚖ Exam Rules & Instructions</p><p class="card-subtitle">Read carefully before starting the exam</p></div>
@@ -209,7 +209,7 @@
         </div>
 
         <!-- RESULT TAB -->
-        <div class="tab-content" id="tab-result">
+        <div id="section-result" style="margin-bottom: 60px; padding-top: 40px; border-top: 1px solid var(--card-border);">
           <div class="card" id="resultCard">
             <div id="resultContent"></div>
           </div>
@@ -308,7 +308,13 @@
         ['Year of Passing', student.yearOfPassing],
         ['Applied On', new Date(student.appliedAt).toLocaleDateString('en-IN')],
       ];
-      document.getElementById('profileDetails').innerHTML = profileItems.map(([label, val]) => `
+      const profilePhotoHtml = student.photoData ? `
+        <div style="display:flex; justify-content:center; padding:16px 0; border-bottom:1px solid var(--card-border);">
+          <img src="${student.photoData}" alt="Profile Photo" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.2);" />
+        </div>
+      ` : '';
+      
+      document.getElementById('profileDetails').innerHTML = profilePhotoHtml + profileItems.map(([label, val]) => `
         <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--card-border);">
           <span style="font-size:13px; color:var(--mid);">${label}</span>
           <span style="font-size:13px; color:var(--lighter); font-weight:500;">${val || '--'}</span>
@@ -342,13 +348,42 @@
       // Fallback object to prevent undefined crash if student status is completely malformed
       const d = statusDetails[student.status] || statusDetails['pending'];
       
+      const fullProfileDetails = [
+        ['Email Address', student.email],
+        ['Mobile Number', student.mobile],
+        ['Course Applied For', student.courseApplied],
+        ['12th Board Percentage', student.twelfthPercent + '%'],
+        ['12th Maths Marks', student.mathsMarks ? student.mathsMarks : '--'],
+        ['Academic Stream', student.stream],
+        ['Year of Passing', student.yearOfPassing],
+        ['Date of Application', new Date(student.appliedAt).toLocaleDateString('en-IN')]
+      ];
+
       document.getElementById('statusDetailBox').innerHTML = `
-        <div class="alert alert-${d.color}" style="flex-direction:column; align-items:flex-start; padding:24px; border-radius:16px; line-height:1.8;">
+        <div class="alert alert-${d.color}" style="flex-direction:column; align-items:flex-start; padding:24px; border-radius:16px; line-height:1.8; margin-bottom:20px;">
           <div style="font-size:40px; margin-bottom:12px;">${d.icon}</div>
           <strong style="font-size:16px;">${d.title}</strong>
           <p style="margin-top:8px; font-size:14px;">${d.msg}</p>
         </div>
-        ${student.photoData ? `<div style="margin-top:16px;"><img src="${student.photoData}" alt="Your Photo" style="width:100px; height:120px; object-fit:cover; border-radius:12px; border:2px solid var(--card-border);" /></div>` : ''}
+        ${student.photoData ? `
+        <div style="background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:20px; margin-bottom:20px; display:flex; align-items:center; gap:20px;">
+          <img src="${student.photoData}" alt="Profile Photo" style="width:100px; height:100px; object-fit:cover; border-radius:50%; border:3px solid var(--primary-light); box-shadow: 0 4px 15px rgba(0,0,0,0.2);" />
+          <div>
+            <h3 style="color:var(--white); font-size:18px; font-weight:600; margin-bottom:4px;">${student.fullName}</h3>
+            <p style="color:var(--mid); font-size:14px; margin-bottom:8px;">Student ID: <span style="color:var(--light); font-weight:600;">${student.studentId || 'Pending'}</span></p>
+            <span class="badge badge-${student.status}" style="font-size:11px; padding:4px 10px;">${student.status.toUpperCase()}</span>
+          </div>
+        </div>` : ''}
+
+        <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:24px;">
+          <h3 style="font-size:15px; font-weight:600; color:var(--white); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--card-border);">Comprehensive Profile Details</h3>
+          ${fullProfileDetails.map(([label, val]) => `
+            <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.03);">
+              <span style="font-size:13px; color:var(--mid);">${label}</span>
+              <span style="font-size:13px; color:var(--lighter); font-weight:500;">${val || '--'}</span>
+            </div>
+          `).join('')}
+        </div>
       `;
     }
 
@@ -501,14 +536,12 @@
       }
     }
 
-    function showTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('tab-' + tab).classList.add('active');
-      document.getElementById('nav-' + tab).classList.add('active');
-
-      const titles = { overview:'Dashboard Overview', status:'Application Status', schedule:'Exam Schedule', rules:'Exam Rules', result:'My Result' };
-      document.getElementById('pageTitle').textContent = titles[tab];
+    function scrollToSection(id) {
+      const el = document.getElementById('section-' + id);
+      if(el) {
+        const offset = el.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo({top: offset, behavior: 'smooth'});
+      }
     }
 
     function logout() {
