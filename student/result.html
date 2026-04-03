@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Result | CET Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="bg-particles"></div>
+  <div style="max-width:800px; margin:0 auto; padding:60px 24px;" id="resultPage">
+    <div class="form-card wide" id="resultCard">
+      <div id="resultContent">
+        <div class="spinner" style="margin:40px auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/db.js"></script>
+  <script>
+    const student = DB.getCurrentStudent();
+    if (!student) { window.location.href = 'login.html'; }
+
+    const stu = DB.getStudentById(student.id);
+    const result = DB.getResultByStudentId(student.id);
+
+    if (!result) {
+      document.getElementById('resultContent').innerHTML = `
+        <div class="empty-state">
+          <h3>No Result Found</h3>
+          <p>You haven't taken the exam yet.</p>
+          <a href="dashboard.html" class="btn btn-solid" style="margin-top:20px; display:inline-flex;">← Back to Dashboard</a>
+        </div>`;
+    } else {
+      const pct = Math.round((result.score / result.total) * 100);
+      const grade = pct >= 80 ? { label:'Distinction', color:'#10b981', bg:'rgba(16,185,129,0.1)', icon:'🥇' }
+                 : pct >= 60 ? { label:'First Class', color:'#6366f1', bg:'rgba(99,102,241,0.1)', icon:'🥈' }
+                 : pct >= 40 ? { label:'Pass', color:'#f59e0b', bg:'rgba(245,158,11,0.1)', icon:'🥉' }
+                 : { label:'Fail', color:'#ef4444', bg:'rgba(239,68,68,0.1)', icon:'❌' };
+
+      const mins = Math.floor(result.timeUsed / 60);
+      const secs = result.timeUsed % 60;
+
+      document.getElementById('resultContent').innerHTML = `
+        <!-- Header -->
+        <div style="text-align:center; margin-bottom:32px;">
+          <div style="font-size:80px; margin-bottom:16px; animation: bounceIn 0.8s ease;">${grade.icon}</div>
+          <h1 style="font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; margin-bottom:4px;">Exam Completed!</h1>
+          <p style="color:var(--light); font-size:16px;">Your CET examination has been submitted successfully</p>
+        </div>
+
+        <!-- Score Circle -->
+        <div style="text-align:center; margin-bottom:40px;">
+          <div style="width:180px; height:180px; border-radius:50%; border:8px solid ${grade.color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 20px; background:${grade.bg}; position:relative;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:52px; font-weight:800; color:${grade.color}; line-height:1;">${pct}%</div>
+            <div style="font-size:13px; color:var(--mid);">Score</div>
+          </div>
+          <h2 style="font-size:24px; font-weight:700;">${result.score} / ${result.total}</h2>
+          <p style="font-size:18px; font-weight:600; color:${grade.color}; margin-top:4px;">${grade.label}</p>
+          <p style="font-size:13px; color:var(--mid); margin-top:4px;">Submitted: ${new Date(result.submittedAt).toLocaleString('en-IN')}</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;">
+          <div style="text-align:center; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:20px;">
+            <p style="font-size:28px; font-weight:700; color:var(--success); font-family:'Space Grotesk',sans-serif;">${result.correctAnswers}</p>
+            <p style="font-size:12px; color:var(--mid);">✅ Correct</p>
+          </div>
+          <div style="text-align:center; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:12px; padding:20px;">
+            <p style="font-size:28px; font-weight:700; color:var(--danger); font-family:'Space Grotesk',sans-serif;">${result.wrongAnswers}</p>
+            <p style="font-size:12px; color:var(--mid);">❌ Wrong</p>
+          </div>
+          <div style="text-align:center; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:12px; padding:20px;">
+            <p style="font-size:28px; font-weight:700; color:var(--warning); font-family:'Space Grotesk',sans-serif;">${result.unanswered}</p>
+            <p style="font-size:12px; color:var(--mid);">— Skipped</p>
+          </div>
+          <div style="text-align:center; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:20px;">
+            <p style="font-size:28px; font-weight:700; color:var(--primary-light); font-family:'Space Grotesk',sans-serif;">${mins}m${secs}s</p>
+            <p style="font-size:12px; color:var(--mid);">⏱ Time Used</p>
+          </div>
+        </div>
+
+        <!-- Student Info -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:12px; padding:20px; margin-bottom:24px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            ${[['Student Name', stu?.fullName || result.studentName], ['Student ID', result.studentCetId], ['Course Applied', result.courseApplied], ['Violations', result.violations + ' / 3']].map(([l,v]) => `
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:13px; color:var(--mid);">${l}</span>
+                <span style="font-size:13px; font-weight:500; color:var(--lighter);">${v}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        ${result.violations > 0 ? `<div class="alert alert-warning" style="margin-bottom:24px;">⚠ ${result.violations} violation(s) were recorded during your exam.</div>` : ''}
+
+        <!-- Actions -->
+        <div style="display:flex; gap:12px; justify-content:center;">
+          <button onclick="window.print()" class="btn btn-outline-sm btn-lg">🖨 Print Result</button>
+          <a href="dashboard.html" class="btn btn-solid btn-lg" style="text-decoration:none;">← Back to Dashboard</a>
+        </div>
+      `;
+    }
+  </script>
+  <style>
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.1); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @media print {
+      .bg-particles, button, a.btn-solid { display: none !important; }
+    }
+  </style>
+</body>
+</html>

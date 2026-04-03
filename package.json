@@ -1,0 +1,13 @@
+{
+  "name": "cet-exam-online",
+  "version": "1.0.0",
+  "description": "CET Online Exam System",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx live-server --port=3000"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

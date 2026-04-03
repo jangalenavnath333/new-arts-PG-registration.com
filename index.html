@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CET Online Exam System | College Admission</title>
+  <meta name="description" content="Secure online CET examination portal for college admissions. Apply, schedule, and take your entrance exam with advanced proctoring." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <!-- Ignore favicon 404 error -->
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="nav-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
+            <path d="M8 22L16 10L24 22H8Z" fill="white" opacity="0.9"/>
+            <circle cx="16" cy="16" r="3" fill="white"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="nav-title">
+          <span class="brand-name">CET Portal</span>
+          <span class="brand-sub">Online Exam System</span>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="student/login.html" class="nav-btn btn-outline">Student Login</a>
+        <a href="admin/login.html" class="nav-btn btn-primary">Admin Panel</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3);">
+        <span class="badge-dot"></span>
+        Admission Academic Year 2026-27
+      </div>
+
+      <div style="margin-bottom: 24px; margin-top: 16px;">
+        <p style="font-size: 14px; color: var(--primary-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Ahmednagar Jilha Maratha Vidya Prasarak Samaj</p>
+        <h2 style="font-size: 28px; color: var(--white); font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 6px; line-height: 1.3;">New Arts, Commerce and Science College, Ahmednagar</h2>
+        <p style="font-size: 18px; color: var(--mid); font-weight: 500;">Department of Computer Science</p>
+      </div>
+
+      <h1 class="hero-title" style="font-size: 46px; line-height: 1.15; margin-bottom: 20px;">
+        Online CET Entrance<br/>
+        <span class="gradient-text">Examination Portal</span>
+      </h1>
+
+      <p class="hero-desc">
+        A fully secure, AI-monitored examination platform with real-time proctoring, automated scheduling, and instant results.
+      </p>
+      <div class="hero-actions">
+        <a href="student/apply.html" class="btn-hero-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Apply Now
+        </a>
+        <a href="student/login.html" class="btn-hero-secondary">
+          Student Login →
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-num">10K+</div>
+          <div class="stat-label">Students Enrolled</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+          <div class="stat-num">99.8%</div>
+          <div class="stat-label">Uptime Reliability</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-card">
+          <div class="stat-num">AI</div>
+          <div class="stat-label">Powered Proctoring</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card main-card">
+        <div class="card-header-bar">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+          <span class="card-title-bar">Secure Exam Interface</span>
+        </div>
+        <div class="exam-preview">
+          <div class="preview-question">
+            <div class="q-num">Q.12 / 30</div>
+            <div class="q-text">Which data structure uses LIFO order?</div>
+            <div class="q-options">
+              <div class="q-opt selected">A. Stack</div>
+              <div class="q-opt">B. Queue</div>
+              <div class="q-opt">C. Array</div>
+              <div class="q-opt">D. Linked List</div>
+            </div>
+          </div>
+          <div class="preview-timer">
+            <div class="timer-ring">
+              <svg width="60" height="60" viewBox="0 0 60 60">
+                <circle cx="30" cy="30" r="25" fill="none" stroke="#1e293b" stroke-width="4"/>
+                <circle cx="30" cy="30" r="25" fill="none" stroke="#6366f1" stroke-width="4" 
+                  stroke-dasharray="157" stroke-dashoffset="40" stroke-linecap="round" transform="rotate(-90 30 30)"/>
+              </svg>
+              <span class="timer-text">48:22</span>
+            </div>
+          </div>
+        </div>
+        <div class="webcam-indicator">
+          <div class="cam-dot"></div>
+          <span>Webcam Active · Proctoring ON</span>
+        </div>
+      </div>
+      <div class="floating-badge badge-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Anti-Cheat Active
+      </div>
+      <div class="floating-badge badge-2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 7l-7 5 7 5V7z"/>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+        </svg>
+        Webcam Verified
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Everything You Need for Secure Exams</h2>
+        <p class="section-desc">Built with advanced security features to ensure exam integrity</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon icon-blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3>AI Proctoring</h3>
+          <p>Real-time webcam monitoring with face detection, multiple person detection, and behavior analysis.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3>Timed Assessment</h3>
+          <p>Configurable countdown timers with auto-submission when time expires. Every second counts.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-green">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h3>Tab Lock</h3>
+          <p>Detects and penalizes tab switching. Auto-submit after 3 violations. Fullscreen enforced.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-orange">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h3>Admin Dashboard</h3>
+          <p>Complete control over applications, scheduling, questions, results and candidate management.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-pink">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <h3>Live Results</h3>
+          <p>Instant scoring and result generation with export capabilities for administrative records.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-teal">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <h3>Mobile Block</h3>
+          <p>Automatic detection and blocking of mobile devices and secondary screen attempts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Process Steps -->
+  <section class="process">
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-desc">Simple 4-step process from application to results</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Apply Online</h3>
+            <p>Fill application form, upload documents and photo</p>
+          </div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Get Approved</h3>
+            <p>Admin reviews and approves your application</p>
+          </div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Take Exam</h3>
+            <p>Secure proctored exam at the scheduled time</p>
+          </div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Get Results</h3>
+            <p>View instant results and admission status</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="brand-name">CET Portal</span>
+        <p>Secure online examination system for college admissions</p>
+      </div>
+      <div class="footer-links">
+        <a href="student/apply.html">Apply Now</a>
+        <a href="student/login.html">Student Login</a>
+        <a href="admin/login.html">Admin Login</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 CET Online Exam System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/landing.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apply for CET Exam | CET Portal</title>
+  <meta name="description" content="Submit your application for the CET online entrance exam. Fill in your details and upload required documents." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+  <div class="bg-particles"></div>
+
+  <!-- Top bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="../index.html" class="nav-brand" style="text-decoration:none">
+        <div class="nav-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#lg2)"/>
+            <path d="M8 22L16 10L24 22H8Z" fill="white" opacity="0.9"/>
+            <circle cx="16" cy="16" r="3" fill="white"/>
+            <defs><linearGradient id="lg2" x1="0" y1="0" x2="32" y2="32"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+          </svg>
+        </div>
+        <div class="nav-title"><span class="brand-name">CET Portal</span><span class="brand-sub">Application Form</span></div>
+      </a>
+      <div class="nav-links">
+        <a href="login.html" class="nav-btn btn-outline">Already Applied? Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="form-page" style="padding-top: 100px;">
+    <div class="form-card wide">
+      <!-- Header -->
+      <div class="form-logo">
+        <span>📋 Student Application Form</span>
+        <p>Fill all fields carefully. All information must be accurate.</p>
+      </div>
+
+      <!-- Progress Steps -->
+      <div style="display:flex; gap:0; margin-bottom:32px; border-radius:10px; overflow:hidden; border:1px solid var(--card-border);">
+        <div class="step-tab active" id="stepTab1" style="flex:1; padding:10px; text-align:center; font-size:13px; font-weight:600; color:var(--primary-light); background:rgba(99,102,241,0.1); cursor:pointer;">
+          1️⃣ Personal Info
+        </div>
+        <div class="step-tab" id="stepTab2" style="flex:1; padding:10px; text-align:center; font-size:13px; font-weight:500; color:var(--mid); cursor:pointer; border-left:1px solid var(--card-border);">
+          2️⃣ Academic Details
+        </div>
+        <div class="step-tab" id="stepTab3" style="flex:1; padding:10px; text-align:center; font-size:13px; font-weight:500; color:var(--mid); cursor:pointer; border-left:1px solid var(--card-border);">
+          3️⃣ Documents
+        </div>
+      </div>
+
+      <div id="alertBox"></div>
+
+      <form id="applyForm" novalidate>
+        <!-- Step 1: Personal Info -->
+        <div class="step-section" id="step1">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="fullName">Full Name <span>*</span></label>
+              <input type="text" id="fullName" class="form-input" placeholder="Enter your full name" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="email">Email Address <span>*</span></label>
+              <input type="email" id="email" class="form-input" placeholder="your@email.com" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="mobile">Mobile Number <span>*</span></label>
+              <input type="tel" id="mobile" class="form-input" placeholder="10-digit mobile number" maxlength="10" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="dob">Date of Birth <span>*</span></label>
+              <input type="date" id="dob" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="address">Address</label>
+            <textarea id="address" class="form-textarea" placeholder="Full address with city and state" style="min-height:80px;"></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+            <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(2)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Academic Details -->
+        <div class="step-section" id="step2" style="display:none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="twelfthPercent">12th Percentage <span>*</span></label>
+              <input type="number" id="twelfthPercent" class="form-input" placeholder="e.g. 85.5" min="0" max="100" step="0.1" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="board">Board / University <span>*</span></label>
+              <input type="text" id="board" class="form-input" placeholder="e.g. CBSE, ICSE, State Board" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="yearOfPassing">Year of Passing <span>*</span></label>
+              <select id="yearOfPassing" class="form-select" required>
+                <option value="">Select Year</option>
+                <option>2026</option><option>2025</option><option>2024</option>
+                <option>2023</option><option>2022</option><option>2021</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="stream">Stream <span>*</span></label>
+              <select id="stream" class="form-select" required>
+                <option value="">Select Stream</option>
+                <option>Science (PCM)</option>
+                <option>Science (PCB)</option>
+                <option>Commerce</option>
+                <option>Arts / Humanities</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="courseApplied">Course Applied For <span>*</span></label>
+            <select id="courseApplied" class="form-select" required>
+              <option value="">Select Course</option>
+              <option>B.Tech Computer Science Engineering</option>
+              <option>B.Tech Information Technology</option>
+              <option>B.Tech Electronics & Communication</option>
+              <option>B.Tech Mechanical Engineering</option>
+              <option>B.Tech Civil Engineering</option>
+              <option>BCA (Bachelor of Computer Applications)</option>
+              <option>BSc Computer Science</option>
+              <option>BBA (Bachelor of Business Administration)</option>
+              <option>B.Com (Bachelor of Commerce)</option>
+            </select>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(1)">← Back</button>
+            <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(3)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Documents -->
+        <div class="step-section" id="step3" style="display:none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Passport Photo <span>*</span></label>
+              <div class="upload-area" id="photoUpload">
+                <input type="file" id="photoFile" accept="image/*" onchange="handleFileUpload('photoFile','photoPreview','photoName')" />
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload photo<br><strong>JPG, PNG</strong> · Max 2MB</div>
+                <div id="photoPreview" class="upload-preview"></div>
+              </div>
+              <p id="photoName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">ID Proof <span>*</span></label>
+              <div class="upload-area" id="idUpload">
+                <input type="file" id="idFile" accept="image/*,.pdf" onchange="handleFileUpload('idFile','idPreview','idName')" />
+                <div class="upload-icon">🪪</div>
+                <div class="upload-text">Aadhaar / PAN / Passport<br><strong>JPG, PNG, PDF</strong> · Max 5MB</div>
+                <div id="idPreview" class="upload-preview"></div>
+              </div>
+              <p id="idName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
+            </div>
+          </div>
+
+          <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:16px; margin:16px 0;">
+            <p style="font-size:13px; color:#fcd34d; margin-bottom:8px;"><strong>⚠ Important Information:</strong></p>
+            <ul style="font-size:13px; color:var(--light); padding-left:16px;">
+              <li>Your mobile number will be your login password</li>
+              <li>Application status will be updated within 2-3 business days</li>
+              <li>You will receive your Student ID upon approval</li>
+              <li>Exam schedule will be shared after approval</li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+              <input type="checkbox" id="termsCheck" style="margin-top:3px; accent-color:var(--primary);" />
+              <span style="font-size:13px; color:var(--light);">I confirm that all information provided is accurate and I agree to the <a href="#" style="color:var(--primary-light);">terms and conditions</a>.</span>
+            </label>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(2)">← Back</button>
+            <button type="submit" class="btn btn-solid btn-lg" id="submitBtn">🚀 Submit Application</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay" id="successModal" style="display:none;">
+    <div class="modal" style="text-align:center; max-width:480px;">
+      <div style="font-size:72px; margin-bottom:16px;">🎉</div>
+      <h2>Application Submitted!</h2>
+      <p class="modal-desc">Your application has been received successfully.</p>
+      <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:20px; margin:20px 0;">
+        <p style="font-size:13px; color:var(--light); margin-bottom:8px;">Application ID</p>
+        <p id="appIdDisplay" style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--success);"></p>
+        <p style="font-size:12px; color:var(--mid); margin-top:8px;">Login with your email and mobile number</p>
+      </div>
+      <a href="login.html" class="btn-submit" style="display:inline-block; margin-top:8px; padding:12px 28px; text-decoration:none;">Login to Track Status →</a>
+    </div>
+  </div>
+
+  <script src="../js/db.js"></script>
+  <script>
+    let currentStep = 1;
+    let photoData = null;
+    let idData = null;
+
+    function showAlert(msg, type) {
+      document.getElementById('alertBox').innerHTML = `
+        <div class="alert alert-${type}">${msg}</div>
+      `;
+      setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 4000);
+    }
+
+    function handleFileUpload(inputId, previewId, nameId) {
+      const file = document.getElementById(inputId).files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById(previewId);
+        if (file.type.startsWith('image/')) {
+          preview.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+          preview.style.display = 'block';
+        }
+        document.getElementById(nameId).textContent = '✅ ' + file.name;
+        if (inputId === 'photoFile') photoData = e.target.result;
+        else idData = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function nextStep(step) {
+      if (!validateStep(currentStep)) return;
+      showStep(step);
+    }
+
+    function prevStep(step) { showStep(step); }
+
+    function showStep(step) {
+      document.querySelectorAll('.step-section').forEach(s => s.style.display = 'none');
+      document.getElementById('step' + step).style.display = 'block';
+      
+      document.querySelectorAll('.step-tab').forEach((t, i) => {
+        t.style.background = i + 1 === step ? 'rgba(99,102,241,0.1)' : 'transparent';
+        t.style.color = i + 1 === step ? 'var(--primary-light)' : 'var(--mid)';
+        t.style.fontWeight = i + 1 === step ? '600' : '500';
+      });
+
+      currentStep = step;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(step) {
+      if (step === 1) {
+        const name = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const dob = document.getElementById('dob').value;
+        if (!name || !email || !mobile || !dob) { showAlert('⚠ Please fill all required fields.', 'warning'); return false; }
+        if (!/^\S+@\S+\.\S+$/.test(email)) { showAlert('⚠ Please enter a valid email.', 'warning'); return false; }
+        if (!/^\d{10}$/.test(mobile)) { showAlert('⚠ Mobile number must be 10 digits.', 'warning'); return false; }
+        // Check duplicate email
+        const existing = DB.getStudentByEmail(email);
+        if (existing) { showAlert('⚠ An application with this email already exists. Please login.', 'danger'); return false; }
+      }
+      if (step === 2) {
+        const pct = document.getElementById('twelfthPercent').value;
+        const board = document.getElementById('board').value.trim();
+        const year = document.getElementById('yearOfPassing').value;
+        const stream = document.getElementById('stream').value;
+        const course = document.getElementById('courseApplied').value;
+        if (!pct || !board || !year || !stream || !course) { showAlert('⚠ Please fill all required fields.', 'warning'); return false; }
+        if (parseFloat(pct) < 0 || parseFloat(pct) > 100) { showAlert('⚠ Please enter valid percentage (0-100).', 'warning'); return false; }
+      }
+      return true;
+    }
+
+    document.getElementById('applyForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (!document.getElementById('termsCheck').checked) {
+        showAlert('⚠ Please agree to terms and conditions.', 'warning');
+        return;
+      }
+
+      const photoFile = document.getElementById('photoFile').files[0];
+      const idFile = document.getElementById('idFile').files[0];
+      if (!photoFile) { showAlert('⚠ Please upload your passport photo.', 'warning'); return; }
+      if (!idFile) { showAlert('⚠ Please upload your ID proof.', 'warning'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Submitting...';
+
+      setTimeout(() => {
+        const student = DB.addStudent({
+          fullName: document.getElementById('fullName').value.trim(),
+          email: document.getElementById('email').value.trim().toLowerCase(),
+          mobile: document.getElementById('mobile').value.trim(),
+          dob: document.getElementById('dob').value,
+          address: document.getElementById('address').value.trim(),
+          twelfthPercent: document.getElementById('twelfthPercent').value,
+          board: document.getElementById('board').value.trim(),
+          yearOfPassing: document.getElementById('yearOfPassing').value,
+          stream: document.getElementById('stream').value,
+          courseApplied: document.getElementById('courseApplied').value,
+          photoData: photoData,
+          idData: idData,
+        });
+
+        document.getElementById('appIdDisplay').textContent = student.id;
+        document.getElementById('successModal').style.display = 'flex';
+      }, 1200);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>High-Security Exam Protocol | CET Portal</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; user-select: none; -webkit-user-select: none; }
+    * { user-select: none !important; }
+    
+    .timer-danger { color: #ef4444 !important; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen relative">
+
+  <!-- Setup Overlay -->
+  <div id="setupOverlay" class="absolute inset-0 z-50 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center">
+      <div class="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-6">🔒</div>
+      <h2 class="text-2xl font-bold text-white mb-2">Secure Exam Proctoring Setup</h2>
+      <p class="text-slate-400 mb-6 text-sm">You are attempting to enter the lockdown exam environment. We must verify your identity and permissions.</p>
+      
+      <div class="bg-slate-900 rounded-xl p-5 mb-6 text-left border border-slate-700 space-y-3">
+        <div id="chk-status" class="flex items-center gap-3 text-sm text-slate-400"><span class="w-5 text-center">⏳</span> Checking Approval Status</div>
+        <div id="chk-media" class="flex items-center gap-3 text-sm text-slate-400"><span class="w-5 text-center">⏳</span> Requesting Webcam & Mic</div>
+        <div id="chk-full" class="flex items-center gap-3 text-sm text-slate-400"><span class="w-5 text-center">⏳</span> Entering Fullscreen Lockdown</div>
+      </div>
+      
+      <div id="previewBox" class="hidden mb-6 rounded-xl border-2 border-indigo-500 overflow-hidden bg-black relative">
+        <video id="previewVideo" class="w-full h-48 object-cover" autoplay muted playsinline></video>
+        <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex gap-2 items-center">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Identity Confirmed
+        </div>
+      </div>
+      
+      <button id="startSetupBtn" onclick="runSetupSequence()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors">
+        Initiate Security Checks & Start
+      </button>
+      <p id="setupErrorMsg" class="text-red-400 text-sm mt-4 font-medium h-4"></p>
+    </div>
+  </div>
+
+  <!-- Main Exam Interface -->
+  <div id="mainExamInterface" class="hidden flex-col h-full w-full">
+    <header class="h-16 shrink-0 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-6">
+      <div class="flex items-center gap-4">
+        <div class="w-8 h-8 rounded bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">🎓</div>
+        <div>
+          <h1 class="text-sm font-bold text-white tracking-wide">CET EXAM NETWORK</h1>
+          <p id="topStudentDisplay" class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Loading...</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-6">
+        <div class="bg-slate-900/50 px-4 py-1.5 rounded border border-slate-700 font-mono text-center">
+          <span class="block text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Time Remaining</span>
+          <span id="topTimer" class="font-bold text-emerald-400 text-sm tracking-wider">00:00:00</span>
+        </div>
+        
+        <div class="bg-red-900/20 px-4 py-1.5 rounded border border-red-900/50 flex flex-col items-center">
+           <span class="text-[10px] text-red-300 uppercase tracking-wider mb-1">Violations (Max 3)</span>
+           <div class="flex gap-1.5" id="violationIndicators">
+             <div class="w-3 h-3 rounded-sm border border-red-500/50 bg-slate-900"></div>
+             <div class="w-3 h-3 rounded-sm border border-red-500/50 bg-slate-900"></div>
+             <div class="w-3 h-3 rounded-sm border border-red-500/50 bg-slate-900"></div>
+           </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+      <main class="flex-1 overflow-y-auto px-8 py-10 flex flex-col items-center">
+        <div class="w-full max-w-3xl">
+          <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+            <span class="px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs font-bold uppercase tracking-widest" id="qSubject">Subject</span>
+            <span class="text-sm font-mono text-slate-400" id="qProgress">Question 1 of N</span>
+          </div>
+          <div id="questionContainer" class="mb-10"></div>
+          <div class="flex justify-between items-center bg-slate-800 p-4 border border-slate-700 rounded-xl">
+            <button id="btnPrev" onclick="navQuestion(-1)" class="px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold transition">← Previous</button>
+            <button id="btnSubmit" onclick="triggerSubmit()" class="px-5 py-2.5 rounded-lg bg-red-600/90 hover:bg-red-600 text-white shadow-lg text-sm font-bold transition">End & Auto-Submit</button>
+            <button id="btnNext" onclick="navQuestion(1)" class="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg text-sm font-bold transition">Next →</button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="w-80 shrink-0 bg-slate-800 border-l border-slate-700 flex flex-col">
+        <div class="p-4 border-b border-slate-700">
+          <div class="relative rounded-xl overflow-hidden bg-black border border-slate-600 shadow-inner">
+            <video id="liveVideo" autoplay muted playsinline class="w-full h-40 object-cover"></video>
+            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-white flex items-center gap-1.5 border border-slate-700/50">
+               <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE REC
+            </div>
+          </div>
+          <p class="text-[11px] text-center text-slate-400 mt-2 font-medium"><span class="text-emerald-400">●</span> AI Proctoring & Mic Connected</p>
+        </div>
+        
+        <div class="p-5 flex-1 overflow-y-auto">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Question Map</p>
+          <div id="qMapGrid" class="grid grid-cols-5 gap-2"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="notificationToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-2xl font-bold text-white transition-all transform translate-y-20 opacity-0 z-[100]"></div>
+
+  <script>
+    /* ============================================================== 
+       PURE VANILLA JAVASCRIPT & LOCALSTORAGE (No External Imports)
+       ============================================================== */
+
+    let currentStudent = null;
+    let examData = [];
+    let answersStore = {};
+    let currentIdx = 0;
+    
+    let examTimeLeft = 3600; // Default 60 mins fallback
+    let timerID = null;
+    let activeViolations = 0;
+    let isExamActive = false;
+    let mediaStream = null;
+
+    // Load Local DB Functions purely in-memory
+    const LocalDB = {
+      get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+      set(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Fetch Session
+      const session = LocalDB.get('cet_current_student');
+      if(!session) { alert('No active session.'); window.location.href = 'login.html'; return; }
+      
+      const allStudents = LocalDB.get('cet_students') || [];
+      currentStudent = allStudents.find(s => s.id === session.id);
+      
+      if(!currentStudent) { window.location.href = 'login.html'; }
+    });
+
+    function setCheck(id, pass) {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const text = el.textContent.split(' ').slice(1).join(' ');
+      el.innerHTML = `<span class="w-5 text-center">${pass ? '✅' : '❌'}</span> ${text}`;
+      el.className = `flex items-center gap-3 text-sm font-medium ${pass ? 'text-emerald-400' : 'text-red-400'}`;
+    }
+
+    async function runSetupSequence() {
+      const btn = document.getElementById('startSetupBtn');
+      const errbox = document.getElementById('setupErrorMsg');
+      btn.disabled = true;
+      btn.textContent = 'Running Security Protocols...';
+      errbox.textContent = '';
+
+      // Check 1: Approval Status
+      if(currentStudent.status !== 'approved') {
+        setCheck('chk-status', false); return errbox.textContent = "Your application is not approved yet!";
+      }
+      if(currentStudent.hasAttempted) {
+        setCheck('chk-status', false); return errbox.textContent = "You have already completed this safely monitored exam.";
+      }
+      setCheck('chk-status', true);
+
+      // Check 2: Require Webcam & Mic
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('previewBox').style.display = 'block';
+        document.getElementById('previewVideo').srcObject = mediaStream;
+        setCheck('chk-media', true);
+
+        // Save Photo Snapshot quietly
+        setTimeout(() => {
+          const cvs = document.createElement('canvas');
+          const vid = document.getElementById('previewVideo');
+          cvs.width = vid.videoWidth || 320; cvs.height = vid.videoHeight || 240;
+          cvs.getContext('2d').drawImage(vid, 0, 0);
+          
+          let students = LocalDB.get('cet_students') || [];
+          let obj = students.find(s=>s.id === currentStudent.id);
+          if(obj) { obj.examPhotoCapture = cvs.toDataURL('image/jpeg', 0.8); LocalDB.set('cet_students', students); }
+        }, 1000);
+      } catch (e) {
+        setCheck('chk-media', false);
+        btn.textContent = 'Retry Permissions';
+        btn.disabled = false;
+        return errbox.textContent = "CRITICAL: You must allow Camera AND Microphone permissions to proceed.";
+      }
+
+      // Check 3: Fullscreen Lockdown
+      try {
+        await document.documentElement.requestFullscreen();
+        setCheck('chk-full', true);
+      } catch (e) {
+         setCheck('chk-full', false);
+         btn.disabled = false; btn.textContent = 'Retry Fullscreen';
+         return errbox.textContent = "Could not activate fullscreen lock. Please try again.";
+      }
+
+      setTimeout(() => engageExam(), 800);
+    }
+
+    function engageExam() {
+      isExamActive = true;
+      document.getElementById('setupOverlay').classList.add('hidden');
+      document.getElementById('mainExamInterface').classList.remove('hidden');
+      document.getElementById('mainExamInterface').classList.add('flex');
+      
+      document.getElementById('topStudentDisplay').textContent = `${currentStudent.fullName} | ID: ${currentStudent.studentId}`;
+      document.getElementById('liveVideo').srcObject = mediaStream;
+      
+      // Load Questions (Fallback to default if empty)
+      examData = LocalDB.get('cet_questions');
+      if(!examData || examData.length === 0) {
+        examData = [
+          { id: 'Q1', subject: 'Logical Reasoning', text: 'If A > B, B > C, and C > D, which is the largest?', options: ['B','C','A','D'], correct: 2 },
+          { id: 'Q2', subject: 'Mathematics', text: 'What is 15% of 200?', options: ['20','25','30','35'], correct: 2 }
+        ];
+      }
+
+      const schedule = LocalDB.get('cet_exam_schedule');
+      if(schedule && schedule.duration) examTimeLeft = Math.floor(schedule.duration * 60);
+      
+      updateUIMap();
+      renderCurrentQuestion();
+      timerID = setInterval(examClockTick, 1000);
+    }
+
+    function renderCurrentQuestion() {
+      if(examData.length === 0) return;
+      document.getElementById('qProgress').textContent = `Question ${currentIdx + 1} of ${examData.length}`;
+      const q = examData[currentIdx];
+      document.getElementById('qSubject').textContent = q.subject || 'GENERAL';
+      
+      const storedAns = answersStore[currentIdx] !== undefined ? answersStore[currentIdx] : -1;
+      document.getElementById('questionContainer').innerHTML = `
+        <h2 class="text-xl font-semibold leading-relaxed mb-8">${q.text}</h2>
+        <div class="space-y-3">
+          ${q.options.map((opt, i) => `
+            <div onclick="selectAnswer(${i})" class="group cursor-pointer rounded-xl border-2 transition-all p-4 flex items-center gap-4
+              ${storedAns === i ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-800 hover:border-indigo-500/50 hover:bg-slate-700/50'}">
+              <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center font-bold text-sm transition-all
+                  ${storedAns === i ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}">
+                ${String.fromCharCode(65 + i)}
+              </div>
+              <p class="text-slate-200 text-sm font-medium leading-tight">${opt}</p>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.getElementById('btnPrev').disabled = currentIdx === 0;
+      document.getElementById('btnNext').style.display = (currentIdx === examData.length - 1) ? 'none' : 'block';
+    }
+
+    function selectAnswer(ansIndex) {
+      answersStore[currentIdx] = ansIndex;
+      renderCurrentQuestion();
+      updateUIMap();
+    }
+
+    function navQuestion(dir) {
+      const nextQ = currentIdx + dir;
+      if(nextQ >= 0 && nextQ < examData.length) { currentIdx = nextQ; renderCurrentQuestion(); updateUIMap(); }
+    }
+
+    function updateUIMap() {
+      const grid = document.getElementById('qMapGrid');
+      grid.innerHTML = examData.map((_, i) => {
+        let stateClass = 'bg-slate-700 text-slate-400 border-slate-600 hover:border-slate-400';
+        if(answersStore[i] !== undefined) stateClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
+        if(currentIdx === i) stateClass = 'bg-indigo-600 text-white border-indigo-400';
+        return `<button onclick="currentIdx=${i}; renderCurrentQuestion(); updateUIMap();" class="h-10 rounded border text-xs font-bold transition-all ${stateClass}">${i+1}</button>`;
+      }).join('');
+    }
+
+    // ==========================================
+    // EXAM TIMER & LOCKDOWN EVENT LISTENERS
+    // ==========================================
+    function examClockTick() {
+      if(examTimeLeft <= 0) {
+        clearInterval(timerID);
+        sysToast('⏰ TIME ELAPSED! Force submitting your exam.', 'bg-red-600');
+        return setTimeout(() => executeFinalSubmit(), 1500);
+      }
+      examTimeLeft--;
+      const [h, m, s] = [Math.floor(examTimeLeft / 3600), Math.floor((examTimeLeft % 3600) / 60), Math.floor(examTimeLeft % 60)];
+      document.getElementById('topTimer').textContent = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    }
+
+    document.addEventListener('contextmenu', e => { e.preventDefault(); sysToast('Right-click is completely blocked.', 'bg-amber-600'); });
+    document.addEventListener('copy', e => e.preventDefault()); document.addEventListener('paste', e => e.preventDefault());
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.hidden && isExamActive) registerViolation('Tab switching protocol violation detected!');
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if(!document.fullscreenElement && isExamActive) {
+        registerViolation('Critical Alert: You exited fullscreen mode!');
+        setTimeout(() => document.documentElement.requestFullscreen().catch(()=>{}), 500);
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if(e.key === 'F5' || (e.ctrlKey && e.key === 'r') || e.key === 'Escape' || (e.altKey && e.key === 'Tab')) {
+        e.preventDefault();
+        if(isExamActive) registerViolation(`Shortcut [${e.key}] blocked during live exam.`);
+        return false;
+      }
+    });
+
+    function registerViolation(msg) {
+      if(!isExamActive) return;
+      activeViolations++;
+      sysToast(`🚨 VIOLATION: ${msg}`, 'bg-red-600');
+      
+      const dotsHTML = Array(3).fill(0).map((_, i) => `<div class="w-3 h-3 rounded-sm border border-red-500/50 ${i < activeViolations ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-900'}"></div>`).join('');
+      document.getElementById('violationIndicators').innerHTML = dotsHTML;
+      
+      if(activeViolations >= 3) {
+        isExamActive = false; clearInterval(timerID);
+        sysToast(`🔒 MAX VIOLATIONS REACHED. Terminating Exam...`, 'bg-red-800');
+        setTimeout(() => executeFinalSubmit(), 2000);
+      }
+    }
+
+    function sysToast(msg, bgClass) {
+      const t = document.getElementById('notificationToast');
+      t.textContent = msg;
+      t.className = `fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl font-bold text-white transition-all transform z-[100] ${bgClass}`;
+      setTimeout(() => t.style.opacity = '0', 3000);
+    }
+
+    function triggerSubmit() { if(confirm('Submit your exam?')) executeFinalSubmit(); }
+
+    function executeFinalSubmit() {
+      isExamActive = false;
+      clearInterval(timerID);
+      
+      let scoreAmt = 0, wrongAmt = 0;
+      examData.forEach((q, i) => {
+        if(answersStore[i] !== undefined) { if(answersStore[i] === q.correct) scoreAmt++; else wrongAmt++; }
+      });
+      
+      const schedule = LocalDB.get('cet_exam_schedule');
+      const startDur = schedule ? (schedule.duration * 60) : 3600;
+      const elapsedSec = startDur - examTimeLeft;
+
+      let results = LocalDB.get('cet_results') || [];
+      results.push({
+        id: 'RES' + Date.now(),
+        studentId: currentStudent.id,
+        studentName: currentStudent.fullName,
+        studentCetId: currentStudent.studentId,
+        courseApplied: currentStudent.courseApplied,
+        score: scoreAmt,
+        total: examData.length,
+        violations: activeViolations,
+        timeUsed: elapsedSec,
+        submittedAt: new Date().toISOString()
+      });
+      LocalDB.set('cet_results', results);
+
+      let students = LocalDB.get('cet_students') || [];
+      const stIdx = students.findIndex(s=>s.id === currentStudent.id);
+      if(stIdx !== -1) { students[stIdx].hasAttempted = true; LocalDB.set('cet_students', students); }
+
+      if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+
+      window.location.replace('result.html');
+    }
+  </script>
+</body>
+</html>
