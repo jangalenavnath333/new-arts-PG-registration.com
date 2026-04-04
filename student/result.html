@@ -17,8 +17,8 @@
     </div>
   </div>
 
-  <script src="../js/db.js"></script>
-  <script>
+  <script type="module">
+    import DB from '../js/db.js';
     const student = DB.getCurrentStudent();
     if (!student) { window.location.href = 'login.html'; }
 

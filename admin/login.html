@@ -43,13 +43,14 @@
     </div>
   </div>
 
-  <script src="../js/db.js"></script>
-  <script>
+  <script type="module">
+    import DB from '../js/db.js';
+
     // Default credentials
     const ADMIN_USER = 'admin';
     const ADMIN_PASS = 'admin123';
 
-    function togglePwd() {
+    window.togglePwd = function() {
       const p = document.getElementById('password');
       p.type = p.type === 'password' ? 'text' : 'password';
       document.getElementById('eyeBtn').textContent = p.type === 'password' ? '👁' : '🙈';

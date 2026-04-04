@@ -44,13 +44,14 @@
     </div>
   </div>
 
-  <script src="../js/db.js"></script>
-  <script>
-    function showAlert(msg, type) {
+  <script type="module">
+    import DB from '../js/db.js';
+    
+    window.showAlert = function(msg, type) {
       document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
     }
 
-    function togglePwd() {
+    window.togglePwd = function() {
       const p = document.getElementById('password');
       const btn = document.getElementById('eyeBtn');
       if (p.type === 'password') { p.type = 'text'; btn.textContent = '🙈'; }

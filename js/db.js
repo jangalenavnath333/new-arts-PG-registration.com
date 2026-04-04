@@ -149,3 +149,4 @@ function getDefaultQuestions() {
 // ---- Export ----
 window.DB = DB;
 window.getDefaultQuestions = getDefaultQuestions;
+export default DB;

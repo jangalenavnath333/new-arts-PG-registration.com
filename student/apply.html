@@ -222,21 +222,22 @@
     </div>
   </div>
 
-  <script src="../js/db.js"></script>
-  <script>
+  <script type="module">
+    import DB from '../js/db.js';
+    
     let currentStep = 1;
     let photoData = null;
     let idData = null;
     let resultData = null;
 
-    function showAlert(msg, type) {
+    window.showAlert = function(msg, type) {
       document.getElementById('alertBox').innerHTML = `
         <div class="alert alert-${type}">${msg}</div>
       `;
       setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 4000);
     }
 
-    function handleFileUpload(inputId, previewId, nameId) {
+    window.handleFileUpload = function(inputId, previewId, nameId) {
       const file = document.getElementById(inputId).files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -254,14 +255,15 @@
       reader.readAsDataURL(file);
     }
 
-    function nextStep(step) {
-      if (!validateStep(currentStep)) return;
-      showStep(step);
+    window.nextStep = function(step) {
+      if (validateStep(step)) showStep(step + 1);
     }
 
-    function prevStep(step) { showStep(step); }
+    window.prevStep = function(step) {
+      showStep(step - 1);
+    }
 
-    function showStep(step) {
+    window.showStep = function(step) {
       document.querySelectorAll('.step-section').forEach(s => s.style.display = 'none');
       document.getElementById('step' + step).style.display = 'block';
       
@@ -275,7 +277,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function validateStep(step) {
+    window.validateStep = function(step) {
       if (step === 1) {
         const name = document.getElementById('fullName').value.trim();
         const email = document.getElementById('email').value.trim();
