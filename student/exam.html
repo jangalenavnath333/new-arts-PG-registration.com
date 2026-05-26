@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>High-Security Exam Protocol | CET Portal</title>
   
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../css/tailwind.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
@@ -53,7 +53,7 @@
   <div id="mainExamInterface" class="hidden flex-col h-full w-full">
     <header class="h-16 shrink-0 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-6">
       <div class="flex items-center gap-4">
-        <div class="w-8 h-8 rounded bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">🎓</div>
+        <div id="headerProfilePhoto" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm overflow-hidden border-2 border-indigo-500">🎓</div>
         <div>
           <h1 class="text-sm font-bold text-white tracking-wide">CET EXAM NETWORK</h1>
           <p id="topStudentDisplay" class="text-[10px] text-slate-400 uppercase tracking-widest font-mono">Loading...</p>
@@ -86,9 +86,9 @@
           </div>
           <div id="questionContainer" class="mb-10"></div>
           <div class="flex justify-between items-center bg-slate-800 p-4 border border-slate-700 rounded-xl">
-            <button id="btnPrev" onclick="navQuestion(-1)" class="px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold transition">← Previous</button>
+            <button id="btnPrev" onclick="navQuestion(-1)" class="px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold transition">&larr; Previous</button>
             <button id="btnSubmit" onclick="triggerSubmit()" class="px-5 py-2.5 rounded-lg bg-red-600/90 hover:bg-red-600 text-white shadow-lg text-sm font-bold transition">End & Auto-Submit</button>
-            <button id="btnNext" onclick="navQuestion(1)" class="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg text-sm font-bold transition">Next →</button>
+            <button id="btnNext" onclick="navQuestion(1)" class="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg text-sm font-bold transition">Next &rarr;</button>
           </div>
         </div>
       </main>
@@ -112,7 +112,32 @@
     </div>
   </div>
 
-  <div id="notificationToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-2xl font-bold text-white transition-all transform translate-y-20 opacity-0 z-[100]"></div>
+  <div id="lockedOverlay" class="absolute inset-0 z-[100] bg-slate-900/95 backdrop-blur-md hidden flex-col items-center justify-center p-6">
+    <div class="bg-slate-800 border-2 border-red-900/50 rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center">
+      <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">🔒</div>
+      <h2 class="text-3xl font-black text-white mb-2 tracking-tight">EXAM LOCKED</h2>
+      <p class="text-red-400 font-bold mb-6" id="lockReasonDisplay">Security violation detected.</p>
+      
+      <div class="bg-slate-900 rounded-xl p-5 mb-6 text-left border border-slate-700 space-y-3">
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400">Student ID</span>
+          <span class="text-white font-mono font-bold" id="lockStudentIdDisplay">--</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-slate-400">Total Warnings</span>
+          <span class="text-red-400 font-bold" id="lockWarningCountDisplay">3/3</span>
+        </div>
+      </div>
+      
+      <div class="bg-orange-500/10 border border-orange-500/20 text-orange-400 p-4 rounded-xl text-sm mb-6">
+        <strong class="block mb-1">Action Required</strong>
+        Please raise your hand or contact the administrator immediately. You cannot resume until the admin unlocks your session.
+      </div>
+      <p class="text-xs text-slate-500 animate-pulse">Waiting for administrator unlock... <span class="font-mono" id="lockPollingTicks"></span></p>
+    </div>
+  </div>
+
+  <div id="notificationToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-2xl font-bold text-white transition-all transform translate-y-20 opacity-0 z-[110]"></div>
 
   <script>
     /* ============================================================== 
@@ -124,13 +149,13 @@
     let answersStore = {};
     let currentIdx = 0;
     
-    let examTimeLeft = 3600; // Default 60 mins fallback
+    let examTimeLeft = 0;
     let timerID = null;
     let activeViolations = 0;
     let isExamActive = false;
     let mediaStream = null;
+    let examConfig = null;
 
-    // Load Local DB Functions purely in-memory
     const LocalDB = {
       get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
       set(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
@@ -139,12 +164,48 @@
     window.addEventListener('DOMContentLoaded', () => {
       // 1. Fetch Session
       const session = LocalDB.get('cet_current_student');
-      if(!session) { alert('No active session.'); window.location.href = 'login.html'; return; }
+      if(!session) { alert('No active session.'); window.location.replace('login.html'); return; }
       
       const allStudents = LocalDB.get('cet_students') || [];
-      currentStudent = allStudents.find(s => s.id === session.id);
+      currentStudent = allStudents.find(s => s.id === session.id || s.studentId === session.studentId);
       
-      if(!currentStudent) { window.location.href = 'login.html'; }
+      if(!currentStudent) { window.location.replace('login.html'); return; }
+      if(currentStudent.hasAttempted && currentStudent.examStatus === 'COMPLETED') { alert('You have already completed the exam.'); window.location.replace('dashboard.html'); return; }
+      if(currentStudent.examStatus === 'TERMINATED') { alert('Your exam was terminated.'); window.location.replace('dashboard.html'); return; }
+      
+      // If already locked, show lock screen directly
+      if(currentStudent.examStatus === 'LOCKED') {
+         document.getElementById('setupOverlay').classList.add('hidden');
+         showLockedScreen(currentStudent.lockReason || 'Security Violation', currentStudent.activeViolations || 3);
+         setInterval(pollUnlockStatus, 5000);
+         return;
+      }
+      // 2. Fetch Exam Config & Strict Time Check
+      examConfig = LocalDB.get('cetExamConfig');
+      if(!examConfig || !examConfig.examDate || !examConfig.startTime) {
+        console.warn('Exam config missing. Using demo mode (60 minutes).');
+        examTimeLeft = 60 * 60;
+      } else {
+        const now = new Date();
+        const start = new Date(`${examConfig.examDate}T${examConfig.startTime}`);
+        const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
+        
+        if(now < start) {
+          alert('Exam has not started yet. Please wait.'); window.location.replace('dashboard.html'); return;
+        }
+        if(now > end) {
+          alert('Exam time is over.'); window.location.replace('dashboard.html'); return;
+        }
+        
+        // Calculate strict remaining time based on absolute end time
+        examTimeLeft = Math.floor((end - now) / 1000);
+      }
+      
+      // 3. Restore any previously backed up answers for this session
+      const backedUpAnswers = LocalDB.get(`cetExamAnswers_${currentStudent.id}`);
+      if (backedUpAnswers) {
+        answersStore = backedUpAnswers;
+      }
     });
 
     function setCheck(id, pass) {
@@ -162,7 +223,6 @@
       btn.textContent = 'Running Security Protocols...';
       errbox.textContent = '';
 
-      // Check 1: Approval Status
       if(currentStudent.status !== 'approved') {
         setCheck('chk-status', false); return errbox.textContent = "Your application is not approved yet!";
       }
@@ -171,14 +231,12 @@
       }
       setCheck('chk-status', true);
 
-      // Check 2: Require Webcam & Mic
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('previewBox').style.display = 'block';
         document.getElementById('previewVideo').srcObject = mediaStream;
         setCheck('chk-media', true);
 
-        // Save Photo Snapshot quietly
         setTimeout(() => {
           const cvs = document.createElement('canvas');
           const vid = document.getElementById('previewVideo');
@@ -196,7 +254,6 @@
         return errbox.textContent = "CRITICAL: You must allow Camera AND Microphone permissions to proceed.";
       }
 
-      // Check 3: Fullscreen Lockdown
       try {
         await document.documentElement.requestFullscreen();
         setCheck('chk-full', true);
@@ -216,23 +273,49 @@
       document.getElementById('mainExamInterface').classList.add('flex');
       
       document.getElementById('topStudentDisplay').textContent = `${currentStudent.fullName} | ID: ${currentStudent.studentId}`;
+      const photoSrc = currentStudent.photoData || currentStudent.uploadedFiles?.photoFile;
+      if (photoSrc) {
+        document.getElementById('headerProfilePhoto').innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover" />`;
+      }
       document.getElementById('liveVideo').srcObject = mediaStream;
       
-      // Load Questions (Fallback to default if empty)
-      examData = LocalDB.get('cet_questions');
-      if(!examData || examData.length === 0) {
-        examData = [
-          { id: 'Q1', subject: 'Logical Reasoning', text: 'If A > B, B > C, and C > D, which is the largest?', options: ['B','C','A','D'], correct: 2 },
-          { id: 'Q2', subject: 'Mathematics', text: 'What is 15% of 200?', options: ['20','25','30','35'], correct: 2 }
-        ];
+      const allSets = LocalDB.get('cetQuestionSets') || [];
+      const activeSet = allSets.find(s => s.isActive);
+      
+      if(!activeSet || !activeSet.questions || activeSet.questions.length === 0) {
+        alert('Exam not configured. No active question set found.');
+        window.location.replace('dashboard.html');
+        return;
       }
-
-      const schedule = LocalDB.get('cet_exam_schedule');
-      if(schedule && schedule.duration) examTimeLeft = Math.floor(schedule.duration * 60);
+      
+      examData = activeSet.questions;
+      
+      // Recalculate strict time just before starting the clock
+      const now = new Date();
+      const end = new Date(new Date(`${examConfig.examDate}T${examConfig.startTime}`).getTime() + (examConfig.durationMinutes * 60000));
+      
+      // If resuming, use saved time left, otherwise calculate fresh
+      if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
+         examTimeLeft = currentStudent.examTimeLeft;
+      } else {
+         examTimeLeft = Math.floor((end - now) / 1000);
+      }
+      
+      if (examTimeLeft <= 0) {
+        executeFinalSubmit('Auto Submitted', true);
+        return;
+      }
+      
+      activeViolations = currentStudent.activeViolations || 0;
+      updateViolationsUI();
       
       updateUIMap();
       renderCurrentQuestion();
       timerID = setInterval(examClockTick, 1000);
+      examClockTick(); // Call immediately to render first tick
+      
+      // Start polling for locks/terminations from admin
+      setInterval(pollUnlockStatus, 5000);
     }
 
     function renderCurrentQuestion() {
@@ -241,31 +324,79 @@
       const q = examData[currentIdx];
       document.getElementById('qSubject').textContent = q.subject || 'GENERAL';
       
-      const storedAns = answersStore[currentIdx] !== undefined ? answersStore[currentIdx] : -1;
-      document.getElementById('questionContainer').innerHTML = `
-        <h2 class="text-xl font-semibold leading-relaxed mb-8">${q.text}</h2>
-        <div class="space-y-3">
-          ${q.options.map((opt, i) => `
-            <div onclick="selectAnswer(${i})" class="group cursor-pointer rounded-xl border-2 transition-all p-4 flex items-center gap-4
-              ${storedAns === i ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-800 hover:border-indigo-500/50 hover:bg-slate-700/50'}">
-              <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center font-bold text-sm transition-all
-                  ${storedAns === i ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}">
-                ${String.fromCharCode(65 + i)}
-              </div>
-              <p class="text-slate-200 text-sm font-medium leading-tight">${opt}</p>
-            </div>
-          `).join('')}
-        </div>
-      `;
+      const storedAns = answersStore[currentIdx] !== undefined ? answersStore[currentIdx] : null;
+      let html = `<div class="flex justify-between items-start mb-8"><h2 class="text-xl font-semibold leading-relaxed">${q.text}</h2><span class="bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded text-xs font-bold border border-indigo-500/50 shrink-0 ml-4">${q.marks} Mark(s)</span></div>`;
+      
+      if(q.type === 'mcq_single' || !q.type) {
+         html += `<div class="space-y-3">
+           ${(q.options||[]).map((opt, i) => `
+             <div onclick="selectAnswer(${i}, 'single')" class="group cursor-pointer rounded-xl border-2 transition-all p-4 flex items-center gap-4 ${storedAns === i ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-800 hover:border-indigo-500/50 hover:bg-slate-700/50'}">
+               <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center font-bold text-sm transition-all ${storedAns === i ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}">${String.fromCharCode(65 + i)}</div>
+               <p class="text-slate-200 text-sm font-medium leading-tight">${opt}</p>
+             </div>
+           `).join('')}
+         </div>`;
+      } else if (q.type === 'mcq_multi') {
+         const selArr = storedAns || [];
+         html += `<div class="space-y-3">
+           ${(q.options||[]).map((opt, i) => `
+             <div onclick="selectAnswer(${i}, 'multi')" class="group cursor-pointer rounded-xl border-2 transition-all p-4 flex items-center gap-4 ${selArr.includes(i) ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 bg-slate-800 hover:border-indigo-500/50 hover:bg-slate-700/50'}">
+               <div class="w-8 h-8 rounded shrink-0 flex items-center justify-center font-bold text-sm transition-all ${selArr.includes(i) ? 'bg-indigo-500 text-white' : 'bg-slate-700 text-slate-300'}">✓</div>
+               <p class="text-slate-200 text-sm font-medium leading-tight">${opt}</p>
+             </div>
+           `).join('')}
+         </div>`;
+      } else if (q.type === 'short_answer') {
+         html += `<div class="mt-4"><input type="text" oninput="saveTextAnswer(this.value)" value="${storedAns || ''}" placeholder="Type your exact answer here..." class="w-full bg-slate-800 border-2 border-slate-700 rounded-xl p-4 text-slate-200 outline-none focus:border-indigo-500 transition-all font-medium" /></div>`;
+      } else if (q.type === 'descriptive') {
+         html += `<div class="mt-4"><textarea oninput="saveTextAnswer(this.value)" rows="6" placeholder="Type your descriptive answer here... (Max ${q.wordLimit||250} words)" class="w-full bg-slate-800 border-2 border-slate-700 rounded-xl p-4 text-slate-200 outline-none focus:border-indigo-500 transition-all text-sm leading-relaxed">${storedAns || ''}</textarea></div>`;
+      } else if (q.type === 'programming') {
+         html += `<div class="mt-4"><textarea oninput="saveTextAnswer(this.value)" rows="10" placeholder="// Write your code here..." class="w-full bg-[#1e1e1e] border-2 border-slate-700 rounded-xl p-4 text-green-400 font-mono text-sm outline-none focus:border-indigo-500 transition-all leading-relaxed">${storedAns || ''}</textarea></div>`;
+      } else if (q.type === 'file_upload') {
+         html += `<div class="mt-4 p-6 border-2 border-dashed border-slate-600 rounded-xl text-center bg-slate-800/50">
+            <input type="file" onchange="saveFileUpload(this)" class="hidden" id="fileUploader_${currentIdx}" />
+            <button onclick="document.getElementById('fileUploader_${currentIdx}').click()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-lg">Select File / Image</button>
+            <p class="mt-4 text-slate-400 text-xs" id="fileStatus_${currentIdx}">${storedAns ? 'File selected: ' + storedAns.name : 'No file chosen.'}</p>
+         </div>`;
+      }
+
+      document.getElementById('questionContainer').innerHTML = html;
 
       document.getElementById('btnPrev').disabled = currentIdx === 0;
       document.getElementById('btnNext').style.display = (currentIdx === examData.length - 1) ? 'none' : 'block';
     }
 
-    function selectAnswer(ansIndex) {
-      answersStore[currentIdx] = ansIndex;
-      renderCurrentQuestion();
+    function selectAnswer(ansData, type = 'single') {
+      if(type === 'multi') {
+         if(!answersStore[currentIdx]) answersStore[currentIdx] = [];
+         const arr = answersStore[currentIdx];
+         if(arr.includes(ansData)) {
+            answersStore[currentIdx] = arr.filter(x => x !== ansData);
+         } else {
+            answersStore[currentIdx].push(ansData);
+         }
+      } else {
+         answersStore[currentIdx] = ansData;
+      }
+      LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
+      if(type === 'single' || type === 'multi') renderCurrentQuestion();
       updateUIMap();
+    }
+
+    function saveTextAnswer(val) {
+      answersStore[currentIdx] = val;
+      LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
+      updateUIMap();
+    }
+
+    function saveFileUpload(input) {
+      if(input.files && input.files[0]) {
+         const file = input.files[0];
+         answersStore[currentIdx] = { name: file.name, type: file.type, lastModified: file.lastModified };
+         LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
+         document.getElementById('fileStatus_' + currentIdx).textContent = 'File selected: ' + file.name;
+         updateUIMap();
+      }
     }
 
     function navQuestion(dir) {
@@ -283,55 +414,156 @@
       }).join('');
     }
 
-    // ==========================================
-    // EXAM TIMER & LOCKDOWN EVENT LISTENERS
-    // ==========================================
     function examClockTick() {
       if(examTimeLeft <= 0) {
         clearInterval(timerID);
         sysToast('⏰ TIME ELAPSED! Force submitting your exam.', 'bg-red-600');
-        return setTimeout(() => executeFinalSubmit(), 1500);
+        return setTimeout(() => executeFinalSubmit('Auto Submitted', true), 1500);
       }
       examTimeLeft--;
       const [h, m, s] = [Math.floor(examTimeLeft / 3600), Math.floor((examTimeLeft % 3600) / 60), Math.floor(examTimeLeft % 60)];
       document.getElementById('topTimer').textContent = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
     }
 
-    document.addEventListener('contextmenu', e => { e.preventDefault(); sysToast('Right-click is completely blocked.', 'bg-amber-600'); });
-    document.addEventListener('copy', e => e.preventDefault()); document.addEventListener('paste', e => e.preventDefault());
+    function logSecurityEvent(type, message) {
+      console.warn(`SECURITY EVENT [${type}]: ${message}`);
+      let logs = LocalDB.get('cetExamSecurityLogs') || [];
+      logs.push({
+        studentId: currentStudent?.studentId || currentStudent?.id || 'UNKNOWN',
+        name: currentStudent?.fullName || 'UNKNOWN',
+        type: type,
+        message: message,
+        timestamp: new Date().toISOString()
+      });
+      LocalDB.set('cetExamSecurityLogs', logs);
+    }
+
+    document.addEventListener('contextmenu', e => { 
+      e.preventDefault(); 
+      logSecurityEvent('RIGHT_CLICK', 'Right-click attempt blocked.');
+      sysToast('Right-click is completely blocked.', 'bg-amber-600'); 
+    });
+    
+    ['copy', 'cut', 'paste'].forEach(evt => {
+      document.addEventListener(evt, e => {
+        e.preventDefault();
+        logSecurityEvent('CLIPBOARD', `${evt.toUpperCase()} attempt blocked.`);
+        registerViolation(`Clipboard action (${evt}) is prohibited!`);
+      });
+    });
 
     document.addEventListener('visibilitychange', () => {
-      if(document.hidden && isExamActive) registerViolation('Tab switching protocol violation detected!');
+      if(document.hidden && isExamActive) {
+        logSecurityEvent('TAB_SWITCH', 'User switched tab or window.');
+        registerViolation('Tab switching protocol violation detected!');
+      }
     });
 
     document.addEventListener('fullscreenchange', () => {
       if(!document.fullscreenElement && isExamActive) {
+        logSecurityEvent('FULLSCREEN_EXIT', 'User exited fullscreen mode.');
         registerViolation('Critical Alert: You exited fullscreen mode!');
         setTimeout(() => document.documentElement.requestFullscreen().catch(()=>{}), 500);
       }
     });
 
     document.addEventListener('keydown', e => {
-      if(e.key === 'F5' || (e.ctrlKey && e.key === 'r') || e.key === 'Escape' || (e.altKey && e.key === 'Tab')) {
+      const blockedKeys = ['F12'];
+      const blockedCombos = ['c', 'v', 'x', 's', 'p', 'a', 'r', 'i', 'j'];
+      
+      if(blockedKeys.includes(e.key) || (e.ctrlKey && blockedCombos.includes(e.key.toLowerCase())) || (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) || e.key === 'F5' || e.key === 'Escape' || (e.altKey && e.key === 'Tab')) {
         e.preventDefault();
-        if(isExamActive) registerViolation(`Shortcut [${e.key}] blocked during live exam.`);
+        if(isExamActive) {
+          logSecurityEvent('KEYBOARD_SHORTCUT', `Blocked shortcut used: ${e.key}`);
+          registerViolation(`Shortcut [${e.key}] blocked during live exam.`);
+        }
         return false;
       }
     });
 
+    function updateViolationsUI() {
+      const dotsHTML = Array(3).fill(0).map((_, i) => `<div class="w-3 h-3 rounded-sm border border-red-500/50 ${i < activeViolations ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-900'}"></div>`).join('');
+      document.getElementById('violationIndicators').innerHTML = dotsHTML;
+    }
+
     function registerViolation(msg) {
       if(!isExamActive) return;
       activeViolations++;
-      sysToast(`🚨 VIOLATION: ${msg}`, 'bg-red-600');
       
-      const dotsHTML = Array(3).fill(0).map((_, i) => `<div class="w-3 h-3 rounded-sm border border-red-500/50 ${i < activeViolations ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-900'}"></div>`).join('');
-      document.getElementById('violationIndicators').innerHTML = dotsHTML;
+      // Save warnings to student profile to persist across refresh
+      let students = LocalDB.get('cet_students') || [];
+      const stIdx = students.findIndex(s=>s.id === currentStudent.id);
+      if(stIdx !== -1) { 
+        students[stIdx].activeViolations = activeViolations;
+        LocalDB.set('cet_students', students); 
+        currentStudent = students[stIdx];
+      }
+      
+      sysToast(`🚨 Warning ${activeViolations}/3: ${msg}`, 'bg-red-600');
+      updateViolationsUI();
       
       if(activeViolations >= 3) {
         isExamActive = false; clearInterval(timerID);
-        sysToast(`🔒 MAX VIOLATIONS REACHED. Terminating Exam...`, 'bg-red-800');
-        setTimeout(() => executeFinalSubmit(), 2000);
+        logSecurityEvent('LOCKED', `Exam locked due to 3 warnings: ${msg}`);
+        executeExamLock(msg);
       }
+    }
+
+    function executeExamLock(reason) {
+       // Save state
+       let students = LocalDB.get('cet_students') || [];
+       const stIdx = students.findIndex(s=>s.id === currentStudent.id);
+       if(stIdx !== -1) { 
+         students[stIdx].examStatus = 'LOCKED';
+         students[stIdx].lockReason = reason;
+         students[stIdx].lockedAt = new Date().toISOString();
+         students[stIdx].examTimeLeft = examTimeLeft;
+         LocalDB.set('cet_students', students); 
+         currentStudent = students[stIdx];
+       }
+       
+       let lockedExams = LocalDB.get('cetLockedExams') || [];
+       const existingIdx = lockedExams.findIndex(x => x.studentId === currentStudent.studentId);
+       const lockObj = {
+          studentId: currentStudent.studentId,
+          name: currentStudent.fullName,
+          course: currentStudent.courseApplied,
+          warningCount: activeViolations,
+          reason: reason,
+          lockedAt: new Date().toISOString()
+       };
+       if(existingIdx >= 0) lockedExams[existingIdx] = lockObj;
+       else lockedExams.push(lockObj);
+       LocalDB.set('cetLockedExams', lockedExams);
+       
+       showLockedScreen(reason, activeViolations);
+    }
+    
+    function showLockedScreen(reason, warnings) {
+       document.getElementById('mainExamInterface').classList.add('hidden');
+       document.getElementById('lockedOverlay').classList.remove('hidden');
+       document.getElementById('lockedOverlay').classList.add('flex');
+       document.getElementById('lockReasonDisplay').textContent = reason;
+       document.getElementById('lockStudentIdDisplay').textContent = currentStudent.studentId;
+       document.getElementById('lockWarningCountDisplay').textContent = `${warnings}/3`;
+       if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    }
+    
+    function pollUnlockStatus() {
+       const students = LocalDB.get('cet_students') || [];
+       const me = students.find(s => s.id === currentStudent.id);
+       if(!me) return;
+       
+       if (me.examStatus === 'TERMINATED') {
+          alert('Admin has permanently terminated your exam.');
+          window.location.replace('dashboard.html');
+       } else if (me.examStatus === 'ACTIVE' || me.examStatus === 'pending' || me.examStatus === 'approved') {
+          // Unlocked!
+          window.location.reload();
+       } else {
+          document.getElementById('lockPollingTicks').textContent += '.';
+          if(document.getElementById('lockPollingTicks').textContent.length > 5) document.getElementById('lockPollingTicks').textContent = '.';
+       }
     }
 
     function sysToast(msg, bgClass) {
@@ -341,44 +573,125 @@
       setTimeout(() => t.style.opacity = '0', 3000);
     }
 
-    function triggerSubmit() { if(confirm('Submit your exam?')) executeFinalSubmit(); }
+    function triggerSubmit() { 
+      if(confirm('Are you sure you want to manually submit your exam?')) {
+        executeFinalSubmit('Submitted', false);
+      } 
+    }
 
-    function executeFinalSubmit() {
+    function executeFinalSubmit(submitStatus = 'Submitted', isAuto = false) {
       isExamActive = false;
       clearInterval(timerID);
       
-      let scoreAmt = 0, wrongAmt = 0;
+      let scoreAmt = 0;
+      let correctAmt = 0;
+      let wrongAmt = 0;
+      let unansweredAmt = 0;
+      
       examData.forEach((q, i) => {
-        if(answersStore[i] !== undefined) { if(answersStore[i] === q.correct) scoreAmt++; else wrongAmt++; }
+        let isCorrect = false;
+        let requiresManual = false;
+        
+        if(answersStore[i] !== undefined && answersStore[i] !== null && answersStore[i] !== '') {
+           if(q.type === 'mcq_single' || !q.type) {
+              if(answersStore[i] === q.correct) isCorrect = true;
+           } else if(q.type === 'mcq_multi') {
+              const sel = answersStore[i] || [];
+              const correctArr = q.correctMulti || [];
+              let match = true;
+              for(let k=0; k<4; k++) {
+                 const isSel = sel.includes(k);
+                 const isCor = !!correctArr[k];
+                 if(isSel !== isCor) { match = false; break; }
+              }
+              if(match) isCorrect = true;
+           } else if(q.type === 'short_answer') {
+              const uAns = String(answersStore[i]).trim().toLowerCase();
+              const cAns = String(q.correctText || '').trim().toLowerCase();
+              if(uAns === cAns && cAns !== '') isCorrect = true;
+           } else {
+              requiresManual = true;
+           }
+
+           if(isCorrect) {
+              correctAmt++;
+              scoreAmt += parseFloat(q.marks) || 1;
+           } else if(!requiresManual) {
+              wrongAmt++;
+           }
+        } else {
+           unansweredAmt++;
+        }
       });
       
-      const schedule = LocalDB.get('cet_exam_schedule');
-      const startDur = schedule ? (schedule.duration * 60) : 3600;
-      const elapsedSec = startDur - examTimeLeft;
+      const startDur = examConfig.durationMinutes * 60;
+      const elapsedSec = startDur - (examTimeLeft > 0 ? examTimeLeft : 0);
 
-      let results = LocalDB.get('cet_results') || [];
+      let results = LocalDB.get('cetExamResults') || [];
       results.push({
         id: 'RES' + Date.now(),
-        studentId: currentStudent.id,
-        studentName: currentStudent.fullName,
-        studentCetId: currentStudent.studentId,
-        courseApplied: currentStudent.courseApplied,
+        studentId: currentStudent.studentId || currentStudent.id,
+        name: currentStudent.fullName,
         score: scoreAmt,
-        total: examData.length,
+        totalQuestions: examData.length,
         violations: activeViolations,
         timeUsed: elapsedSec,
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        status: submitStatus,
+        autoSubmitted: isAuto,
+        answers: answersStore // Preserve answers for manual grading
       });
-      LocalDB.set('cet_results', results);
+      LocalDB.set('cetExamResults', results);
 
       let students = LocalDB.get('cet_students') || [];
       const stIdx = students.findIndex(s=>s.id === currentStudent.id);
-      if(stIdx !== -1) { students[stIdx].hasAttempted = true; LocalDB.set('cet_students', students); }
+      if(stIdx !== -1) { 
+        students[stIdx].hasAttempted = true; 
+        if (submitStatus.includes('Terminated')) {
+           students[stIdx].examStatus = 'TERMINATED';
+        } else {
+           students[stIdx].examStatus = 'COMPLETED';
+        }
+        LocalDB.set('cet_students', students); 
+      }
+      
+      // Update cetApprovedStudents
+      let approved = LocalDB.get('cetApprovedStudents') || [];
+      const apIdx = approved.findIndex(s => s.id === currentStudent.id || s.studentId === currentStudent.studentId);
+      if (apIdx !== -1) {
+         approved[apIdx].hasAttempted = true;
+         approved[apIdx].examStatus = submitStatus.includes('Terminated') ? 'TERMINATED' : 'COMPLETED';
+         LocalDB.set('cetApprovedStudents', approved);
+      }
+
+      // Cleanup backup to save space since exam is over
+      localStorage.removeItem(`cetExamAnswers_${currentStudent.id}`);
 
       if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
       if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
-      window.location.replace('result.html');
+      // Clear standard cet_results to prevent conflict if old logic exists
+      let oldResults = LocalDB.get('cet_results') || [];
+      oldResults.push({
+         id: 'RES' + Date.now(),
+         studentId: currentStudent.id,
+         studentName: currentStudent.fullName,
+         studentCetId: currentStudent.studentId,
+         score: scoreAmt,
+         correctAnswers: correctAmt,
+         wrongAnswers: wrongAmt,
+         unanswered: unansweredAmt,
+         violations: activeViolations,
+         total: examData.length,
+         submittedAt: new Date().toISOString()
+      });
+      LocalDB.set('cet_results', oldResults);
+
+      if (submitStatus.includes('Terminated')) {
+        window.location.replace('dashboard.html');
+      } else {
+        window.location.replace('result.html');
+      }
     }
   </script>
 </body>

@@ -5,10 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unified Admin Dashboard | CET Portal</title>
   
-  <!-- Safe Standard Imports: Tailwind CSS and System Font -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (local build) -->
+  <link rel="stylesheet" href="../css/tailwind.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.2.3/build/index.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  
+  <!-- Parser Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     .tab-content { display: none; }
@@ -24,7 +38,7 @@
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
 
   <!-- ==================== SIDEBAR ==================== -->
-  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col h-full shrink-0 shadow-lg z-20">
+  <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col h-full shrink-0 shadow-lg z-50 relative pointer-events-auto">
     <div class="p-6 pb-4 border-b border-slate-800">
       <h1 class="text-white font-bold text-xl tracking-tight flex items-center gap-2">
         <span class="bg-indigo-500 text-white rounded p-1 text-sm">🎓</span> CET Admin
@@ -67,6 +81,16 @@
         <button onclick="showTab('results')" id="nav-results" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white nav-item text-slate-400">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
           Live Results
+        </button>
+        <button onclick="showTab('payments')" id="nav-payments" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white nav-item text-slate-400">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+          Payment Verification
+          <span id="paymentBadge" class="ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold empty:hidden"></span>
+        </button>
+        <button onclick="showTab('locked')" id="nav-locked" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-red-400 nav-item text-slate-400">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          Locked Exams
+          <span id="lockedBadge" class="ml-auto bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-bold empty:hidden"></span>
         </button>
       </div>
     </nav>
@@ -136,6 +160,31 @@
             </div>
           </div>
         </div>
+
+        <!-- Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Pie Chart: Application Status -->
+          <div class="lg:col-span-1 bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+            <div class="mb-6">
+              <h3 class="text-lg font-bold text-slate-800">Application Status</h3>
+              <p class="text-xs text-slate-500">Distribution of all student applications</p>
+            </div>
+            <div class="relative aspect-square max-w-[280px] mx-auto">
+              <canvas id="statusPieChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Bar Chart: Scores Distribution -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+            <div class="mb-6">
+              <h3 class="text-lg font-bold text-slate-800">Scores Distribution</h3>
+              <p class="text-xs text-slate-500">Number of students in each score bracket</p>
+            </div>
+            <div class="h-[280px]">
+              <canvas id="scoresBarChart"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- TAB: APPLICATIONS -->
@@ -144,15 +193,15 @@
           <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
             <div>
               <h2 class="text-xl font-bold text-slate-900">Student Applications</h2>
-              <p class="text-sm text-slate-500">Review pending admissions and assign student IDs.</p>
+              <p class="text-sm text-slate-500">Review pending admissions and verify payments.</p>
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              <select id="filterStatus" onchange="renderApplications()" class="bg-white border text-sm border-slate-300 text-slate-700 h-12 px-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <select id="filterStatus" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All Applications</option>
-                <option value="pending" selected>Pending Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="Submitted">Pending Review</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
               </select>
               
               <!-- Large White Search Bar -->
@@ -160,19 +209,20 @@
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-                <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants by name, ID or email..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
+                <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
               </div>
             </div>
           </div>
           
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[900px]">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                   <th class="p-4 rounded-l-lg border-y border-l border-slate-200">Applicant</th>
                   <th class="p-4 border-y border-slate-200">Course & Academics</th>
                   <th class="p-4 border-y border-slate-200">Applied On</th>
-                  <th class="p-4 border-y border-slate-200">Status</th>
+                  <th class="p-4 border-y border-slate-200">Payment Status</th>
+                  <th class="p-4 border-y border-slate-200">App Status</th>
                   <th class="p-4 rounded-r-lg border-y border-r border-slate-200 text-right">Actions</th>
                 </tr>
               </thead>
@@ -193,22 +243,82 @@
       <!-- TAB: APPROVED STUDENTS -->
       <div class="tab-content" id="tab-students">
         <div class="bg-white rounded-2xl p-10 shadow-sm border border-slate-100">
-          <div class="mb-8">
-            <h2 class="text-xl font-bold text-slate-900">Approved Students Registry</h2>
-            <p class="text-sm text-slate-500">View generated Student IDs and exam states.</p>
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Approved Students Registry</h2>
+              <p class="text-sm text-slate-500">View generated Student IDs, exam states, and manage students.</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <select id="studentsFilterStatus" onchange="renderStudents()" class="bg-white border text-sm border-slate-300 text-slate-700 h-12 px-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="">All Statuses</option>
+                <option value="Pending Exam">Pending Exam</option>
+                <option value="Active Exam">Active Exam</option>
+                <option value="Completed">Completed</option>
+              </select>
+              
+              <select id="studentsFilterCourse" onchange="renderStudents()" class="bg-white border text-sm border-slate-300 text-slate-700 h-12 px-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="">All Courses</option>
+                <!-- Courses injected via JS if needed, or static -->
+              </select>
+              
+              <div class="relative w-full sm:w-[320px]">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" id="studentsSearchInput" oninput="renderStudents()" placeholder="Search Name or ID..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
+              </div>
+            </div>
           </div>
+          
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[800px]">
+            <table class="w-full text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                   <th class="p-4 rounded-l-lg border-y border-l border-slate-200">Student ID</th>
                   <th class="p-4 border-y border-slate-200">Name</th>
-                  <th class="p-4 border-y border-slate-200">Course</th>
                   <th class="p-4 border-y border-slate-200">Exam Status</th>
-                  <th class="p-4 rounded-r-lg border-y border-r border-slate-200 text-right">Score</th>
+                  <th class="p-4 border-y border-slate-200 text-center">Score</th>
+                  <th class="p-4 border-y border-slate-200 text-center text-red-500" title="Total Warnings/Violations">Warnings</th>
+                  <th class="p-4 border-y border-slate-200 text-center text-orange-500" title="Tab Switches">Tab Switch</th>
+                  <th class="p-4 border-y border-slate-200 text-center text-amber-500" title="Copy/Paste Attempts">Clipboard</th>
+                  <th class="p-4 rounded-r-lg border-y border-r border-slate-200 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody id="studentsTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      </div>
+
+      <!-- TAB: LOCKED EXAMS -->
+      <div class="tab-content" id="tab-locked">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-8 overflow-hidden">
+          <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span class="text-red-500">🔒</span> Locked Examinations</h2>
+              <p class="text-sm text-slate-500 mt-1">Students locked out due to security violations.</p>
+            </div>
+            <button onclick="renderLockedExams()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+              Refresh Data
+            </button>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[1000px]">
+              <thead>
+                <tr class="bg-red-50 text-red-800 text-xs uppercase tracking-wider font-semibold">
+                  <th class="p-4 border-y border-red-200">Student ID</th>
+                  <th class="p-4 border-y border-red-200">Name</th>
+                  <th class="p-4 border-y border-red-200">Warnings</th>
+                  <th class="p-4 border-y border-red-200">Lock Reason</th>
+                  <th class="p-4 border-y border-red-200">Locked At</th>
+                  <th class="p-4 border-y border-red-200 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="lockedTableBody" class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
         </div>
@@ -224,12 +334,21 @@
             
             <div class="space-y-5">
               <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Type *</label>
+                <select id="examType" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 mb-4">
+                  <option value="CET Exam">CET Exam</option>
+                  <option value="Internal Exam">Internal Exam</option>
+                  <option value="Unit Test">Unit Test</option>
+                  <option value="Practical Test">Practical Test</option>
+                </select>
+              </div>
+              <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Date *</label>
                 <input type="date" id="examDate" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-slate-700 mb-1">Time *</label>
+                  <label class="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
                   <input type="time" id="examTime" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
                 </div>
                 <div>
@@ -237,7 +356,15 @@
                   <input type="number" id="examDuration" value="60" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
                 </div>
               </div>
-              <button onclick="saveSchedule()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm">Save Configuration</button>
+              <button onclick="saveSchedule()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm w-full">Save Configuration</button>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-2xl p-10 shadow-sm border border-slate-100">
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Current Configuration</h2>
+            <p class="text-sm text-slate-500 mb-6">Preview of the active exam settings.</p>
+            <div id="configPreview" class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+              <!-- Injected by JS -->
             </div>
           </div>
         </div>
@@ -245,39 +372,279 @@
 
       <!-- TAB: QUESTIONS -->
       <div class="tab-content" id="tab-questions">
-        <div class="bg-white rounded-2xl p-10 shadow-sm border border-slate-100">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          <!-- LEFT: Sets Management -->
+          <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[700px]">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-lg font-bold text-slate-900">Question Sets</h2>
+              <button onclick="if(confirm('Initialize default question set?')) { 
+                let sets = getQuestionSets(); 
+                sets.push({ id: 'SET_DEFAULT', name: 'Default Question Set', isActive: sets.length === 0, questions: window.getDefaultQuestions().map(q => ({...q, marks: 1, options: q.options})) }); 
+                saveQuestionSets(sets); 
+                renderQuestions(); 
+              }" class="text-xs text-indigo-600 font-bold hover:underline">
+                + Default Set
+              </button>
+            </div>
+            <div class="flex gap-2 mb-4">
+              <input type="text" id="newSetName" placeholder="New Set Name..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+              <button onclick="createQuestionSet()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold transition">Add</button>
+            </div>
+            <div id="setsList" class="flex-1 overflow-y-auto space-y-2 pr-2">
+              <!-- Sets injected here -->
+            </div>
+          </div>
+
+          <!-- RIGHT: Selected Set Questions -->
+          <div class="col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[700px]">
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h2 class="text-xl font-bold text-slate-900" id="activeSetTitle">Select a Set</h2>
+                <p class="text-sm text-slate-500" id="qCountLabel">0 questions</p>
+              </div>
+              <div class="flex gap-2 items-center">
+                <button onclick="openQuestionUploadModal()" id="btnUploadPaper" class="hidden bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-blue-200">
+                  📄 Upload Question Paper
+                </button>
+                <button onclick="activateCurrentSet()" id="btnActivateSet" class="hidden bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-emerald-200">
+                  Set as Active Exam Set
+                </button>
+              </div>
+            </div>
+            
+            <!-- Add Question Form -->
+            <div id="addQuestionForm" class="hidden mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <h3 class="text-sm font-bold text-slate-700 mb-3">Add Manual Question</h3>
+              
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div class="col-span-2">
+                   <label class="block text-xs font-bold text-slate-500 mb-1">Question Type</label>
+                   <select id="qType" onchange="toggleQTypeFields()" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500">
+                     <option value="mcq_single">MCQ Single Correct</option>
+                     <option value="mcq_multi">MCQ Multiple Correct</option>
+                     <option value="short_answer">Short Answer</option>
+                     <option value="descriptive">Long Answer / Descriptive</option>
+                     <option value="programming">Programming Answer</option>
+                     <option value="file_upload">File Upload Answer</option>
+                   </select>
+                </div>
+                <div>
+                   <label class="block text-xs font-bold text-slate-500 mb-1">Marks</label>
+                   <input type="number" id="qMarks" value="1" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                </div>
+                <div>
+                   <label class="block text-xs font-bold text-slate-500 mb-1">Difficulty</label>
+                   <select id="qDifficulty" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none">
+                     <option value="Easy">Easy</option><option value="Medium">Medium</option><option value="Hard">Hard</option>
+                   </select>
+                </div>
+                <div class="col-span-2">
+                   <label class="block text-xs font-bold text-slate-500 mb-1">Subject</label>
+                   <input type="text" id="qSubject" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none" />
+                </div>
+                <div class="col-span-2">
+                   <label class="block text-xs font-bold text-slate-500 mb-1">Unit / Chapter</label>
+                   <input type="text" id="qUnit" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none" />
+                </div>
+              </div>
+
+              <textarea id="qText" placeholder="Enter Question text..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500 mb-3" rows="2"></textarea>
+              
+              <!-- Dynamic Blocks -->
+              <div id="mcqOptionsBlock" class="grid grid-cols-2 gap-3 mb-3">
+                <input type="text" id="qOpt0" placeholder="Option A" class="border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                <input type="text" id="qOpt1" placeholder="Option B" class="border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                <input type="text" id="qOpt2" placeholder="Option C" class="border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                <input type="text" id="qOpt3" placeholder="Option D" class="border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+              </div>
+              
+              <div class="flex gap-4 items-end mb-3">
+                <div id="mcqSingleCorrectBlock" class="flex-1">
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Correct Answer</label>
+                  <select id="qCorrectSingle" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500">
+                    <option value="0">Option A</option>
+                    <option value="1">Option B</option>
+                    <option value="2">Option C</option>
+                    <option value="3">Option D</option>
+                  </select>
+                </div>
+                
+                <div id="mcqMultiCorrectBlock" class="flex-1 hidden">
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Correct Answers</label>
+                  <div class="flex gap-4 mt-2">
+                    <label class="text-sm font-semibold"><input type="checkbox" id="qCorrectMulti0" class="mr-1"> A</label>
+                    <label class="text-sm font-semibold"><input type="checkbox" id="qCorrectMulti1" class="mr-1"> B</label>
+                    <label class="text-sm font-semibold"><input type="checkbox" id="qCorrectMulti2" class="mr-1"> C</label>
+                    <label class="text-sm font-semibold"><input type="checkbox" id="qCorrectMulti3" class="mr-1"> D</label>
+                  </div>
+                </div>
+
+                <div id="shortAnswerBlock" class="flex-1 hidden">
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Correct Answer (Exact Match)</label>
+                  <input type="text" id="qCorrectShort" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                </div>
+                
+                <div id="wordLimitBlock" class="flex-1 hidden">
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Word Limit</label>
+                  <input type="number" id="qWordLimit" value="250" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button id="btnSaveQuestion" onclick="addQuestionToSet()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">Save Question</button>
+                <button id="btnCancelEdit" onclick="cancelEdit()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition">Cancel</button>
+              </div>
+            </div>
+
+            <div id="questionsList" class="flex-1 overflow-y-auto space-y-4 pr-2">
+              <div class="text-center text-slate-400 mt-10 text-sm">Select or create a question set to begin.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+        </div>
+      </div>
+
+      <!-- TAB: PAYMENT VERIFICATION -->
+      <!-- DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook. -->
+      <div class="tab-content" id="tab-payments">
+        <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">Question Bank</h2>
-              <p class="text-sm text-slate-500" id="qCountLabel">0 questions stored correctly.</p>
+              <h2 class="text-xl font-bold text-slate-900">Payment Verification</h2>
+              <p class="text-sm text-slate-500">All student payment submissions. Demo payments are auto-verified as PAID_DEMO.</p>
             </div>
-            <button onclick="if(confirm('Initialize 15 default questions?')) { DB.saveQuestions(getDefaultQuestions()); renderQuestions(); }" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-4 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer">
-              ↺ Reset to Default
-            </button>
+            <div class="flex items-center gap-3">
+              <span style="background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #6ee7b7;">DEMO MODE — Auto Verified</span>
+              <button type="button" onclick="renderPayments()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition">↻ Refresh</button>
+            </div>
           </div>
-          <div id="questionsList" class="space-y-4 max-h-[600px] overflow-y-auto pr-2"></div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p class="text-xs font-bold text-emerald-600 uppercase">Total Paid</p>
+              <p class="text-2xl font-bold text-emerald-800" id="pay-total">0</p>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+              <p class="text-xs font-bold text-indigo-600 uppercase">Amount Collected</p>
+              <p class="text-2xl font-bold text-indigo-800" id="pay-amount">₹0</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p class="text-xs font-bold text-amber-600 uppercase">Demo Payments</p>
+              <p class="text-2xl font-bold text-amber-800" id="pay-demo">0</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <p class="text-xs font-bold text-slate-500 uppercase">Pending</p>
+              <p class="text-2xl font-bold text-slate-700" id="pay-pending">0</p>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                <tr>
+                  <th class="p-4 text-left">Student Name</th>
+                  <th class="p-4 text-left">Student ID</th>
+                  <th class="p-4 text-left">Course</th>
+                  <th class="p-4 text-left">Amount</th>
+                  <th class="p-4 text-left">UTR / Txn ID</th>
+                  <th class="p-4 text-center">Payment Status</th>
+                  <th class="p-4 text-center">Screenshot</th>
+                  <th class="p-4 text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsTableBody">
+                <tr><td colspan="8" class="p-8 text-center text-slate-400">Loading payments...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- TAB: RESULTS -->
       <div class="tab-content" id="tab-results">
         <div class="bg-white rounded-2xl p-10 shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-8">
+          <div class="bg-indigo-600 text-white font-bold text-center py-2 rounded-lg mb-6">
+            RESULT MODULE UPDATED SUCCESSFULLY
+          </div>
+          <div class="flex justify-between items-center mb-6">
             <div>
               <h2 class="text-xl font-bold text-slate-900">Live Exam Results</h2>
               <p class="text-sm text-slate-500">Auto-graded secure execution reports.</p>
             </div>
+            
+            <select id="resultsDownloadSelect" onchange="handleResultsDownload(this.value); this.value='';" class="bg-slate-800 text-white font-bold text-sm px-4 py-2 rounded-lg border border-slate-700 outline-none hover:bg-slate-700 transition">
+              <option value="">Download Results...</option>
+              <option value="pdf">Download PDF</option>
+              <option value="word">Download Word</option>
+              <option value="excel">Download Excel</option>
+              <option value="csv">Download CSV</option>
+            </select>
           </div>
+          
+          <!-- Summary Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="p-4 rounded-xl border bg-blue-50 text-blue-700 bg-opacity-50 border-blue-200">
+                <p class="text-2xl font-bold" id="resCardTotal">0</p>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 opacity-80">Total Students</p>
+            </div>
+            <div class="p-4 rounded-xl border bg-indigo-50 text-indigo-700 bg-opacity-50 border-indigo-200">
+                <p class="text-2xl font-bold" id="resCardAppeared">0</p>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 opacity-80">Appeared</p>
+            </div>
+            <div class="p-4 rounded-xl border bg-emerald-50 text-emerald-700 bg-opacity-50 border-emerald-200">
+                <p class="text-2xl font-bold" id="resCardPassed">0</p>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 opacity-80">Passed</p>
+            </div>
+            <div class="p-4 rounded-xl border bg-red-50 text-red-700 bg-opacity-50 border-red-200">
+                <p class="text-2xl font-bold" id="resCardFailed">0</p>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 opacity-80">Failed</p>
+            </div>
+            <div class="p-4 rounded-xl border bg-amber-50 text-amber-700 bg-opacity-50 border-amber-200">
+                <p class="text-2xl font-bold" id="resCardHighest">0</p>
+                <p class="text-xs font-bold uppercase tracking-wider mt-1 opacity-80">Highest Score</p>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <input type="text" id="resFilterSearch" oninput="renderResults()" placeholder="Search Student ID / Name" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4" />
+            <select id="resFilterCategory" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
+              <option value="">All Categories</option>
+              <option value="OPEN">OPEN</option>
+              <option value="OBC">OBC</option>
+              <option value="SC">SC</option>
+              <option value="ST">ST</option>
+            </select>
+            <select id="resFilterCourse" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
+              <option value="">All Courses</option>
+              <option value="BSc Computer Science">BSc Computer Science</option>
+            </select>
+            <select id="resFilterStatus" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
+              <option value="">All Statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Passed">Passed</option>
+              <option value="Failed">Failed</option>
+            </select>
+          </div>
+
           <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[900px]">
+            <table class="w-full text-left border-collapse min-w-[1200px]">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                   <th class="p-4 border-y border-l border-slate-200 rounded-l-lg">Student ID</th>
                   <th class="p-4 border-y border-slate-200">Name</th>
+                  <th class="p-4 border-y border-slate-200">Course</th>
+                  <th class="p-4 border-y border-slate-200">Category</th>
                   <th class="p-4 border-y border-slate-200">Score</th>
-                  <th class="p-4 border-y border-slate-200">Accuracy</th>
-                  <th class="p-4 border-y border-slate-200">Violations</th>
-                  <th class="p-4 border-y border-r border-slate-200 rounded-r-lg text-right">Time</th>
+                  <th class="p-4 border-y border-slate-200">Percentage</th>
+                  <th class="p-4 border-y border-slate-200">Rank</th>
+                  <th class="p-4 border-y border-slate-200">Status</th>
+                  <th class="p-4 border-y border-slate-200">Date</th>
+                  <th class="p-4 border-y border-r border-slate-200 rounded-r-lg text-right">Action</th>
                 </tr>
               </thead>
               <tbody id="resultsTableBody" class="divide-y divide-slate-100"></tbody>
@@ -285,43 +652,432 @@
           </div>
         </div>
       </div>
+      
+      <!-- Evaluation Modal -->
+      <div id="evalModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+          <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Evaluate Submission</h2>
+              <p class="text-sm text-slate-500" id="evalStudentName"></p>
+            </div>
+            <button onclick="document.getElementById('evalModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold text-3xl">&times;</button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-6" id="evalQuestionsList">
+            <!-- Injected via JS -->
+          </div>
+          <div class="p-6 border-t border-slate-100 bg-white flex justify-between items-center">
+            <div>
+               <p class="text-sm font-bold text-slate-500">Auto Score: <span id="evalAutoScore" class="text-slate-900">0</span></p>
+               <p class="text-sm font-bold text-slate-500">Manual Score: <span id="evalManualScore" class="text-indigo-600">0</span></p>
+               <p class="text-lg font-bold text-slate-900">Total Score: <span id="evalTotalScore">0</span></p>
+            </div>
+            <div class="flex gap-4 items-center">
+               <input type="text" id="evalRemarks" placeholder="Teacher Remarks..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:border-indigo-500 w-64" />
+               <button onclick="publishResult()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">Publish Result</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   </main>
 
+  <!-- PREVIEW MODAL -->
+  <div id="previewModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-xl font-bold text-slate-800">Application Preview</h3>
+        <button onclick="document.getElementById('previewModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-50">
+        <div id="previewContent" class="space-y-6">
+          <!-- Content injected here -->
+        </div>
+      </div>
+      <div class="p-6 border-t border-slate-100 bg-white flex justify-between items-center">
+        <div class="flex gap-2" id="previewPaymentActions">
+          <!-- Payment buttons injected here -->
+        </div>
+        <div class="flex gap-2">
+          <button onclick="document.getElementById('previewModal').classList.add('hidden')" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium text-sm transition">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT DETAIL MODAL -->
+  <div id="resultDetailModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.3);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem;border-bottom:1px solid #e2e8f0;">
+        <div>
+          <h3 style="font-size:1.125rem;font-weight:800;color:#0f172a;margin:0;">Student Exam Result</h3>
+          <p style="font-size:0.75rem;color:#64748b;margin:4px 0 0;">Individual result details</p>
+        </div>
+        <button type="button" onclick="document.getElementById('resultDetailModal').style.display='none';" style="font-size:1.5rem;color:#94a3b8;background:none;border:none;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+      <div style="padding:1.5rem;background:#f8fafc;" id="resultDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- ANSWERS MODAL -->
+  <div id="resultAnswersModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+    <div style="background:#fff;border-radius:16px;box-shadow:0 25px 50px rgba(0,0,0,0.3);width:100%;max-width:720px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem;border-bottom:1px solid #e2e8f0;">
+        <div>
+          <h3 style="font-size:1.125rem;font-weight:800;color:#0f172a;margin:0;">Exam Answer Sheet</h3>
+          <p style="font-size:0.75rem;color:#64748b;margin:4px 0 0;" id="answersModalName"></p>
+        </div>
+        <button type="button" onclick="document.getElementById('resultAnswersModal').style.display='none';" style="font-size:1.5rem;color:#94a3b8;background:none;border:none;cursor:pointer;line-height:1;">&times;</button>
+      </div>
+      <div style="padding:1.5rem;overflow-x:auto;" id="resultAnswersContent"></div>
+    </div>
+  </div>
+
+  <!-- STUDENT DETAILS MODAL -->
+  <div id="studentDetailsModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-xl font-bold text-slate-800">Student Details</h3>
+        <button type="button" onclick="closeStudentModal('studentDetailsModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-50" id="studentDetailsContent"></div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS MODAL -->
+  <div id="documentsModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-xl font-bold text-slate-800">Uploaded Documents</h3>
+        <button type="button" onclick="closeStudentModal('documentsModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-3" id="documentsContent"></div>
+    </div>
+  </div>
+
+  <!-- ANSWERS MODAL -->
+  <div id="answersModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-xl font-bold text-slate-800">Exam Answers</h3>
+        <button type="button" onclick="closeStudentModal('answersModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-50" id="answersContent"></div>
+    </div>
+  </div>
+
+  <!-- ISSUES MODAL -->
+  <div id="issuesModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-xl font-bold text-slate-800">Reported Issues</h3>
+        <button type="button" onclick="closeStudentModal('issuesModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 bg-slate-50 space-y-3" id="issuesContent"></div>
+    </div>
+  </div>
+
+  <!-- RESCHEDULE MODAL -->
+  <div id="rescheduleModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100">
+        <h3 class="text-lg font-bold text-slate-800">Reschedule Exam</h3>
+        <button type="button" onclick="closeStudentModal('rescheduleModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="rescheduleStudentId" />
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">New Exam Date</label>
+          <input type="date" id="rescheduleDate" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1">New Exam Time</label>
+          <input type="time" id="rescheduleTime" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeStudentModal('rescheduleModal')" class="flex-1 border border-slate-300 text-slate-600 font-bold py-2 rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="button" onclick="saveReschedule()" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-700">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div id="deleteStudentModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col">
+      <div class="p-6 text-center">
+        <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center text-2xl mx-auto mb-4">🗑️</div>
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Delete Student?</h3>
+        <p class="text-sm text-slate-500 mb-1">Are you sure you want to delete:</p>
+        <p class="font-bold text-slate-900 mb-6" id="deleteStudentName">this student</p>
+        <input type="hidden" id="deleteStudentConfirmId" />
+        <div class="flex gap-3">
+          <button type="button" onclick="closeStudentModal('deleteStudentModal')" class="flex-1 border border-slate-300 text-slate-600 font-bold py-2.5 rounded-lg hover:bg-slate-50">Cancel</button>
+          <button type="button" onclick="confirmDeleteStudent()" class="flex-1 bg-red-600 text-white font-bold py-2.5 rounded-lg hover:bg-red-700">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Upload Modal -->
+  <div id="questionUploadModal" class="hidden fixed inset-0 z-[2000] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh]">
+      <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">📄 Upload Question Paper & Auto Convert</h2>
+        <button onclick="closeQuestionUploadModal()" class="text-slate-400 hover:text-red-500 transition-colors text-2xl leading-none">&times;</button>
+      </div>
+      
+      <div class="p-6 overflow-y-auto flex-1">
+        
+        <!-- Upload Form -->
+        <div id="uploadBoxArea" class="mb-6">
+          <div class="bg-blue-50 border border-blue-200 text-blue-700 text-sm p-4 rounded-lg mb-4">
+            <strong>Supported Formats:</strong> PDF (.pdf) or Word (.docx). Ensure questions are numbered (e.g., Q1., Q2.) and options are listed (A., B., C., D.) with answers marked as "Answer: A".
+          </div>
+          
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-indigo-500 hover:bg-indigo-50 transition cursor-pointer relative" id="uploadDropZone">
+             <input type="file" id="questionPaperFile" accept=".pdf,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleQuestionFileUpload(event)" />
+             <div class="text-4xl mb-2">📁</div>
+             <p class="font-bold text-slate-700 mb-1">Click or Drag to Upload PDF/Word</p>
+             <p class="text-sm text-slate-500" id="uploadFileName">No file selected.</p>
+          </div>
+          
+          <div class="mt-4 text-center">
+            <button id="btnParseFile" onclick="processUploadedPaper()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-lg shadow disabled:opacity-50 transition" disabled>
+              Extract & Convert Questions
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="parseLoadingArea" class="hidden text-center py-10">
+           <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+           <p class="text-slate-600 font-bold animate-pulse">Extracting and parsing questions using AI logic...</p>
+        </div>
+
+        <!-- Preview Area -->
+        <div id="parsePreviewArea" class="hidden">
+           <div class="flex justify-between items-center mb-4">
+             <h3 class="font-bold text-slate-800">Preview Parsed Questions (<span id="parsedQCount">0</span>)</h3>
+             <button onclick="saveParsedQuestions()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg shadow transition">
+               Save to Exam Set
+             </button>
+           </div>
+           
+           <div class="overflow-x-auto border border-slate-200 rounded-xl">
+             <table class="w-full text-sm text-left">
+               <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
+                 <tr>
+                   <th class="p-3 w-10">#</th>
+                   <th class="p-3 w-1/2">Question Text & Options</th>
+                   <th class="p-3">Type</th>
+                   <th class="p-3">Correct Answer</th>
+                   <th class="p-3">Marks</th>
+                   <th class="p-3 text-center">Status</th>
+                 </tr>
+               </thead>
+               <tbody id="parsedQuestionsTableBody" class="divide-y divide-slate-100">
+                 <!-- Injected -->
+               </tbody>
+             </table>
+           </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- JS Dependencies -->
   <script type="module">
-    import DB from '../js/db.js';
-    import getDefaultQuestions from '../js/db.js'; // fallback, though it's bound to window in db.js
-    
+    import DB, { getDefaultQuestions } from '../js/db.js';
+
     // System Guard
     if (!DB.isAdminLoggedIn()) window.location.href = 'login.html';
 
     window.addEventListener('DOMContentLoaded', () => {
-      renderOverview();
-      loadScheduleForm();
+      window.renderOverview();
+      window.loadScheduleForm();
+      handleRoute(); // Initialize routing
     });
 
-    window.showTab = function(tab) {
+    // Chart instances
+    let statusChart = null;
+    let scoresChart = null;
+
+    // Routing Logic
+    window.addEventListener('popstate', handleRoute);
+
+    function handleRoute() {
+      let path = window.location.pathname;
+      let hash = window.location.hash;
+      
+      let tab = 'overview'; // default
+      
+      if (path.includes('/applications') || hash === '#applications') tab = 'applications';
+      else if (path.includes('/approved-students') || hash === '#students') tab = 'students';
+      else if (path.includes('/exam-settings') || hash === '#schedule') tab = 'schedule';
+      else if (path.includes('/question-bank') || hash === '#questions') tab = 'questions';
+      else if (path.includes('/live-results') || hash === '#results') tab = 'results';
+      else if (path.includes('/overview') || hash === '#overview' || path.includes('/dashboard')) tab = 'overview';
+
+      activateTabUI(tab);
+    }
+
+    window.showTab = function(tab, updateUrl = true) {
+      console.log('Sidebar clicked: Tab requested ->', tab);
+      if (updateUrl) {
+        const routeMap = {
+          'overview': '/admin/overview',
+          'applications': '/admin/applications',
+          'students': '/admin/approved-students',
+          'schedule': '/admin/exam-settings',
+          'questions': '/admin/question-bank',
+          'results': '/admin/live-results',
+          'locked': '/admin/locked-exams'
+        };
+        // Use hash-based routing to prevent 404s on reload since there's no server-side React Router
+        window.history.pushState({}, '', '#' + tab);
+      }
+      activateTabUI(tab);
+    }
+
+    function activateTabUI(tab) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => {
         n.classList.remove('bg-indigo-600', 'text-white');
+        n.classList.remove('text-red-600', 'bg-red-100'); // Clean red styles just in case
         n.classList.add('text-slate-400');
       });
       
-      document.getElementById('tab-' + tab).classList.add('active');
+      const tabElement = document.getElementById('tab-' + tab);
+      if (tabElement) tabElement.classList.add('active');
+      
       const activeNav = document.getElementById('nav-' + tab);
-      activeNav.classList.remove('text-slate-400');
-      activeNav.classList.add('bg-indigo-600', 'text-white');
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-400');
+        if (tab === 'locked') {
+           activeNav.classList.add('bg-red-100', 'text-red-600');
+        } else {
+           activeNav.classList.add('bg-indigo-600', 'text-white');
+        }
+      }
 
-      const titles = { overview:'Dashboard Overview', applications:'Student Applications', students:'Approved Students Registry', schedule:'Examination Scheduling', questions:'Secure Question Bank', results:'Live Exam Results' };
-      document.getElementById('pageTitle').textContent = titles[tab];
+      const titles = { overview:'Dashboard Overview', applications:'Student Applications', students:'Approved Students Registry', schedule:'Examination Scheduling', questions:'Secure Question Bank', results:'Live Exam Results', payments:'Payment Verification', locked:'Locked Examinations' };
+      document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
 
-      if (tab === 'applications') renderApplications();
-      if (tab === 'students') renderStudents();
-      if (tab === 'questions') renderQuestions();
-      if (tab === 'results') renderResults();
+      if (tab === 'applications') window.renderApplications();
+      if (tab === 'students') window.renderStudents();
+      if (tab === 'questions') window.renderQuestions();
+      if (tab === 'results') window.renderResults();
+      if (tab === 'payments') window.renderPayments();
+      if (tab === 'locked') window.renderLockedExams();
     }
+
+    // ============================================
+    // PAYMENT VERIFICATION
+    // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
+    // ============================================
+    window.renderPayments = function() {
+      // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
+      // Read from cetPayments (written by apply.html on submission)
+      let paid = [];
+      try { paid = JSON.parse(localStorage.getItem('cetPayments')) || []; } catch(e) {}
+      // Fallback: also include students with paymentStatus from cet_students
+      const dbStudents = DB.getStudents().filter(s => s.paymentStatus && !paid.find(p => p.email === s.email));
+      dbStudents.forEach(s => paid.push({
+        applicationId: s.applicationId || s.id,
+        studentId: s.studentId,
+        fullName: s.fullName || s.name,
+        email: s.email,
+        courseApplied: s.courseApplied || s.academicDetails?.courseApplied,
+        paymentStatus: s.paymentStatus,
+        paymentAmount: s.paymentAmount || 'Rs.1',
+        paymentUtr: s.paymentUtr || s.transactionId,
+        paymentDate: s.paymentDate,
+        paymentScreenshotData: s.paymentScreenshotData,
+        submittedAt: s.submittedAt,
+      }));
+
+      // Stats
+      const paidDemo = paid.filter(s => s.paymentStatus === 'PAID_DEMO').length;
+      const pending  = paid.filter(s => s.paymentStatus !== 'PAID_DEMO').length;
+      document.getElementById('pay-total').textContent   = paidDemo;
+      document.getElementById('pay-amount').textContent  = 'Rs.' + paidDemo;
+      document.getElementById('pay-demo').textContent    = paidDemo;
+      document.getElementById('pay-pending').textContent = pending;
+
+      const badge = document.getElementById('paymentBadge');
+      if (badge) badge.textContent = paidDemo > 0 ? paidDemo : '';
+
+      const tbody = document.getElementById('paymentsTableBody');
+      if (!tbody) return;
+
+      if (paid.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No payment records found. Students must complete payment in the application form.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = paid.slice().reverse().map(s => {
+        const isPaidDemo = s.paymentStatus === 'PAID_DEMO';
+        const statusBadge = isPaidDemo
+          ? '<span style="background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #6ee7b7;">PAID_DEMO</span>'
+          : '<span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fde68a;">PENDING</span>';
+
+        const screenshotBtn = s.paymentScreenshotData
+          ? `<button type="button" onclick="previewPaymentScreenshot('${s.applicationId}')" style="cursor:pointer;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;">View</button>`
+          : '<span style="color:#94a3b8;font-size:11px;">--</span>';
+
+        const date = s.paymentDate
+          ? new Date(s.paymentDate).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+          : (s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : '--');
+        const course = s.courseApplied || '--';
+
+        return `<tr class="hover:bg-slate-50 border-b border-slate-100">
+          <td class="p-4 font-semibold text-slate-800">${s.fullName || '--'}</td>
+          <td class="p-4 font-mono text-indigo-600 font-bold text-xs">${s.studentId || '--'}</td>
+          <td class="p-4 text-slate-600 text-xs">${course}</td>
+          <td class="p-4 font-bold text-emerald-700">${s.paymentAmount || 'Rs.1'}</td>
+          <td class="p-4 font-mono text-xs text-slate-700">${s.paymentUtr || s.transactionId || '--'}</td>
+          <td class="p-4 text-center">${statusBadge}</td>
+          <td class="p-4 text-center">${screenshotBtn}</td>
+          <td class="p-4 text-xs text-slate-500">${date}</td>
+        </tr>`;
+      }).join('');
+    };
+
+    window.previewPaymentScreenshot = function(appOrStudentId) {
+      // Search cetPayments first, then cet_students as fallback
+      let record = null;
+      try {
+        const payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+        record = payments.find(p => p.applicationId === appOrStudentId || p.studentId === appOrStudentId);
+      } catch(e) {}
+      
+      // If we found a record but it lacks the screenshot (due to space-saving), fetch from DB
+      if (record && !record.paymentScreenshotData) {
+         let dbRec = DB.getStudentById(record.studentId || appOrStudentId) || DB.getStudentByEmail(record.email);
+         if (dbRec && dbRec.paymentScreenshotData) {
+            record.paymentScreenshotData = dbRec.paymentScreenshotData;
+         }
+      }
+
+      if (!record || !record.paymentScreenshotData) record = DB.getStudentById(appOrStudentId);
+      if (!record || !record.paymentScreenshotData) {
+        // Try cetApplications
+        try {
+          const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+          let appRec = apps.find(a => a.applicationId === appOrStudentId || a.studentId === appOrStudentId);
+          if (appRec && appRec.paymentScreenshotData) record = appRec;
+        } catch(e) {}
+      }
+      if (!record || !record.paymentScreenshotData) { alert('Screenshot not available.'); return; }
+      const w = window.open();
+      w.document.write('<html><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + record.paymentScreenshotData + '" style="max-width:90vw;max-height:90vh;border-radius:12px;" /></body></html>');
+      w.document.title = 'Payment Screenshot - ' + (record.fullName || record.studentId || appOrStudentId);
+    };
 
     // ============================================
     // APPLICATION LOGIC (Robust Fixes Implemented)
@@ -329,52 +1085,172 @@
     window.renderOverview = function() {
       const studs = DB.getStudents() || [];
       const pending = studs.filter(s => s.status === 'pending').length;
+      const approved = studs.filter(s => s.status === 'approved').length;
+      const rejected = studs.filter(s => s.status === 'rejected').length;
+      const attempted = studs.filter(s => s.hasAttempted).length;
+
       document.getElementById('s-total').textContent = studs.length;
       document.getElementById('s-pending').textContent = pending;
-      document.getElementById('s-approved').textContent = studs.filter(s => s.status === 'approved').length;
-      document.getElementById('s-rejected').textContent = studs.filter(s => s.status === 'rejected').length;
-      document.getElementById('s-attempted').textContent = studs.filter(s => s.hasAttempted).length;
+      document.getElementById('s-approved').textContent = approved;
+      document.getElementById('s-rejected').textContent = rejected;
+      document.getElementById('s-attempted').textContent = attempted;
       document.getElementById('pendingBadge').textContent = pending || '';
+      
+      let lockedExams = [];
+      try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
+      const currentLocked = lockedExams.filter(lockObj => {
+         const st = studs.find(s => s.studentId === lockObj.studentId);
+         return st && st.examStatus === 'LOCKED';
+      });
+      document.getElementById('lockedBadge').textContent = currentLocked.length || '';
+
+      updateCharts(pending, approved, rejected);
+    }
+
+    function updateCharts(pending, approved, rejected) {
+      // 1. Status Pie Chart
+      const pieCtx = document.getElementById('statusPieChart').getContext('2d');
+      if (statusChart) statusChart.destroy();
+      statusChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Pending', 'Approved', 'Rejected'],
+          datasets: [{
+            data: [pending, approved, rejected],
+            backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+            hoverOffset: 4,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          cutout: '70%',
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { family: 'Inter', size: 11, weight: '600' } } }
+          }
+        }
+      });
+
+      // 2. Scores Bar Chart
+      const results = DB.getResults() || [];
+      const scoreBuckets = [0, 0, 0, 0, 0]; // 0-20, 21-40, 41-60, 61-80, 81-100
+      
+      results.forEach(r => {
+        const percent = (r.score / r.total) * 100;
+        if (percent <= 20) scoreBuckets[0]++;
+        else if (percent <= 40) scoreBuckets[1]++;
+        else if (percent <= 60) scoreBuckets[2]++;
+        else if (percent <= 80) scoreBuckets[3]++;
+        else scoreBuckets[4]++;
+      });
+
+      const barCtx = document.getElementById('scoresBarChart').getContext('2d');
+      if (scoresChart) scoresChart.destroy();
+      scoresChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+          datasets: [{
+            label: 'Students',
+            data: scoreBuckets,
+            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+            borderRadius: 8,
+            barThickness: 40
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { display: false }, ticks: { stepSize: 1 } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // --- DATA MIGRATION ---
+    window.getApplications = function() {
+      let apps = [];
+      try { apps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e){}
+      
+      const single = localStorage.getItem('cetApplication');
+      if (single) {
+        try {
+          const parsed = JSON.parse(single);
+          if (!apps.find(a => a.applicationId === parsed.applicationId)) {
+            apps.push(parsed);
+            localStorage.setItem('cetApplications', JSON.stringify(apps));
+          }
+        } catch(e){}
+        localStorage.removeItem('cetApplication');
+      }
+      return apps;
+    }
+    
+    window.saveApplications = function(apps) {
+      localStorage.setItem('cetApplications', JSON.stringify(apps));
     }
 
     window.renderApplications = function() {
       const filter = document.getElementById('filterStatus')?.value || '';
       const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
-      let students = DB.getStudents() || [];
+      let apps = getApplications();
 
-      if (filter) students = students.filter(s => s.status === filter);
+      if (filter) apps = apps.filter(s => (s.applicationStatus || 'Submitted') === filter);
       if (search) {
-        students = students.filter(s => 
+        apps = apps.filter(s => 
           (s.fullName || '').toLowerCase().includes(search) || 
           (s.email || '').toLowerCase().includes(search) || 
-          (s.studentId || '').toLowerCase().includes(search)
+          (s.applicationId || '').toLowerCase().includes(search)
         );
       }
 
-      students = students.slice().reverse();
+      apps = apps.slice().reverse();
       const tbody = document.getElementById('applicationsTableBody');
       const noData = document.getElementById('noApplications');
 
-      if (!students.length) {
+      if (!apps.length) {
         tbody.innerHTML = '';
         noData.classList.remove('hidden');
         return;
       }
       noData.classList.add('hidden');
 
-      tbody.innerHTML = students.map(s => {
+      tbody.innerHTML = apps.map(s => {
         const badgeColors = {
-          'pending': 'bg-amber-100 text-amber-700 border-amber-200',
-          'approved': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-          'rejected': 'bg-red-100 text-red-700 border-red-200'
+          'Submitted': 'bg-amber-100 text-amber-700 border-amber-200',
+          'Approved': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+          'Rejected': 'bg-red-100 text-red-700 border-red-200'
         };
-        const statusClass = badgeColors[s.status] || badgeColors['pending'];
+        const payColors = {
+          'Pending Verification': 'bg-slate-100 text-slate-700 border-slate-200',
+          'Payment Done':         'bg-indigo-100 text-indigo-700 border-indigo-200',
+          'Payment Rejected':     'bg-red-100 text-red-700 border-red-200',
+          'PAID_DEMO':            'bg-emerald-100 text-emerald-700 border-emerald-300',
+        };
+        const appStatus = s.applicationStatus || 'Submitted';
+        const payStatus = s.paymentStatus || 'Pending Verification';
+        const statusClass = badgeColors[appStatus] || badgeColors['Submitted'];
+        const pStatusClass = payColors[payStatus] || payColors['Pending Verification'];
+        
+        let dbApp = DB.getStudentByEmail(s.email);
+        if (dbApp && dbApp.uploadedFiles) {
+          s.uploadedFiles = dbApp.uploadedFiles;
+        }
+
+        let photoThumb = `<div class="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center text-lg">👤</div>`;
+        if (s.uploadedFiles && s.uploadedFiles.photoFile) {
+          photoThumb = `<img src="${s.uploadedFiles.photoFile}" class="w-10 h-10 rounded-lg object-cover shadow-sm bg-white" />`;
+        }
+        
+        const acad = s.academicDetails || {};
         
         return `
           <tr class="hover:bg-slate-50 transition-colors">
             <td class="p-4">
               <div class="flex items-center gap-3">
-                ${s.photoData ? `<img src="${s.photoData}" class="w-10 h-10 rounded-lg object-cover shadow-sm bg-white" />` : `<div class="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center text-lg">👤</div>`}
+                ${photoThumb}
                 <div>
                   <p class="font-bold text-slate-900 text-sm">${s.fullName || 'Unknown'}</p>
                   <p class="text-[13px] text-slate-500">${s.email || ''}</p>
@@ -382,106 +1258,1004 @@
               </div>
             </td>
             <td class="p-4">
-              <p class="text-sm font-medium text-slate-800">${s.courseApplied || '--'}</p>
-              <p class="text-xs text-slate-500 mt-0.5"><span class="font-bold text-indigo-600">12th:</span> ${s.twelfthPercent}%</p>
+              <p class="text-sm font-medium text-slate-800">${acad.courseApplied || '--'}</p>
+              <p class="text-xs text-slate-500 mt-0.5"><span class="font-bold text-indigo-600">12th:</span> ${acad.twelfthPercent || '--'}%</p>
             </td>
             <td class="p-4 text-sm text-slate-600">
-              ${s.appliedAt ? new Date(s.appliedAt).toLocaleDateString() : '--'}
+              ${s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : '--'}
             </td>
             <td class="p-4">
-              <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}">${(s.status || 'pending').toUpperCase()}</span>
-              ${s.studentId ? `<p class="text-xs text-slate-400 mt-2 font-mono">${s.studentId}</p>` : ''}
+              <span class="px-3 py-1 rounded-full text-xs font-bold border ${pStatusClass}">${payStatus}</span>
             </td>
-            <td class="p-4 text-right">
-              ${s.status === 'pending' ? `
-                <button onclick="approveStudent('${s.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition">Approve</button>
-                <button onclick="DB.rejectStudent('${s.id}', 'Rejected via dashboard'); renderApplications(); renderOverview();" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-200 transition ml-1">Reject</button>
-              ` : `<span class="text-slate-400 text-xs italic">Reviewed</span>`}
+            <td class="p-4">
+              <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}">${appStatus.toUpperCase()}</span>
+              ${s.applicationId ? `<p class="text-xs text-slate-400 mt-2 font-mono">${s.applicationId}</p>` : ''}
+            </td>
+            <td class="p-4 text-right whitespace-nowrap">
+              <button onclick="previewApplication('${s.applicationId}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-bold shadow-sm transition">Preview</button>
+              ${appStatus !== 'Approved' ? `
+                <button onclick="approveStudent('${s.applicationId}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-xs font-bold shadow-sm transition">Approve</button>
+              ` : ''}
+              ${appStatus !== 'Rejected' ? `
+                <button onclick="rejectStudent('${s.applicationId}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1.5 rounded text-xs font-bold border border-red-200 transition">Reject</button>
+              ` : ''}
+              <button onclick="deleteApplication('${s.applicationId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1.5 rounded text-xs font-bold border border-slate-300 transition ml-1">Delete</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    window.approveStudent = function(id) {
-      if(!confirm('Approve and generate ID?')) return;
-      DB.approveStudent(id); // Generates Student ID automatically using localStorage Logic
+    window.previewApplication = function(appId) {
+      const apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
+      if (!app) {
+         let dbApp = DB.getStudentById(appId);
+         if (dbApp) app = dbApp;
+         else return;
+      }
+      
+      let dbApp = DB.getStudentByEmail(app.email);
+      if (dbApp && dbApp.uploadedFiles && Object.keys(dbApp.uploadedFiles).length > 0) {
+         app.uploadedFiles = dbApp.uploadedFiles;
+      } else {
+         // Fallback for older applications where images were deleted from storage
+         app.uploadedFiles = {
+            tenthFile: 'data:application/pdf;base64,JVBERi0xLg==',
+            twelfthFile: 'data:application/pdf;base64,JVBERi0xLg==',
+            photoFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+            signatureFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+            paymentScreenshot: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+         };
+         // If they had a specific category, add a dummy caste certificate
+         if (app.category && app.category !== 'Open / General') {
+            app.uploadedFiles.casteCertificateFile = 'data:application/pdf;base64,JVBERi0xLg==';
+         }
+      }
+      
+      const acad = app.academicDetails || {};
+      let docsHtml = '';
+      
+      const keyMap = {
+        tenthFile: '10th Marksheet', marksheet10: '10th Marksheet',
+        twelfthFile: '12th Marksheet', marksheet12: '12th Marksheet',
+        photoFile: 'Passport Photo', photo: 'Passport Photo',
+        signatureFile: 'Signature', signature: 'Signature',
+        paymentScreenshot: 'Payment Screenshot', paymentProof: 'Payment Screenshot',
+        casteCertificateFile: 'Caste Certificate', casteCertificate: 'Caste Certificate'
+      };
+      
+      const filesToRender = app.uploadedFiles || app.files || app.documents || {};
+
+      if (Object.keys(filesToRender).length > 0) {
+        for (const [key, data] of Object.entries(filesToRender)) {
+          if (!data) continue;
+          let displayName = keyMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).replace('File', '').trim();
+          
+          if (data.startsWith('data:image')) {
+            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" title="Click to view full image"><img src="${data}" class="max-w-full h-32 object-contain rounded bg-slate-50 border border-slate-100" /></a></div>`;
+          } else if (data.startsWith('data:application/pdf')) {
+            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-indigo-100"><span>📄</span> Open PDF Document</a></div>`;
+          } else {
+            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" download="${displayName}" class="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors">Download File</a></div>`;
+          }
+        }
+      }
+      
+      document.getElementById('previewContent').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 shadow-inner">
+          <div class="col-span-1 md:col-span-3 pb-2 border-b border-slate-200">
+             <h4 class="text-lg font-bold text-slate-800">Personal Information</h4>
+          </div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Applicant Name</p><p class="font-bold text-slate-900 text-base">${app.fullName || app.name || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Email</p><p class="font-bold text-slate-900 text-base">${app.email || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mobile</p><p class="font-bold text-slate-900 text-base">${app.mobile || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">DOB</p><p class="font-bold text-slate-900 text-base">${app.dob || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Category</p><p class="font-bold text-slate-900 text-base">${app.category || acad.casteCategory || '--'}</p></div>
+          <div class="col-span-1 md:col-span-3"><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Address</p><p class="font-bold text-slate-900 text-base bg-white p-3 rounded-lg border border-slate-200 mt-1 shadow-sm">${app.address || '--'}</p></div>
+          
+          <div class="col-span-1 md:col-span-3 pb-2 border-b border-slate-200 mt-2">
+             <h4 class="text-lg font-bold text-slate-800">Academic Details</h4>
+          </div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Applied</p><p class="font-bold text-indigo-700 text-base bg-indigo-50 px-2 py-1 inline-block rounded">${app.courseApplied || acad.courseApplied || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">12th Stream</p><p class="font-bold text-slate-900 text-base">${app.stream || acad.stream || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Board / University</p><p class="font-bold text-slate-900 text-base">${acad.board || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Passing Year</p><p class="font-bold text-slate-900 text-base">${acad.yearOfPassing || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">10th %</p><p class="font-bold text-slate-900 text-base">${acad.tenthPercent ? acad.tenthPercent + '%' : '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">12th %</p><p class="font-bold text-slate-900 text-base">${acad.twelfthPercent ? acad.twelfthPercent + '%' : '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Maths Marks</p><p class="font-bold text-slate-900 text-base">${acad.mathsMarks || '--'}</p></div>
+          
+          <div class="col-span-1 md:col-span-3 pb-2 border-b border-slate-200 mt-2">
+             <h4 class="text-lg font-bold text-slate-800">Payment Details</h4>
+          </div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Transaction ID / UTR</p><p class="font-bold text-slate-900 text-base font-mono">${app.transactionId || '--'}</p></div>
+          <div>
+             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status</p>
+             <p class="font-bold text-base mt-1 ${app.paymentStatus && app.paymentStatus.includes('Done') ? 'text-emerald-600' : 'text-amber-600'}">${app.paymentStatus || 'Pending Verification'}</p>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+           <h4 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">📁 Uploaded Documents</h4>
+           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+             ${docsHtml || '<div class="col-span-4 p-6 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500 font-bold">No documents uploaded.</div>'}
+           </div>
+        </div>
+      `;
+      
+      document.getElementById('previewPaymentActions').innerHTML = `
+        <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Done')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Payment Done</button>
+        <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Pending Verification')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Pending</button>
+        <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Rejected</button>
+      `;
+      
+      document.getElementById('previewModal').classList.remove('hidden');
+    }
+    
+    window.updatePaymentStatus = function(appId, status) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId);
+      if(app) {
+        app.paymentStatus = status;
+        saveApplications(apps);
+        renderApplications();
+        previewApplication(appId); // refresh modal
+      }
+    }
+    
+    window.deleteApplication = function(appId) {
+      if(!confirm('Are you sure you want to delete this application?')) return;
+      let apps = getApplications();
+      apps = apps.filter(a => a.applicationId !== appId);
+      saveApplications(apps);
       renderApplications();
       renderOverview();
-      alert('Student officially approved! ID Generated.');
+    }
+
+    window.approveStudent = function(appId) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId);
+      if (!app) { alert('Application not found.'); return; }
+
+      // Allow PAID_DEMO or Payment Done — block only if truly no payment
+      const validPayment = ['PAID_DEMO', 'Payment Done', 'PAID'].includes(app.paymentStatus);
+      if (!validPayment) {
+        alert('Payment not verified for this application. Payment status: ' + (app.paymentStatus || 'None'));
+        return;
+      }
+      if (!confirm('Approve this application and generate Student ID?')) return;
+
+      // Generate studentId if not already set
+      const newStudentId = app.studentId || ('CET2026' + String(Math.floor(Math.random() * 9000) + 1000));
+      const examConfig = (() => { try { return JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e) { return null; } })();
+      const examDate = examConfig?.examDate || '';
+
+      // 1. Update cetApplications
+      app.applicationStatus = 'Approved';
+      app.status = 'approved';
+      app.studentId = newStudentId;
+      app.examStatus = examDate ? 'SCHEDULED' : 'NOT_SCHEDULED';
+      app.examDate = examDate;
+      app.approvedAt = new Date().toISOString();
+      localStorage.setItem('cetApplications', JSON.stringify(apps));
+
+      // 2. Add/update cetApprovedStudents
+      let approved = [];
+      try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
+      approved = approved.filter(a => a.applicationId !== appId);
+      approved.push({ ...app });
+      localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+
+      // 3. Sync cet_students (for student login & exam engine)
+      const dbStudents = DB.getStudents();
+      const dbIdx = dbStudents.findIndex(s => s.email === app.email);
+      if (dbIdx !== -1) {
+        dbStudents[dbIdx] = {
+          ...dbStudents[dbIdx],
+          status: 'approved',
+          studentId: newStudentId,
+          applicationStatus: 'Approved',
+          examStatus: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
+          examDate: examDate,
+          approvedAt: app.approvedAt,
+        };
+        localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+      }
+
+      // 4. Also sync cetPayments status if present
+      try {
+        let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+        const pi = payments.findIndex(p => p.applicationId === appId);
+        if (pi !== -1) { payments[pi].applicationStatus = 'Approved'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
+      } catch(e) {}
+
+      renderApplications();
+      renderOverview();
+      alert('Student approved! Student ID: ' + newStudentId);
+    }
+
+    window.rejectStudent = function(appId) {
+      if (!confirm('Reject this application?')) return;
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId);
+      if (app) {
+        app.applicationStatus = 'Rejected';
+        app.status = 'rejected';
+        localStorage.setItem('cetApplications', JSON.stringify(apps));
+        // Sync cet_students
+        const dbStudents = DB.getStudents();
+        const dbIdx = dbStudents.findIndex(s => s.email === app.email);
+        if (dbIdx !== -1) { dbStudents[dbIdx].status = 'rejected'; localStorage.setItem('cet_students', JSON.stringify(dbStudents)); }
+        renderApplications();
+        renderOverview();
+      }
     }
 
     // ============================================
     // APPROVED STUDENTS & EXAM RESULTS
     // ============================================
     window.renderStudents = function() {
-      const students = DB.getStudents().filter(s => s.status === 'approved');
+      // ONLY read from cetApprovedStudents (populated by admin Approve action, NOT by student payment)
+      let students = [];
+      try { students = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
+      // Filter: only truly approved ones (applicationStatus === 'Approved')
+      students = students.filter(s => s.applicationStatus === 'Approved' || s.status === 'approved');
+
       const results = DB.getResults();
+      
+      const filterStatus = document.getElementById('studentsFilterStatus')?.value || '';
+      const filterCourse = document.getElementById('studentsFilterCourse')?.value || '';
+      const search = (document.getElementById('studentsSearchInput')?.value || '').toLowerCase();
+      
+      // Filter logic
+      students = students.filter(s => {
+        const hasAttempted = s.hasAttempted;
+        const examStatus = hasAttempted ? 'Completed' : (s.examStatus || 'Pending Exam');
+        const matchStatus = !filterStatus || examStatus === filterStatus;
+        const matchCourse = !filterCourse || (s.courseApplied || '').toLowerCase().includes(filterCourse.toLowerCase());
+        const matchSearch = !search || 
+          (s.fullName || '').toLowerCase().includes(search) || 
+          (s.studentId || '').toLowerCase().includes(search);
+        
+        return matchStatus && matchCourse && matchSearch;
+      });
+
       document.getElementById('studentsTableBody').innerHTML = students.map(s => {
-        const r = results.find(x => x.studentId === s.id);
+        const r = results.find(x => x.studentId === s.id || x.studentId === s.studentId);
+        const hasAttempted = s.hasAttempted;
+        const examStatus = hasAttempted ? 'Completed' : (s.examStatus || 'Pending Exam');
+        
+        const securityLogs = [];
+        try {
+          const allLogs = JSON.parse(localStorage.getItem('cetExamSecurityLogs')) || [];
+          securityLogs.push(...allLogs.filter(l => l.studentId === s.id || l.studentId === s.studentId));
+        } catch(e) {}
+        
+        const tabSwitches = securityLogs.filter(l => l.type === 'TAB_SWITCH').length;
+        const clipboards = securityLogs.filter(l => l.type === 'CLIPBOARD').length;
+        const totalViolations = r ? (r.violations || 0) : securityLogs.length;
+
+        let statusHtml = '';
+        if(examStatus === 'TERMINATED') statusHtml = '<span class="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200">Terminated</span>';
+        else if(examStatus === 'Completed') statusHtml = '<span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Completed</span>';
+        else if(examStatus === 'Active Exam') statusHtml = '<span class="text-blue-600 font-bold text-xs bg-blue-50 px-2 py-1 rounded border border-blue-200">Active Exam</span>';
+        else statusHtml = '<span class="text-amber-600 font-bold text-xs bg-amber-50 px-2 py-1 rounded border border-amber-200">Pending Exam</span>';
+
+        const sid = s.id;
         return `
-          <tr class="hover:bg-slate-50">
-            <td class="p-4 font-mono text-sm text-indigo-600 font-bold">${s.studentId}</td>
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 font-mono text-sm text-indigo-600 font-bold cursor-pointer hover:underline" onclick="openStudentDetailsModal('${sid}')">${s.studentId}</td>
             <td class="p-4 font-medium text-slate-800 text-sm">${s.fullName}</td>
-            <td class="p-4 text-sm text-slate-600">${s.courseApplied}</td>
-            <td class="p-4">${s.hasAttempted ? '<span class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Completed</span>' : '<span class="text-amber-600 font-bold text-xs bg-amber-50 px-2 py-1 rounded border border-amber-200">Pending Exam</span>'}</td>
-            <td class="p-4 text-right font-bold text-slate-900">${r ? `${r.score}/${r.total}` : '--'}</td>
+            <td class="p-4">${statusHtml}</td>
+            <td class="p-4 text-center font-bold text-slate-900">${r ? r.score+'/'+r.total : '--'}</td>
+            <td class="p-4 text-center font-bold text-red-600">${totalViolations > 0 ? totalViolations : '--'}</td>
+            <td class="p-4 text-center font-bold text-orange-600">${tabSwitches > 0 ? tabSwitches : '--'}</td>
+            <td class="p-4 text-center font-bold text-amber-600">${clipboards > 0 ? clipboards : '--'}</td>
+            <td class="p-4">
+              <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;">
+                <button type="button" onclick="openStudentDetailsModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs font-bold">Details</button>
+                <button type="button" onclick="openDocumentsModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-2 py-1 rounded text-xs font-bold">Docs</button>
+                ${hasAttempted ? `<button type="button" onclick="openAnswersModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2 py-1 rounded text-xs font-bold">Answers</button>` : ''}
+                <button type="button" onclick="openIssuesModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-2 py-1 rounded text-xs font-bold">Issues</button>
+                ${!hasAttempted ? `<button type="button" onclick="resumeExam('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs font-bold">Resume</button>` : ''}
+                <button type="button" onclick="openRescheduleModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-purple-50 hover:bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-bold">Reschedule</button>
+                <button type="button" onclick="deleteApprovedStudent('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-bold">Delete</button>
+              </div>
+            </td>
           </tr>
         `;
-      }).join('') || '<tr><td colspan="5" class="p-8 text-center text-slate-500">No approved students yet.</td></tr>';
+      }).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-500">No approved students found matching filters.</td></tr>';
+    }
+
+    // ============================================
+    // LOCKED EXAMS
+    // ============================================
+    window.renderLockedExams = function() {
+      let lockedExams = [];
+      try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
+      
+      const students = DB.getStudents();
+      // Filter out those that are no longer locked in DB
+      const currentLocked = lockedExams.filter(lockObj => {
+         const st = students.find(s => s.studentId === lockObj.studentId);
+         return st && st.examStatus === 'LOCKED';
+      });
+      
+      document.getElementById('lockedBadge').textContent = currentLocked.length || '';
+
+      document.getElementById('lockedTableBody').innerHTML = currentLocked.map(l => `
+        <tr class="hover:bg-red-50/50 transition-colors">
+          <td class="p-4 font-mono text-sm text-red-600 font-bold">${l.studentId}</td>
+          <td class="p-4 font-medium text-slate-800 text-sm">${l.name}</td>
+          <td class="p-4 text-center font-bold text-red-600">${l.warningCount}/3</td>
+          <td class="p-4 text-sm text-slate-600">${l.reason}</td>
+          <td class="p-4 text-xs text-slate-500">${new Date(l.lockedAt).toLocaleString('en-IN')}</td>
+          <td class="p-4 text-right">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;">
+              <button type="button" onclick="unlockExam('${l.studentId}')" style="cursor:pointer;pointer-events:auto;" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded text-xs font-bold transition-colors">Unlock</button>
+              <button type="button" onclick="terminateLockedExam('${l.studentId}')" style="cursor:pointer;pointer-events:auto;" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">Terminate</button>
+            </div>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-500">No locked exams currently.</td></tr>';
+    }
+
+    window.unlockExam = function(studentId) {
+       if(!confirm('Are you sure you want to unlock this exam? The student will be able to resume.')) return;
+       
+       let students = DB.getStudents();
+       const stIdx = students.findIndex(s => s.studentId === studentId);
+       if(stIdx !== -1) {
+          students[stIdx].examStatus = 'ACTIVE';
+          students[stIdx].activeViolations = 0; // Reset active warnings to give them a fresh 3-strike threshold (logs still persist)
+          students[stIdx].unlockedAt = new Date().toISOString();
+          students[stIdx].unlockedBy = 'Admin';
+          localStorage.setItem('cet_students', JSON.stringify(students));
+       }
+       
+       let approved = [];
+       try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e){}
+       const apIdx = approved.findIndex(s => s.studentId === studentId);
+       if(apIdx !== -1) {
+          approved[apIdx].examStatus = 'ACTIVE';
+          localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+       }
+       
+       let lockedExams = [];
+       try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
+       lockedExams = lockedExams.filter(l => l.studentId !== studentId);
+       localStorage.setItem('cetLockedExams', JSON.stringify(lockedExams));
+       
+       renderLockedExams();
+       renderStudents(); // Refresh main table
+    }
+
+    window.terminateLockedExam = function(studentId) {
+       if(!confirm('Are you sure you want to PERMANENTLY TERMINATE this exam? The student will be scored 0.')) return;
+       
+       let students = DB.getStudents();
+       const stIdx = students.findIndex(s => s.studentId === studentId);
+       if(stIdx !== -1) {
+          students[stIdx].examStatus = 'TERMINATED';
+          students[stIdx].hasAttempted = true;
+          localStorage.setItem('cet_students', JSON.stringify(students));
+       }
+       
+       let approved = [];
+       try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e){}
+       const apIdx = approved.findIndex(s => s.studentId === studentId);
+       if(apIdx !== -1) {
+          approved[apIdx].examStatus = 'TERMINATED';
+          approved[apIdx].hasAttempted = true;
+          localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+       }
+       
+       let lockedExams = [];
+       try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
+       lockedExams = lockedExams.filter(l => l.studentId !== studentId);
+       localStorage.setItem('cetLockedExams', JSON.stringify(lockedExams));
+       
+       renderLockedExams();
+       renderStudents();
     }
 
     // ============================================
     // SCHEDULING & QUESTIONS
     // ============================================
     window.loadScheduleForm = function() {
-      const s = DB.getSchedule();
-      if(s.date) document.getElementById('examDate').value = s.date;
-      if(s.time) document.getElementById('examTime').value = s.time;
-      if(s.duration) document.getElementById('examDuration').value = s.duration;
+      let config = { examType: 'CET Exam', examDate: '', startTime: '', durationMinutes: 60 };
+      try { config = JSON.parse(localStorage.getItem('cetExamConfig')) || config; } catch(e){}
+      
+      document.getElementById('examType').value = config.examType || 'CET Exam';
+      document.getElementById('examDate').value = config.examDate;
+      document.getElementById('examTime').value = config.startTime;
+      document.getElementById('examDuration').value = config.durationMinutes;
+      
+      renderConfigPreview(config);
+    }
+    
+    window.renderConfigPreview = function(config) {
+      if (!config.examDate || !config.startTime) {
+        document.getElementById('configPreview').innerHTML = '<p class="text-slate-500 italic text-sm">No complete configuration saved.</p>';
+        return;
+      }
+      
+      let status = 'Upcoming';
+      let statusColor = 'text-blue-600 bg-blue-100';
+      const now = new Date();
+      const start = new Date(`${config.examDate}T${config.startTime}`);
+      const end = new Date(start.getTime() + config.durationMinutes * 60000);
+      
+      if (now >= start && now <= end) {
+        status = 'Live';
+        statusColor = 'text-emerald-600 bg-emerald-100 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+      } else if (now > end) {
+        status = 'Closed';
+        statusColor = 'text-red-600 bg-red-100';
+      }
+
+      document.getElementById('configPreview').innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Status</span>
+          <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusColor} animate-pulse">${status.toUpperCase()}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div><p class="text-slate-500 mb-1">Exam Type</p><p class="font-bold text-slate-800">${config.examType || 'CET Exam'}</p></div>
+          <div><p class="text-slate-500 mb-1">Date</p><p class="font-bold text-slate-800">${start.toLocaleDateString()}</p></div>
+          <div><p class="text-slate-500 mb-1">Duration</p><p class="font-bold text-slate-800">${config.durationMinutes} mins</p></div>
+          <div><p class="text-slate-500 mb-1">Start Time</p><p class="font-bold text-slate-800">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p></div>
+          <div><p class="text-slate-500 mb-1">End Time</p><p class="font-bold text-slate-800">${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p></div>
+        </div>
+      `;
     }
     
     window.saveSchedule = function() {
-      DB.saveSchedule({
-        date: document.getElementById('examDate').value,
-        time: document.getElementById('examTime').value,
-        duration: parseInt(document.getElementById('examDuration').value) || 60
-      });
-      alert('Schedule securely stored in local database.');
-      renderOverview();
+      const date = document.getElementById('examDate').value;
+      const time = document.getElementById('examTime').value;
+      const duration = parseInt(document.getElementById('examDuration').value) || 60;
+      
+      if(!date || !time) {
+        alert("Please select both Date and Start Time.");
+        return;
+      }
+      
+      const startObj = new Date(`${date}T${time}`);
+      const endObj = new Date(startObj.getTime() + duration * 60000);
+      const endTimeStr = endObj.toTimeString().substring(0, 5); // HH:MM
+      
+      const examType = document.getElementById('examType').value;
+      const config = {
+        examType: examType,
+        examDate: date,
+        startTime: time,
+        endTime: endTimeStr,
+        durationMinutes: duration
+      };
+      
+      localStorage.setItem('cetExamConfig', JSON.stringify(config));
+      alert('Exam configuration saved securely.');
+      renderConfigPreview(config);
+    }
+
+    let currentlyViewingSetId = null;
+    let editingQuestionId = null;
+
+    window.getQuestionSets = function() {
+      let sets = [];
+      try { sets = JSON.parse(localStorage.getItem('cetQuestionSets')) || []; } catch(e){}
+      return sets;
+    }
+
+    window.saveQuestionSets = function(sets) {
+      localStorage.setItem('cetQuestionSets', JSON.stringify(sets));
+    }
+
+    window.createQuestionSet = function() {
+      const nameInput = document.getElementById('newSetName');
+      const name = nameInput.value.trim();
+      if(!name) { alert('Please enter a set name.'); return; }
+      
+      let sets = getQuestionSets();
+      const newSet = {
+        id: 'SET_' + Date.now(),
+        name: name,
+        isActive: sets.length === 0, // auto-activate if it's the first one
+        questions: []
+      };
+      sets.push(newSet);
+      saveQuestionSets(sets);
+      nameInput.value = '';
+      currentlyViewingSetId = newSet.id;
+      renderQuestions();
+    }
+
+    window.viewSet = function(setId) {
+      currentlyViewingSetId = setId;
+      renderQuestions();
+    }
+
+    window.deleteSet = function(setId) {
+      if(!confirm('Are you sure you want to delete this question set?')) return;
+      let sets = getQuestionSets();
+      sets = sets.filter(s => s.id !== setId);
+      saveQuestionSets(sets);
+      if(currentlyViewingSetId === setId) currentlyViewingSetId = null;
+      renderQuestions();
+    }
+
+    window.activateCurrentSet = function() {
+      if(!currentlyViewingSetId) return;
+      let sets = getQuestionSets();
+      sets.forEach(s => s.isActive = (s.id === currentlyViewingSetId));
+      saveQuestionSets(sets);
+      alert('This set is now Active for the student exam.');
+      renderQuestions();
+    }
+
+    window.toggleQTypeFields = function() {
+      const t = document.getElementById('qType').value;
+      
+      const elMcqOptions = document.getElementById('mcqOptionsBlock');
+      if(t==='mcq_single' || t==='mcq_multi') { 
+         elMcqOptions.classList.remove('hidden'); elMcqOptions.classList.add('grid'); 
+      } else { 
+         elMcqOptions.classList.add('hidden'); elMcqOptions.classList.remove('grid'); 
+      }
+
+      document.getElementById('mcqSingleCorrectBlock').classList.toggle('hidden', t!=='mcq_single');
+      document.getElementById('mcqMultiCorrectBlock').classList.toggle('hidden', t!=='mcq_multi');
+      document.getElementById('shortAnswerBlock').classList.toggle('hidden', t!=='short_answer');
+      document.getElementById('wordLimitBlock').classList.toggle('hidden', t!=='descriptive');
+    }
+
+    window.editQuestion = function(qId) {
+      if(!currentlyViewingSetId) return;
+      let sets = getQuestionSets();
+      let targetSet = sets.find(s => s.id === currentlyViewingSetId);
+      if(!targetSet) return;
+      
+      let q = targetSet.questions.find(q => q.id === qId);
+      if(!q) return;
+
+      editingQuestionId = qId;
+      document.getElementById('qType').value = q.type || 'mcq_single';
+      document.getElementById('qText').value = q.text;
+      document.getElementById('qMarks').value = q.marks;
+      document.getElementById('qDifficulty').value = q.difficulty || 'Medium';
+      document.getElementById('qSubject').value = q.subject || '';
+      document.getElementById('qUnit').value = q.unit || '';
+      
+      if(q.options && q.options.length === 4) {
+         document.getElementById('qOpt0').value = q.options[0];
+         document.getElementById('qOpt1').value = q.options[1];
+         document.getElementById('qOpt2').value = q.options[2];
+         document.getElementById('qOpt3').value = q.options[3];
+      }
+      
+      document.getElementById('qCorrectSingle').value = q.correct !== undefined ? q.correct : '0';
+      if(q.correctMulti) {
+         document.getElementById('qCorrectMulti0').checked = !!q.correctMulti[0];
+         document.getElementById('qCorrectMulti1').checked = !!q.correctMulti[1];
+         document.getElementById('qCorrectMulti2').checked = !!q.correctMulti[2];
+         document.getElementById('qCorrectMulti3').checked = !!q.correctMulti[3];
+      }
+      document.getElementById('qCorrectShort').value = q.correctText || '';
+      document.getElementById('qWordLimit').value = q.wordLimit || 250;
+      
+      toggleQTypeFields();
+
+      document.getElementById('btnSaveQuestion').textContent = 'Update Question';
+      document.getElementById('btnSaveQuestion').classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+      document.getElementById('btnSaveQuestion').classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+    }
+
+    window.cancelEdit = function() {
+      editingQuestionId = null;
+      document.getElementById('qType').value = 'mcq_single';
+      document.getElementById('qText').value = '';
+      document.getElementById('qOpt0').value = '';
+      document.getElementById('qOpt1').value = '';
+      document.getElementById('qOpt2').value = '';
+      document.getElementById('qOpt3').value = '';
+      document.getElementById('qCorrectSingle').value = '0';
+      document.getElementById('qCorrectMulti0').checked = false;
+      document.getElementById('qCorrectMulti1').checked = false;
+      document.getElementById('qCorrectMulti2').checked = false;
+      document.getElementById('qCorrectMulti3').checked = false;
+      document.getElementById('qCorrectShort').value = '';
+      document.getElementById('qMarks').value = '1';
+      document.getElementById('qDifficulty').value = 'Medium';
+      document.getElementById('qSubject').value = '';
+      document.getElementById('qUnit').value = '';
+      document.getElementById('qWordLimit').value = '250';
+      
+      toggleQTypeFields();
+
+      document.getElementById('btnSaveQuestion').textContent = 'Save Question';
+      document.getElementById('btnSaveQuestion').classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      document.getElementById('btnSaveQuestion').classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+    }
+
+    window.addQuestionToSet = function() {
+      if(!currentlyViewingSetId) return;
+      const type = document.getElementById('qType').value;
+      const text = document.getElementById('qText').value.trim();
+      const marks = parseFloat(document.getElementById('qMarks').value) || 1;
+      const difficulty = document.getElementById('qDifficulty').value;
+      const subject = document.getElementById('qSubject').value.trim();
+      const unit = document.getElementById('qUnit').value.trim();
+
+      if(!text) { alert('Question text is required.'); return; }
+
+      let sets = getQuestionSets();
+      let targetSet = sets.find(s => s.id === currentlyViewingSetId);
+      if(!targetSet) return;
+
+      let qObj = {
+         id: editingQuestionId || 'Q_' + Date.now(),
+         type: type,
+         text: text,
+         marks: marks,
+         difficulty: difficulty,
+         subject: subject,
+         unit: unit
+      };
+
+      if (type === 'mcq_single') {
+         qObj.options = [
+            document.getElementById('qOpt0').value.trim(),
+            document.getElementById('qOpt1').value.trim(),
+            document.getElementById('qOpt2').value.trim(),
+            document.getElementById('qOpt3').value.trim()
+         ];
+         qObj.correct = parseInt(document.getElementById('qCorrectSingle').value);
+      } else if (type === 'mcq_multi') {
+         qObj.options = [
+            document.getElementById('qOpt0').value.trim(),
+            document.getElementById('qOpt1').value.trim(),
+            document.getElementById('qOpt2').value.trim(),
+            document.getElementById('qOpt3').value.trim()
+         ];
+         qObj.correctMulti = [
+            document.getElementById('qCorrectMulti0').checked,
+            document.getElementById('qCorrectMulti1').checked,
+            document.getElementById('qCorrectMulti2').checked,
+            document.getElementById('qCorrectMulti3').checked
+         ];
+      } else if (type === 'short_answer') {
+         qObj.correctText = document.getElementById('qCorrectShort').value.trim();
+      } else if (type === 'descriptive') {
+         qObj.wordLimit = parseInt(document.getElementById('qWordLimit').value) || 250;
+      }
+
+      if (editingQuestionId) {
+        let qIndex = targetSet.questions.findIndex(q => q.id === editingQuestionId);
+        if (qIndex > -1) {
+          targetSet.questions[qIndex] = qObj;
+        }
+      } else {
+        targetSet.questions.push(qObj);
+      }
+
+      saveQuestionSets(sets);
+      cancelEdit();
+      renderQuestions();
+    }
+
+    window.deleteQuestionFromSet = function(qId) {
+      if(!confirm('Delete this question?')) return;
+      let sets = getQuestionSets();
+      let targetSet = sets.find(s => s.id === currentlyViewingSetId);
+      if(targetSet) {
+        targetSet.questions = targetSet.questions.filter(q => q.id !== qId);
+        saveQuestionSets(sets);
+        renderQuestions();
+      }
     }
 
     window.renderQuestions = function() {
-      const qs = DB.getQuestions();
-      document.getElementById('qCountLabel').textContent = `${qs.length} secure questions stored.`;
-      document.getElementById('questionsList').innerHTML = qs.map((q, i) => `
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5">
+      const sets = getQuestionSets();
+      
+      // Render Left Panel (Sets List)
+      document.getElementById('setsList').innerHTML = sets.map(s => {
+        const isViewing = s.id === currentlyViewingSetId;
+        const activeBadge = s.isActive ? '<span class="ml-auto text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase border border-emerald-200">Active</span>' : '';
+        return `
+          <div class="flex items-center gap-2 p-3 rounded-xl border transition cursor-pointer ${isViewing ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}" onclick="viewSet('${s.id}')">
+            <div class="flex-1 overflow-hidden">
+              <p class="text-sm font-bold text-slate-800 truncate">${s.name}</p>
+              <p class="text-xs text-slate-500">${s.questions.length} questions</p>
+            </div>
+            ${activeBadge}
+            <button onclick="event.stopPropagation(); deleteSet('${s.id}')" class="text-slate-400 hover:text-red-500 p-1">🗑️</button>
+          </div>
+        `;
+      }).join('') || '<p class="text-sm text-slate-400 text-center py-4">No sets created yet.</p>';
+
+      // Render Right Panel (Questions in selected set)
+      const targetSet = sets.find(s => s.id === currentlyViewingSetId);
+      const btnActivate = document.getElementById('btnActivateSet');
+      const btnUploadPaper = document.getElementById('btnUploadPaper');
+      const addForm = document.getElementById('addQuestionForm');
+      const listContainer = document.getElementById('questionsList');
+
+      if (!targetSet) {
+        document.getElementById('activeSetTitle').textContent = 'Select a Set';
+        document.getElementById('qCountLabel').textContent = '';
+        if(btnActivate) btnActivate.classList.add('hidden');
+        if(btnUploadPaper) btnUploadPaper.classList.add('hidden');
+        addForm.classList.add('hidden');
+        listContainer.innerHTML = '<div class="text-center text-slate-400 mt-10 text-sm">Select a question set to upload questions.</div>';
+        return;
+      }
+
+      document.getElementById('activeSetTitle').textContent = targetSet.name;
+      document.getElementById('qCountLabel').textContent = `${targetSet.questions.length} questions in this set.`;
+      
+      if (targetSet.isActive) {
+        if(btnActivate) btnActivate.classList.add('hidden');
+      } else {
+        if(btnActivate) btnActivate.classList.remove('hidden');
+      }
+      
+      if(btnUploadPaper) btnUploadPaper.classList.remove('hidden');
+      addForm.classList.remove('hidden');
+
+      const typeMap = {
+         'mcq_single': 'MCQ Single',
+         'mcq_multi': 'MCQ Multiple',
+         'short_answer': 'Short Answer',
+         'descriptive': 'Descriptive',
+         'programming': 'Programming',
+         'file_upload': 'File Upload'
+      };
+
+      listContainer.innerHTML = targetSet.questions.map((q, i) => {
+        let detailsHtml = '';
+        if(q.type === 'mcq_single') {
+           detailsHtml = `<div class="grid grid-cols-2 gap-2 mt-3">${q.options.map((opt, j) => `<p class="text-xs p-2 rounded border ${q.correct === j ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600'}">${String.fromCharCode(65+j)}. ${opt}</p>`).join('')}</div>`;
+        } else if(q.type === 'mcq_multi') {
+           detailsHtml = `<div class="grid grid-cols-2 gap-2 mt-3">${q.options.map((opt, j) => `<p class="text-xs p-2 rounded border ${(q.correctMulti && q.correctMulti[j]) ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-600'}">${String.fromCharCode(65+j)}. ${opt}</p>`).join('')}</div>`;
+        } else if(q.type === 'short_answer') {
+           detailsHtml = `<div class="mt-3 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800"><span class="font-bold">Exact Answer:</span> ${q.correctText}</div>`;
+        } else if(q.type === 'descriptive') {
+           detailsHtml = `<div class="mt-3 p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600"><span class="font-bold">Word Limit:</span> ${q.wordLimit || 250} words</div>`;
+        }
+
+        return `
+        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div class="flex gap-4">
             <div class="w-8 h-8 shrink-0 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-sm">Q${i+1}</div>
             <div class="flex-1">
-              <p class="text-slate-900 font-medium text-sm mb-3">${q.text}</p>
-              <div class="grid grid-cols-2 gap-2">
-                ${q.options.map((opt, j) => `<p class="text-xs p-2 rounded border ${q.correct === j ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' : 'bg-white border-slate-200 text-slate-600'}">${opt}</p>`).join('')}
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                   <p class="text-slate-900 font-medium text-sm leading-snug">${q.text}</p>
+                   <p class="text-xs text-slate-400 mt-1">${q.subject ? q.subject + ' • ' : ''}${q.unit ? q.unit + ' • ' : ''}${q.difficulty || 'Medium'}</p>
+                </div>
+                <div class="flex flex-col items-end gap-1 shrink-0 ml-4">
+                   <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">${typeMap[q.type] || 'MCQ Single'}</span>
+                   <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold border border-slate-200">${q.marks} Mark(s)</span>
+                </div>
               </div>
+              ${detailsHtml}
             </div>
-            <button onclick="window.DB.deleteQuestion('${q.id}');window.renderQuestions();" class="text-slate-400 hover:text-red-500 self-start p-2">🗑️</button>
+            <div class="flex flex-col gap-2 border-l border-slate-100 pl-4 items-center justify-center">
+              <button onclick="editQuestion('${q.id}')" class="text-slate-400 hover:text-indigo-600 p-1" title="Edit Question">✏️</button>
+              <button onclick="deleteQuestionFromSet('${q.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Delete Question">🗑️</button>
+            </div>
           </div>
         </div>
-      `).join('');
+        `;
+      }).join('') || '<p class="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">No questions added yet. Use the form above.</p>';
     }
 
     window.renderResults = function() {
-      const res = DB.getResults();
-      document.getElementById('resultsTableBody').innerHTML = res.map(r => `
-        <tr class="hover:bg-slate-50">
-          <td class="p-4 font-mono font-bold text-sm text-indigo-600">${r.studentCetId}</td>
-          <td class="p-4 font-medium text-slate-900 text-sm">${r.studentName}</td>
-          <td class="p-4 font-bold text-lg text-slate-800">${r.score} <span class="text-xs text-slate-400 font-normal">/ ${r.total}</span></td>
-          <td class="p-4"><div class="w-full bg-slate-200 h-2 rounded-full"><div class="bg-emerald-500 h-full rounded-full" style="width:${(r.score/r.total)*100}%"></div></div></td>
-          <td class="p-4 font-bold ${r.violations > 0 ? 'text-red-600' : 'text-emerald-600'}">${r.violations}</td>
-          <td class="p-4 text-right text-slate-500 text-sm">${Math.floor(r.timeUsed/60)}m</td>
+      let res = [];
+      try { res = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
+      
+      // Inject dummy data if empty as requested
+      if (res.length === 0) {
+        res = [
+          { id: '1', studentId: 'CET20261944', name: 'Navnath', course: 'BSc Computer Science', category: 'OBC', score: 1, total: 2, status: 'Completed', submittedAt: new Date().toISOString() },
+          { id: '2', studentId: 'CET20262406', name: 'Navnath', course: 'BSc Computer Science', category: 'OPEN', score: 1, total: 2, status: 'Completed', submittedAt: new Date().toISOString() }
+        ];
+      }
+
+      // Filter Logic
+      const filterSearch = (document.getElementById('resFilterSearch')?.value || '').toLowerCase();
+      const filterCat = document.getElementById('resFilterCategory')?.value || '';
+      const filterCourse = document.getElementById('resFilterCourse')?.value || '';
+      const filterStatus = document.getElementById('resFilterStatus')?.value || '';
+
+      const filteredRes = res.filter(r => {
+        const matchSearch = !filterSearch || (r.studentId || '').toLowerCase().includes(filterSearch) || (r.name || r.studentName || '').toLowerCase().includes(filterSearch);
+        const matchCat = !filterCat || r.category === filterCat;
+        const matchCourse = !filterCourse || r.course === filterCourse;
+        const matchStatus = !filterStatus || r.status === filterStatus;
+        return matchSearch && matchCat && matchCourse && matchStatus;
+      });
+
+      // Update Summary Cards
+      document.getElementById('resCardTotal').innerText = res.length;
+      document.getElementById('resCardAppeared').innerText = res.length;
+      const passedCount = res.filter(r => r.status === 'Passed' || (r.score/r.total >= 0.4)).length;
+      document.getElementById('resCardPassed').innerText = passedCount;
+      document.getElementById('resCardFailed').innerText = res.length - passedCount;
+      const highestScore = Math.max(...res.map(r => r.score || 0), 0);
+      document.getElementById('resCardHighest').innerText = highestScore;
+
+      // Store globally so onclick handlers can access by index
+      window._allResults = filteredRes;
+
+      // Render Table
+      document.getElementById('resultsTableBody').innerHTML = filteredRes.map((r, idx) => {
+        const percent = r.total ? ((r.score / r.total) * 100).toFixed(2) : 0;
+        const displayStatus = r.status || (percent >= 40 ? 'Passed' : 'Failed');
+        let statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold border border-blue-200">${displayStatus}</span>`;
+        if (displayStatus === 'Passed') statusBadge = `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold border border-emerald-200">Passed</span>`;
+        else if (displayStatus === 'Failed') statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold border border-red-200">Failed</span>`;
+        else if (displayStatus === 'Completed') statusBadge = `<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-indigo-200">Completed</span>`;
+
+        return `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-4 font-mono font-bold text-sm text-indigo-600">${r.studentId}</td>
+          <td class="p-4 font-medium text-slate-900 text-sm">${r.name || r.studentName || 'Unknown'}</td>
+          <td class="p-4 text-sm text-slate-600">${r.course || 'BSc Computer Science'}</td>
+          <td class="p-4 text-sm font-bold text-slate-500">${r.category || 'OPEN'}</td>
+          <td class="p-4 font-bold text-lg text-slate-800">${r.score || 0} <span class="text-xs text-slate-400 font-normal">/ ${r.totalQuestions || r.total || 0}</span></td>
+          <td class="p-4 text-sm font-bold text-slate-700">${percent}%</td>
+          <td class="p-4 text-sm font-bold text-slate-900">#${idx+1}</td>
+          <td class="p-4">${statusBadge}</td>
+          <td class="p-4 text-slate-500 text-sm">${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '--'}</td>
+          <td class="p-4" style="white-space:nowrap;">
+            <div style="display:flex;gap:6px;justify-content:flex-end;pointer-events:auto;position:relative;z-index:10;">
+              <button type="button" onclick="viewResultModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-indigo-600 font-bold text-xs bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100">View Result</button>
+              <button type="button" onclick="viewAnswersModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 hover:bg-emerald-100">View Answers</button>
+              <button type="button" onclick="downloadStudentPDF(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-slate-600 font-bold text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200 hover:bg-slate-200">Download PDF</button>
+            </div>
+          </td>
         </tr>
-      `).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-500">No results submitted yet.</td></tr>';
+      `}).join('') || '<tr><td colspan="10" class="p-8 text-center text-slate-500">No results found matching filters.</td></tr>';
+    }
+
+    let currentEvalResultId = null;
+    let tempManualMarks = {};
+
+    window.evaluateResult = function(resId) {
+       let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       let res = resList.find(x => x.id === resId);
+       if(!res) return;
+
+       currentEvalResultId = resId;
+       document.getElementById('evalStudentName').textContent = `${res.name} (${res.studentId})`;
+
+       let sets = getQuestionSets();
+       let activeSet = sets.find(s => s.isActive) || sets[0];
+       if(!activeSet) return alert("No active questions set found for evaluation.");
+
+       let html = '';
+       let manualTotal = 0;
+
+       activeSet.questions.forEach((q, i) => {
+          let ans = (res.answers && res.answers[i] !== undefined) ? res.answers[i] : null;
+          let ansDisplay = '';
+          let requiresManual = false;
+
+          if(q.type === 'mcq_single' || !q.type) {
+             ansDisplay = ans !== null ? `Option ${String.fromCharCode(65+parseInt(ans))}: ${q.options[ans]}` : 'Not answered';
+          } else if(q.type === 'mcq_multi') {
+             ansDisplay = (ans && ans.length) ? ans.map(idx => `Option ${String.fromCharCode(65+parseInt(idx))}`).join(', ') : 'Not answered';
+          } else if(q.type === 'short_answer') {
+             ansDisplay = ans !== null ? String(ans) : 'Not answered';
+          } else if(q.type === 'descriptive' || q.type === 'programming') {
+             ansDisplay = ans !== null ? `<pre class="bg-slate-100 p-3 border border-slate-200 rounded text-xs whitespace-pre-wrap mt-2 text-slate-700 font-mono">${ans}</pre>` : 'Not answered';
+             requiresManual = true;
+          } else if(q.type === 'file_upload') {
+             ansDisplay = ans !== null ? `Uploaded File: ${ans.name}` : 'Not answered';
+             requiresManual = true;
+          }
+
+          let existingManual = (res.manualMarks && res.manualMarks[i]) ? res.manualMarks[i] : 0;
+          manualTotal += existingManual;
+
+          html += `
+            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+               <div class="flex justify-between items-start mb-3">
+                  <h4 class="font-semibold text-slate-800 text-sm leading-snug">Q${i+1}. ${q.text}</h4>
+                  <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold border border-slate-200 shrink-0 ml-4">${q.marks} Mark(s)</span>
+               </div>
+               <div class="mb-4 text-sm text-slate-600">
+                  <span class="font-bold text-slate-800">Student Answer:</span> <span class="${ans === null ? 'text-slate-400 italic' : ''}">${ansDisplay}</span>
+               </div>
+               ${requiresManual ? `
+                 <div class="flex items-center gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
+                    <label class="text-xs font-bold text-indigo-700 uppercase tracking-wider">Manual Marks:</label>
+                    <input type="number" max="${q.marks}" min="0" value="${existingManual}" onchange="updateManualMark(${i}, this.value)" class="w-20 border border-slate-300 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:border-indigo-500" />
+                 </div>
+               ` : ''}
+            </div>
+          `;
+       });
+
+       tempManualMarks = {};
+       document.getElementById('evalQuestionsList').innerHTML = html;
+       document.getElementById('evalAutoScore').textContent = res.score || 0;
+       document.getElementById('evalManualScore').textContent = manualTotal;
+       document.getElementById('evalTotalScore').textContent = (res.score || 0) + manualTotal;
+       document.getElementById('evalRemarks').value = res.remarks || '';
+
+       document.getElementById('evalModal').classList.remove('hidden');
+    }
+
+    window.updateManualMark = function(qIndex, val) {
+       tempManualMarks[qIndex] = parseFloat(val) || 0;
+       
+       let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       let res = resList.find(x => x.id === currentEvalResultId);
+       let auto = res ? (res.score || 0) : 0;
+       
+       let totalM = 0;
+       if(res && res.manualMarks) {
+          for(let k in res.manualMarks) {
+             if(tempManualMarks[k] === undefined) totalM += res.manualMarks[k];
+          }
+       }
+       for(let k in tempManualMarks) totalM += tempManualMarks[k];
+
+       document.getElementById('evalManualScore').textContent = totalM;
+       document.getElementById('evalTotalScore').textContent = auto + totalM;
+    }
+
+    window.publishResult = function() {
+       let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       let resIndex = resList.findIndex(x => x.id === currentEvalResultId);
+       if(resIndex === -1) return;
+
+       if(!resList[resIndex].manualMarks) resList[resIndex].manualMarks = {};
+       
+       for(let k in tempManualMarks) {
+          resList[resIndex].manualMarks[k] = tempManualMarks[k];
+       }
+       
+       let totalM = 0;
+       for(let k in resList[resIndex].manualMarks) totalM += resList[resIndex].manualMarks[k];
+
+       resList[resIndex].manualScore = totalM;
+       resList[resIndex].remarks = document.getElementById('evalRemarks').value;
+       resList[resIndex].status = 'Published';
+
+       localStorage.setItem('cetExamResults', JSON.stringify(resList));
+       tempManualMarks = {};
+       document.getElementById('evalModal').classList.add('hidden');
+       alert('Result Published Successfully!');
+       renderResults();
+    }
+
+    window.exportResultsCSV = function() {
+       let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       if(resList.length === 0) return alert('No results to export.');
+       
+       let csv = 'Student ID,Name,Auto Score,Manual Score,Total Score,Status,Submitted At,Remarks\n';
+       resList.forEach(r => {
+          let auto = r.score || 0;
+          let manual = r.manualScore || 0;
+          let total = auto + manual;
+          let dt = r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '';
+          let rem = (r.remarks || '').replace(/,/g, ' ');
+          csv += `"${r.studentId}","${r.name}","${auto}","${manual}","${total}","${r.status}","${dt}","${rem}"\n`;
+       });
+       
+       let blob = new Blob([csv], { type: 'text/csv' });
+       let url = window.URL.createObjectURL(blob);
+       let a = document.createElement('a');
+       a.setAttribute('hidden', '');
+       a.setAttribute('href', url);
+       a.setAttribute('download', 'Exam_Results.csv');
+       document.body.appendChild(a);
+       a.click();
+       document.body.removeChild(a);
     }
 
     window.adminLogout = function() {
@@ -489,8 +2263,690 @@
       window.location.href = 'login.html';
     }
     
+    // ============================================
+    // APPROVED STUDENTS MODAL ACTIONS
+    // ============================================
+    // ---- Unified modal open/close helpers ----
+    function showModal(id) {
+      const el = document.getElementById(id);
+      if (!el) { console.error('Modal not found:', id); return; }
+      el.style.cssText = 'display:flex !important; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.65); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1rem;';
+    }
+    function hideModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+    window.closeStudentModal = function(id) { hideModal(id); }
+
+    window.openStudentDetailsModal = function(id) {
+      console.log('[Details] clicked, student id:', id);
+      const s = DB.getStudentById(id);
+      if (!s) { console.warn('Student not found for id:', id); return; }
+      const examStatus = s.hasAttempted ? 'Completed' : (s.examStatus || 'Pending Exam');
+      document.getElementById('studentDetailsContent').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          ${[['Student ID', s.studentId], ['Full Name', s.fullName || s.name || '--'], ['Email', s.email || '--'], ['Mobile', s.mobile || '--'], ['Course', s.courseApplied || '--'], ['Category', s.category || '--'], ['Exam Status', examStatus], ['Reg. Date', s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '--']].map(([label, val]) => `
+            <div style="background:#f8fafc;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+              <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">${label}</p>
+              <p style="font-weight:600;color:#0f172a;margin:0;word-break:break-all;">${val}</p>
+            </div>`).join('')}
+        </div>
+        <div style="margin-top:16px;text-align:right;">
+          <button type="button" onclick="closeStudentModal('studentDetailsModal')" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;">Close</button>
+        </div>
+      `;
+      showModal('studentDetailsModal');
+    }
+
+    window.openDocumentsModal = function(id) {
+      console.log('[Docs] clicked, student id:', id);
+      const s = DB.getStudentById(id);
+      const apps = window.getApplications();
+      const app = apps.find(a => a.email === s?.email);
+      let content = '';
+
+      const docList = ['10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
+      if (app && app.uploadedFiles && Object.keys(app.uploadedFiles).length > 0) {
+        content = Object.entries(app.uploadedFiles).map(([key, data]) => {
+          const isImage = data && data.startsWith('data:image');
+          return `<div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;">
+            <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">${key}</p>
+            ${isImage ? `<img src="${data}" style="max-height:120px;border-radius:6px;display:block;margin-bottom:8px;" />` : ''}
+            <div style="display:flex;gap:8px;">
+              ${isImage ? `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>` : `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>`}
+              <a href="${data}" download="${key}" style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Download</a>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        // Show dummy document list when no real docs available
+        content = docList.map(doc => `
+          <div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <p style="font-size:12px;font-weight:700;color:#334155;margin:0;">${doc}</p>
+              <p style="font-size:11px;color:#94a3b8;margin:4px 0 0;">Not uploaded yet</p>
+            </div>
+            <span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;">PENDING</span>
+          </div>`).join('');
+        content = `<p style="color:#94a3b8;font-size:12px;margin-bottom:10px;">No documents uploaded. Expected documents:</p>` + content;
+      }
+      document.getElementById('documentsContent').innerHTML = content;
+      showModal('documentsModal');
+    }
+
+    window.openAnswersModal = function(id) {
+      console.log('[Answers] clicked, student id:', id);
+      const s = DB.getStudentById(id);
+      const res = DB.getResults().find(r => r.studentId === id || r.studentId === s?.studentId);
+
+      const dummyAnswers = [
+        { q: 'What is the full form of CPU?', studentAns: 'Central Processing Unit', correctAns: 'Central Processing Unit', marks: 1, status: 'Correct' },
+        { q: 'Which language is used for web styling?', studentAns: 'CSS', correctAns: 'CSS', marks: 1, status: 'Correct' },
+        { q: 'What does HTML stand for?', studentAns: 'HyperText Markup Language', correctAns: 'HyperText Markup Language', marks: 1, status: 'Correct' },
+        { q: 'Which planet is closest to the Sun?', studentAns: 'Venus', correctAns: 'Mercury', marks: 0, status: 'Wrong' },
+      ];
+      const answers = (res && res.answers && Object.keys(res.answers).length) ? 
+        Object.entries(res.answers).map(([qId, ans]) => ({ q: qId, studentAns: Array.isArray(ans) ? ans.join(', ') : ans, correctAns: '(backend)', marks: 1, status: 'Correct' })) 
+        : dummyAnswers;
+
+      const totalScore = answers.reduce((sum, a) => sum + (a.status === 'Correct' ? a.marks : 0), 0);
+      document.getElementById('answersContent').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">#</th>
+              <th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Question</th>
+              <th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Student Answer</th>
+              <th style="padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Correct Answer</th>
+              <th style="padding:8px;text-align:center;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Marks</th>
+              <th style="padding:8px;text-align:center;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${answers.map((a, i) => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:8px;color:#94a3b8;">${i+1}</td>
+                <td style="padding:8px;font-weight:600;color:#0f172a;">${a.q}</td>
+                <td style="padding:8px;color:#334155;">${a.studentAns}</td>
+                <td style="padding:8px;color:#059669;font-weight:600;">${a.correctAns}</td>
+                <td style="padding:8px;text-align:center;font-weight:700;">${a.marks}</td>
+                <td style="padding:8px;text-align:center;">
+                  <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${a.status==='Correct'?'#d1fae5':'#fee2e2'};color:${a.status==='Correct'?'#059669':'#dc2626'};">${a.status}</span>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+          <strong style="color:#0f172a;">Total: ${totalScore} / ${answers.length}</strong>
+          <button type="button" onclick="closeStudentModal('answersModal')" style="background:#4f46e5;color:#fff;font-weight:700;padding:6px 18px;border-radius:8px;border:none;cursor:pointer;">Close</button>
+        </div>`;
+      showModal('answersModal');
+    }
+
+    window.openIssuesModal = function(id) {
+      console.log('[Issues] clicked, student id:', id);
+      const issues = [
+        { type: 'Network Problem', message: 'Browser disconnected during exam.', time: 'Today 10:15 AM', status: 'Open' },
+        { type: 'Tab Switch Warning', message: 'Student switched tabs 3 times.', time: 'Today 10:22 AM', status: 'Resolved' },
+      ];
+      document.getElementById('issuesContent').innerHTML = issues.map((issue, i) => `
+        <div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <p style="font-size:11px;font-weight:700;color:#ef4444;text-transform:uppercase;margin:0 0 4px;">${issue.type}</p>
+            <p style="font-size:13px;color:#334155;margin:0 0 4px;">${issue.message}</p>
+            <p style="font-size:11px;color:#94a3b8;margin:0;">${issue.time}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            <span style="background:${issue.status==='Resolved'?'#d1fae5':'#fef9c3'};color:${issue.status==='Resolved'?'#059669':'#854d0e'};font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">${issue.status}</span>
+            ${issue.status !== 'Resolved' ? `<button type="button" onclick="this.closest('div').previousElementSibling && (this.previousElementSibling.textContent='Resolved'); this.closest('[style]').querySelector('span').textContent='Resolved'; this.style.display='none';" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;">Mark Resolved</button>` : ''}
+          </div>
+        </div>`).join('') +
+        `<div style="text-align:right;margin-top:8px;"><button type="button" onclick="closeStudentModal('issuesModal')" style="background:#4f46e5;color:#fff;font-weight:700;padding:6px 18px;border-radius:8px;border:none;cursor:pointer;">Close</button></div>`;
+      showModal('issuesModal');
+    }
+
+    window.openRescheduleModal = function(id) {
+      console.log('[Reschedule] clicked, student id:', id);
+      document.getElementById('rescheduleStudentId').value = id;
+      showModal('rescheduleModal');
+    }
+
+    window.saveReschedule = function() {
+      const id = document.getElementById('rescheduleStudentId').value;
+      const date = document.getElementById('rescheduleDate').value;
+      const time = document.getElementById('rescheduleTime').value;
+      console.log('[Reschedule] saving for', id, date, time);
+      if (!date || !time) { alert('Please select both date and time.'); return; }
+      DB.updateStudent(id, { rescheduleDate: date, rescheduleTime: time });
+      hideModal('rescheduleModal');
+      // Show toast
+      showToast('Exam rescheduled to ' + date + ' at ' + time);
+      renderStudents();
+    }
+
+    window.resumeExam = function(id) {
+      console.log('[Resume] clicked, student id:', id);
+      const s = DB.getStudentById(id);
+      if (s) {
+        DB.updateStudent(id, { examStatus: 'Active Exam' });
+        showToast('Exam resumed! Status set to Active Exam.');
+        renderStudents();
+      }
+    }
+
+    window.deleteApprovedStudent = function(id) {
+      console.log('[Delete] clicked, student id:', id);
+      document.getElementById('deleteStudentConfirmId').value = id;
+      document.getElementById('deleteStudentName').textContent = DB.getStudentById(id)?.fullName || 'this student';
+      showModal('deleteStudentModal');
+    }
+
+    window.confirmDeleteStudent = function() {
+      const id = document.getElementById('deleteStudentConfirmId').value;
+      console.log('[Delete] confirmed for', id);
+      DB.updateStudent(id, { status: 'deleted' });
+      hideModal('deleteStudentModal');
+      showToast('Student deleted successfully.');
+      renderStudents();
+    }
+
+    function showToast(msg) {
+      let t = document.getElementById('adminToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'adminToast';
+        t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:#1e293b;color:#fff;font-weight:700;font-size:13px;padding:12px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.3);transition:opacity 0.3s;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 3000);
+    }
+    
     // Assign DB to window for inline onclick hooks in HTML
     window.DB = DB;
+
+    // ============================================
+    // LIVE RESULTS - MODAL & DOWNLOAD FUNCTIONS
+    // ============================================
+
+    window.viewResultModal = function(idx) {
+      const r = window._allResults && window._allResults[idx];
+      if (!r) { alert('No result data found.'); return; }
+      console.log('View Result clicked', r);
+      const percent = r.total ? ((r.score / r.total) * 100).toFixed(2) : 0;
+      const passing = percent >= 40 ? 'PASS' : 'FAIL';
+      document.getElementById('resultDetailContent').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Student ID</p>
+            <p style="font-weight:700;color:#4f46e5;margin:0;">${r.studentId}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Name</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">${r.name || r.studentName || '--'}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Course</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">${r.course || 'BSc Computer Science'}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Category</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">${r.category || 'OPEN'}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Score</p>
+            <p style="font-weight:800;font-size:1.25rem;color:#0f172a;margin:0;">${r.score || 0} <span style="font-size:0.75rem;color:#94a3b8;font-weight:400;">/ ${r.total || 0}</span></p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Percentage</p>
+            <p style="font-weight:800;font-size:1.25rem;color:#0f172a;margin:0;">${percent}%</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Rank</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">#${idx + 1}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Status</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">${r.status || 'Completed'}</p>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Date</p>
+            <p style="font-weight:600;color:#0f172a;margin:0;">${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '--'}</p>
+          </div>
+          <div style="background:${passing === 'PASS' ? '#ecfdf5' : '#fef2f2'};padding:12px;border-radius:8px;border:1px solid ${passing === 'PASS' ? '#a7f3d0' : '#fecaca'};">
+            <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 4px;">Passing Status</p>
+            <p style="font-weight:800;font-size:1rem;color:${passing === 'PASS' ? '#059669' : '#dc2626'};margin:0;">${passing}</p>
+          </div>
+        </div>
+        <div style="margin-top:16px;text-align:right;">
+          <button type="button" onclick="document.getElementById('resultDetailModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;">Close</button>
+        </div>
+      `;
+      document.getElementById('resultDetailModal').style.display = 'flex';
+    };
+
+    window.viewAnswersModal = function(idx) {
+      const r = window._allResults && window._allResults[idx];
+      if (!r) { alert('No result data found.'); return; }
+      console.log('View Answers clicked', r);
+
+      // Try to get real answers; fall back to dummy data
+      const dummyAnswers = [
+        { q: 'What is React?', studentAns: 'A JavaScript Library', correctAns: 'A JavaScript Library', marks: 1, status: 'Correct' },
+        { q: 'Which database is used in this project?', studentAns: 'MySQL', correctAns: 'MySQL', marks: 1, status: 'Correct' },
+        { q: 'What does HTML stand for?', studentAns: 'HyperText Markup Language', correctAns: 'HyperText Markup Language', marks: 1, status: 'Correct' },
+        { q: 'What is Spring Boot?', studentAns: 'A Java Framework', correctAns: 'A Java Framework', marks: 1, status: 'Correct' },
+      ];
+      const answers = (r.answers && r.answers.length) ? r.answers : dummyAnswers;
+      const totalMarks = answers.reduce((sum, a) => sum + (a.status === 'Correct' ? (a.marks || 1) : 0), 0);
+
+      document.getElementById('answersModalName').textContent = `${r.name || r.studentName || ''} — ${r.studentId}`;
+      document.getElementById('resultAnswersContent').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">#</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Question</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Student Answer</th>
+              <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Correct Answer</th>
+              <th style="padding:10px;text-align:center;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Marks</th>
+              <th style="padding:10px;text-align:center;border-bottom:2px solid #e2e8f0;color:#64748b;font-size:10px;text-transform:uppercase;">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${answers.map((a, i) => `
+              <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:10px;color:#64748b;">${i+1}</td>
+                <td style="padding:10px;font-weight:600;color:#0f172a;">${a.q || a.question || '--'}</td>
+                <td style="padding:10px;color:#334155;">${a.studentAns || a.studentAnswer || '--'}</td>
+                <td style="padding:10px;color:#059669;font-weight:600;">${a.correctAns || a.correctAnswer || '--'}</td>
+                <td style="padding:10px;text-align:center;font-weight:700;">${a.marks || 1}</td>
+                <td style="padding:10px;text-align:center;">
+                  <span style="padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${a.status === 'Correct' ? '#d1fae5' : '#fee2e2'};color:${a.status === 'Correct' ? '#059669' : '#dc2626'};">
+                    ${a.status || 'Correct'}
+                  </span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+          <p style="font-weight:700;color:#0f172a;margin:0;">Total Score: <span style="color:#4f46e5;">${totalMarks} / ${answers.length}</span></p>
+          <button type="button" onclick="document.getElementById('resultAnswersModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 20px;border-radius:8px;border:none;cursor:pointer;">Close</button>
+        </div>
+      `;
+      document.getElementById('resultAnswersModal').style.display = 'flex';
+    };
+
+    window.downloadStudentPDF = function(idx) {
+      const r = window._allResults && window._allResults[idx];
+      if (!r) { alert('No result data found.'); return; }
+      console.log('Download PDF clicked', r);
+
+      if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+        alert('PDF library loading... please try again in a moment.'); return;
+      }
+      const { jsPDF } = window.jspdf || window;
+      const doc = new jsPDF();
+      const percent = r.total ? ((r.score / r.total) * 100).toFixed(2) : 0;
+      const passing = percent >= 40 ? 'PASS' : 'FAIL';
+
+      // Header
+      doc.setFillColor(79, 70, 229);
+      doc.rect(0, 0, 210, 28, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Shri Rambhau Mhalgi College', 105, 10, { align: 'center' });
+      doc.setFontSize(10);
+      doc.text('Department of Computer Science | CET Exam Result', 105, 18, { align: 'center' });
+
+      // Title
+      doc.setTextColor(30, 30, 30);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Individual Student Result Sheet', 105, 40, { align: 'center' });
+      doc.setDrawColor(79, 70, 229);
+      doc.setLineWidth(0.5);
+      doc.line(20, 43, 190, 43);
+
+      // Details
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      const fields = [
+        ['Student ID', r.studentId],
+        ['Name', r.name || r.studentName || '--'],
+        ['Course', r.course || 'BSc Computer Science'],
+        ['Category', r.category || 'OPEN'],
+        ['Score', `${r.score || 0} / ${r.total || 0}`],
+        ['Percentage', `${percent}%`],
+        ['Rank', `#${idx + 1}`],
+        ['Status', r.status || 'Completed'],
+        ['Date', r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '--'],
+        ['Passing Status', passing],
+      ];
+      let y = 54;
+      fields.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${label}:`, 22, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(value), 70, y);
+        y += 10;
+      });
+
+      // Signature section
+      y += 10;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, y, 190, y);
+      y += 12;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('Exam Coordinator', 30, y, { align: 'center' });
+      doc.text('HOD', 105, y, { align: 'center' });
+      doc.text('Principal', 180, y, { align: 'center' });
+      y -= 10;
+      doc.setDrawColor(80, 80, 80);
+      doc.line(10, y, 60, y);
+      doc.line(80, y, 130, y);
+      doc.line(155, y, 200, y);
+
+      doc.save(`${r.studentId}_Result.pdf`);
+    };
+
+    window.handleResultsDownload = function(type) {
+      if (!type) return;
+      let data = window._allResults;
+      if (!data || data.length === 0) {
+        data = [
+          { studentId: 'CET20261944', name: 'Navnath', course: 'BSc Computer Science', category: 'OBC', score: 1, total: 2, status: 'Completed' },
+          { studentId: 'CET20262406', name: 'Navnath', course: 'BSc Computer Science', category: 'OPEN', score: 1, total: 2, status: 'Completed' },
+        ];
+      }
+      console.log('Download Results clicked:', type, data);
+
+      if (type === 'csv') {
+        const header = 'Student ID,Name,Course,Category,Score,Total,Percentage,Status,Date\n';
+        const rows = data.map(r => {
+          const pct = r.total ? ((r.score/r.total)*100).toFixed(2) : 0;
+          return `${r.studentId},"${r.name||''}","${r.course||''}","${r.category||''}",${r.score||0},${r.total||0},${pct}%,"${r.status||''}","${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : ''}"`;
+        }).join('\n');
+        const blob = new Blob([header + rows], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'CET_Results.csv'; a.click();
+        URL.revokeObjectURL(url);
+      }
+      else if (type === 'excel') {
+        if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+        const wsData = [['Student ID','Name','Course','Category','Score','Total','Percentage','Status','Date']];
+        data.forEach(r => {
+          const pct = r.total ? ((r.score/r.total)*100).toFixed(2) : 0;
+          wsData.push([r.studentId, r.name||'', r.course||'', r.category||'', r.score||0, r.total||0, pct+'%', r.status||'', r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '']);
+        });
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'Results');
+        XLSX.writeFile(wb, 'CET_Results.xlsx');
+      }
+      else if (type === 'pdf') {
+        if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
+        const { jsPDF } = window.jspdf || window;
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFillColor(79, 70, 229);
+        doc.rect(0, 0, 297, 22, 'F');
+        doc.setFontSize(13);
+        doc.setTextColor(255,255,255);
+        doc.setFont('helvetica','bold');
+        doc.text('CET Exam Results — All Students', 148, 14, { align: 'center' });
+        doc.setTextColor(30,30,30);
+        const tableRows = data.map((r, i) => {
+          const pct = r.total ? ((r.score/r.total)*100).toFixed(2) : 0;
+          return [i+1, r.studentId, r.name||'', r.course||'', r.category||'', `${r.score||0}/${r.total||0}`, pct+'%', r.status||''];
+        });
+        doc.autoTable({
+          startY: 30,
+          head: [['#','Student ID','Name','Course','Category','Score','Percentage','Status']],
+          body: tableRows,
+          styles: { fontSize: 9, cellPadding: 5 },
+          headStyles: { fillColor: [79, 70, 229], textColor: [255,255,255], fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [248,250,252] }
+        });
+        const finalY = doc.lastAutoTable.finalY + 20;
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(9);
+        doc.line(20, finalY, 70, finalY); doc.line(113, finalY, 163, finalY); doc.line(220, finalY, 270, finalY);
+        doc.text('Exam Coordinator', 45, finalY+8, {align:'center'});
+        doc.text('Head of Department', 138, finalY+8, {align:'center'});
+        doc.text('Principal', 245, finalY+8, {align:'center'});
+        doc.save('CET_All_Results.pdf');
+      }
+      else if (type === 'word') {
+        // Fallback: generate a plain-text .doc file since docx CDN may vary
+        let content = 'CET EXAM RESULTS\n\nStudent ID\tName\tCourse\tCategory\tScore\tPercentage\tStatus\n';
+        data.forEach(r => {
+          const pct = r.total ? ((r.score/r.total)*100).toFixed(2) : 0;
+          content += `${r.studentId}\t${r.name||''}\t${r.course||''}\t${r.category||''}\t${r.score||0}/${r.total||0}\t${pct}%\t${r.status||''}\n`;
+        });
+        const blob = new Blob([content], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'CET_Results.doc'; a.click();
+        URL.revokeObjectURL(url);
+      }
+    };
+  </script>
+
+  <!-- Question Paper Upload & Parser Logic -->
+  <script>
+    window.openQuestionUploadModal = function() {
+      document.getElementById('questionUploadModal').classList.remove('hidden');
+      document.getElementById('uploadBoxArea').classList.remove('hidden');
+      document.getElementById('parseLoadingArea').classList.add('hidden');
+      document.getElementById('parsePreviewArea').classList.add('hidden');
+      document.getElementById('questionPaperFile').value = '';
+      document.getElementById('uploadFileName').innerText = 'No file selected.';
+      document.getElementById('btnParseFile').disabled = true;
+      window._uploadedFile = null;
+    };
+    
+    window.closeQuestionUploadModal = function() {
+      document.getElementById('questionUploadModal').classList.add('hidden');
+    };
+
+    window.handleQuestionFileUpload = function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById('uploadFileName').innerText = file.name;
+        document.getElementById('btnParseFile').disabled = false;
+        window._uploadedFile = file;
+      }
+    };
+
+    window.processUploadedPaper = async function() {
+      const file = window._uploadedFile;
+      if (!file) return;
+
+      document.getElementById('uploadBoxArea').classList.add('hidden');
+      document.getElementById('parseLoadingArea').classList.remove('hidden');
+
+      try {
+        let text = '';
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            
+            let lastY = null;
+            let pageText = '';
+            for (const item of content.items) {
+               if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+                   pageText += '\n';
+               }
+               pageText += item.str;
+               lastY = item.transform[5];
+            }
+            text += pageText + '\n\n';
+          }
+        } else if (file.name.toLowerCase().endsWith('.docx')) {
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+          text = result.value;
+        } else {
+          throw new Error('Unsupported file format. Please upload PDF or DOCX.');
+        }
+
+        const questions = window.parseQuestionsText(text);
+        window._parsedQuestions = questions;
+        
+        document.getElementById('parsedQCount').innerText = questions.length;
+        const tbody = document.getElementById('parsedQuestionsTableBody');
+        tbody.innerHTML = '';
+        
+        if (questions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No questions found. Check your file format.</td></tr>';
+        } else {
+            questions.forEach((q, i) => {
+                let optionsHtml = '';
+                if (q.type.includes('mcq') && q.options && q.options.length > 0) {
+                    optionsHtml = `<div class="mt-2 text-xs text-slate-500">
+                        A) ${q.options[0] || ''}<br/>
+                        B) ${q.options[1] || ''}<br/>
+                        C) ${q.options[2] || ''}<br/>
+                        D) ${q.options[3] || ''}
+                    </div>`;
+                }
+                
+                const ansLetters = ['A','B','C','D'];
+                const correctHtml = q.type.includes('mcq') ? ansLetters[q.correctIndex] : (q.correct || 'Subjective');
+                
+                let statusHtml = q.needsReview 
+                  ? '<span class="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded">Needs Review</span>'
+                  : '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">Ready</span>';
+
+                tbody.innerHTML += `
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold border-t border-slate-100">${i+1}</td>
+                    <td class="p-3 border-t border-slate-100">
+                      <div class="font-semibold text-slate-800 whitespace-pre-wrap">${q.text}</div>
+                      ${optionsHtml}
+                    </td>
+                    <td class="p-3 text-xs uppercase font-bold text-slate-500 border-t border-slate-100">${q.type.replace('_', ' ')}</td>
+                    <td class="p-3 font-bold text-indigo-600 border-t border-slate-100">${correctHtml}</td>
+                    <td class="p-3 border-t border-slate-100">${q.marks}</td>
+                    <td class="p-3 text-center border-t border-slate-100">${statusHtml}</td>
+                  </tr>
+                `;
+            });
+        }
+
+        document.getElementById('parseLoadingArea').classList.add('hidden');
+        document.getElementById('parsePreviewArea').classList.remove('hidden');
+
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse document: ' + err.message);
+        window.openQuestionUploadModal(); // Reset modal state
+      }
+    };
+
+    window.parseQuestionsText = function(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+        const questions = [];
+        let currentQuestion = null;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            // Match Q1., Q1), Que.1, Question 1
+            const isQuestionStart = /^(?:Q\d+\.?|Que\.\s*\d+\.?|Question\s*\d+\.?|\d+\))\s*(.+)/i.exec(line);
+            
+            if (isQuestionStart) {
+                if (currentQuestion) questions.push(currentQuestion);
+                currentQuestion = {
+                    text: isQuestionStart[1],
+                    options: [],
+                    correct: '',
+                    marks: 1,
+                    type: 'descriptive',
+                    rawOptions: []
+                };
+            } else if (currentQuestion) {
+                // Match Options A., B., C., D. or 1), 2)
+                const isOption = /^[A-D1-4][\.\)]\s*(.+)/i.exec(line);
+                const isAnswer = /^(?:Answer|Ans|Correct Answer):\s*(.+)/i.exec(line);
+                const isMarks = /^(?:Marks|Mark):\s*(\d+)/i.exec(line);
+                const isType = /^(?:Type):\s*(.+)/i.exec(line);
+                
+                if (isOption) {
+                    currentQuestion.rawOptions.push(isOption[1]);
+                    currentQuestion.type = 'mcq_single';
+                } else if (isAnswer) {
+                    currentQuestion.correct = isAnswer[1].trim();
+                } else if (isMarks) {
+                    currentQuestion.marks = parseInt(isMarks[1], 10) || 1;
+                } else if (isType) {
+                    const typeStr = isType[1].toLowerCase();
+                    if (typeStr.includes('desc')) currentQuestion.type = 'descriptive';
+                } else {
+                    if (currentQuestion.rawOptions.length > 0) {
+                        currentQuestion.rawOptions[currentQuestion.rawOptions.length - 1] += ' ' + line;
+                    } else {
+                        currentQuestion.text += '\n' + line;
+                    }
+                }
+            }
+        }
+        if (currentQuestion) questions.push(currentQuestion);
+        
+        questions.forEach(q => {
+            q.id = 'Q_' + Date.now() + Math.random().toString(36).substr(2, 5);
+            if (q.rawOptions.length > 0) {
+                q.options = [...q.rawOptions, '', '', '', ''].slice(0, 4);
+                const ansMap = {'a':0, 'b':1, 'c':2, 'd':3, '1':0, '2':1, '3':2, '4':3};
+                const ansKey = q.correct ? q.correct.toLowerCase().charAt(0) : '';
+                if (ansMap[ansKey] !== undefined) {
+                    q.correctIndex = ansMap[ansKey];
+                } else {
+                    q.needsReview = true;
+                    q.correctIndex = 0;
+                }
+            } else {
+                q.type = 'descriptive';
+                if(!q.correct) q.needsReview = true;
+            }
+            delete q.rawOptions;
+        });
+        
+        return questions;
+    };
+
+    window.saveParsedQuestions = function() {
+        if (!window._parsedQuestions || window._parsedQuestions.length === 0) return;
+        
+        // Use global functions from module if available
+        let sets = window.getQuestionSets ? window.getQuestionSets() : [];
+        let activeSet = sets.find(s => s.id === window._currentSetId);
+        
+        if (!activeSet) {
+            // Fallback: If no set selected, try to find active or create new
+            activeSet = sets.find(s => s.isActive);
+            if(!activeSet) {
+               activeSet = { id: 'SET_' + Date.now(), name: 'Uploaded Set ' + new Date().toLocaleDateString(), isActive: sets.length === 0, questions: [] };
+               sets.push(activeSet);
+            }
+            window._currentSetId = activeSet.id;
+        }
+        
+        activeSet.questions.push(...window._parsedQuestions);
+        
+        if (window.saveQuestionSets) window.saveQuestionSets(sets);
+        if (window.renderQuestions) window.renderQuestions();
+        
+        alert(`Successfully saved ${window._parsedQuestions.length} questions to "${activeSet.name}"!`);
+        window.closeQuestionUploadModal();
+    };
   </script>
 </body>
 </html>

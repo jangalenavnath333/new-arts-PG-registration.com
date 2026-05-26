@@ -219,6 +219,123 @@
     </main>
   </div>
 
+  <!-- Exam Rules Modal -->
+  <style>
+    #examRulesModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #examRulesModal.active {
+      display: flex;
+    }
+    .rules-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .rules-header {
+      padding: 24px;
+      border-bottom: 1px solid #334155;
+      background: rgba(30, 41, 59, 0.5);
+    }
+    .rules-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .rules-footer {
+      padding: 24px;
+      border-top: 1px solid #334155;
+      background: rgba(30, 41, 59, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .rule-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .btn-action {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+  </style>
+  <div id="examRulesModal">
+    <div class="rules-card">
+      <div class="rules-header">
+        <h2 style="font-size:20px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:24px;">⚖️</span> Mandatory Exam Rules
+        </h2>
+        <p style="font-size:14px; color:#94a3b8; margin-top:4px;">Please read and accept these rules to proceed to the exam environment.</p>
+      </div>
+      
+      <div class="rules-body">
+        <div class="rule-item">
+          <span style="color:#f87171; margin-top:2px;">🚫</span>
+          <p><strong>Do not switch tabs or windows.</strong> Tab switching is logged and will count as a violation.</p>
+        </div>
+        <div class="rule-item">
+          <span style="color:#f87171; margin-top:2px;">🚫</span>
+          <p><strong>Do not copy or paste.</strong> Copy/paste functionality is disabled and attempts are logged.</p>
+        </div>
+        <div class="rule-item">
+          <span style="color:#f87171; margin-top:2px;">🚫</span>
+          <p><strong>Do not right-click.</strong> Context menus are disabled.</p>
+        </div>
+        <div class="rule-item">
+          <span style="color:#f87171; margin-top:2px;">🚫</span>
+          <p><strong>Do not exit fullscreen.</strong> Exiting fullscreen is a severe violation.</p>
+        </div>
+        <div class="rule-item">
+          <span style="color:#34d399; margin-top:2px;">📷</span>
+          <p><strong>Webcam active.</strong> Your profile photo and webcam feed will be monitored during the exam.</p>
+        </div>
+        
+        <div style="margin-top:16px; padding:16px; border-radius:12px; background:rgba(127,29,29,0.2); border:1px solid rgba(127,29,29,0.5);">
+          <p style="font-size:14px; font-weight:700; color:#f87171; text-align:center;">⚠️ 3 WARNINGS = AUTO SUBMIT & EXAM TERMINATION</p>
+        </div>
+      </div>
+      
+      <div class="rules-footer">
+        <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+          <input type="checkbox" id="acceptRulesCheck" onchange="toggleStartBtn()" style="width:20px; height:20px; cursor:pointer;">
+          <span style="font-size:14px; font-weight:500; color:#cbd5e1;">I have read and accept the exam rules and consequences.</span>
+        </label>
+        
+        <div style="display:flex; gap:12px;">
+          <button onclick="closeExamRules()" class="btn-action" style="background:transparent; border:1px solid #475569; color:#cbd5e1;">Cancel</button>
+          <button id="finalStartExamBtn" onclick="proceedToExam()" disabled class="btn-action" style="background:#4f46e5; color:#fff; opacity:0.5; cursor:not-allowed;">Start Exam</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==============================================================
     // INLINE DIRECT DB LOGIC (Bypassing dynamic import / Fetch errors)
@@ -248,20 +365,41 @@
       student = DB.getCurrentStudent();
       if (!student) { window.location.href = 'login.html'; return; }
 
-      // DATA INTEGRITY: Double-check if student exists in primary DB array
-      const dbStudent = DB.getStudentById(student.id);
-      if (!dbStudent) { 
+      // DATA INTEGRITY: Look up latest data from cet_students
+      let dbStudent = DB.getStudentById(student.id);
+      if (!dbStudent) {
+        // Try to find by email in cet_students
+        dbStudent = DB.getStudents().find(s => s.email === student.email);
+      }
+      if (!dbStudent) {
         console.error("Data Integrity Error: Student session invalid.");
         DB.clearCurrentStudent();
-        window.location.replace('login.html'); 
-        return; 
+        window.location.replace('login.html');
+        return;
       }
       student = dbStudent;
 
-      // Safeguard against missing status
+      // Also try to get latest data from cetApplications (admin approval updates this)
+      try {
+        const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+        const appRecord = apps.find(a => a.email === student.email);
+        if (appRecord) {
+          // Merge latest status fields from cetApplications
+          student.applicationStatus = appRecord.applicationStatus || student.applicationStatus;
+          student.examStatus        = appRecord.examStatus        || student.examStatus;
+          student.examDate          = appRecord.examDate          || student.examDate;
+          student.studentId         = appRecord.studentId         || student.studentId;
+          // Sync status: if admin approved via cetApplications
+          if (appRecord.applicationStatus === 'Approved') student.status = 'approved';
+          if (appRecord.applicationStatus === 'Rejected') student.status = 'rejected';
+          if (appRecord.applicationStatus === 'PENDING_APPROVAL') student.status = 'pending';
+        }
+      } catch(e) {}
+
+      // Normalize status
       if (!student.status) student.status = 'pending';
       student.status = student.status.toLowerCase();
-      
+
       DB.setCurrentStudent(student);
 
       // Sidebar
@@ -274,7 +412,9 @@
       // Header status badge
       try {
         const statusColors = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
-        document.getElementById('headerStatus').innerHTML = `<span class="badge ${statusColors[student.status] || 'badge-pending'}">${student.status.toUpperCase()}</span>`;
+        const appSt = student.applicationStatus || student.status || 'pending';
+        const displayStatus = appSt === 'PENDING_APPROVAL' ? 'UNDER REVIEW' : appSt === 'Approved' ? 'APPROVED' : appSt === 'Rejected' ? 'REJECTED' : (student.status || 'pending').toUpperCase();
+        document.getElementById('headerStatus').innerHTML = `<span class="badge ${statusColors[student.status] || 'badge-pending'}">${displayStatus}</span>`;
       } catch (e) { console.error("Header status error", e); }
 
       try { renderOverview(); } catch (e) { console.error("Overview error", e); }
@@ -287,8 +427,10 @@
     }
 
     function renderOverview() {
-      const statusMap = { pending: '⏳', approved: '✅', rejected: '❌' };
-      document.getElementById('statStatus').textContent = statusMap[student.status] + ' ' + student.status.charAt(0).toUpperCase() + student.status.slice(1);
+      const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
+      const statusIcon = { pending:'⏳', approved:'✅', rejected:'❌' };
+      const statusLabel = { pending:'Under Review', approved:'Approved', rejected:'Rejected' };
+      document.getElementById('statStatus').textContent = (statusIcon[student.status] || '⏳') + ' ' + (statusLabel[student.status] || 'Pending');
       document.getElementById('statStudentId').textContent = student.studentId || 'N/A';
 
       const schedule = DB.getSchedule();
@@ -323,13 +465,19 @@
     }
 
     function renderStatus() {
+      const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
+      const isPending  = appStatus === 'PENDING_APPROVAL' || student.status === 'pending';
+      const isApproved = appStatus === 'Approved' || student.status === 'approved';
+      const isRejected = appStatus === 'Rejected' || student.status === 'rejected';
+
       const steps = [
-        { label: 'Application Submitted', desc: new Date(student.appliedAt).toLocaleString('en-IN'), done: true },
-        { label: 'Under Review', desc: 'Admin is reviewing your application', done: student.status !== 'pending', active: student.status === 'pending' },
-        { label: student.status === 'rejected' ? 'Application Rejected' : 'Application Approved', desc: student.status === 'approved' ? `Student ID: ${student.studentId}` : student.status === 'rejected' ? (student.rejectionReason || 'Application not approved') : 'Waiting for admin decision', done: student.status === 'approved', active: student.status === 'rejected' },
-        { label: 'Exam Scheduled', desc: 'Exam date and time will be communicated', done: student.status === 'approved' && DB.getSchedule().date !== '' },
-        { label: 'Exam Taken', desc: 'Complete the online CET examination', done: student.hasAttempted },
-        { label: 'Result Published', desc: 'View your score and rank', done: !!DB.getResultByStudentId(student.id) },
+        { label: 'Application Submitted',  desc: student.appliedAt ? new Date(student.appliedAt).toLocaleString('en-IN') : 'Submitted', done: true },
+        { label: 'Payment Received',        desc: student.paymentStatus === 'PAID_DEMO' ? 'PAID_DEMO — Rs.1 verified' : (student.paymentStatus || 'Pending'), done: !!student.paymentStatus },
+        { label: 'Under Admin Review',      desc: 'Admin is reviewing your application', done: !isPending, active: isPending },
+        { label: isRejected ? 'Application Rejected' : 'Application Approved', desc: isApproved ? ('Student ID: ' + (student.studentId || 'Assigned')) : isRejected ? (student.rejectionReason || 'Not approved') : 'Awaiting admin decision', done: isApproved, active: isRejected },
+        { label: 'Exam Scheduled',          desc: student.examDate ? ('Exam on ' + new Date(student.examDate).toLocaleDateString('en-IN')) : 'Exam date will be shared', done: isApproved && !!student.examDate },
+        { label: 'Exam Taken',             desc: 'Complete the online CET examination', done: student.hasAttempted },
+        { label: 'Result Published',        desc: 'View your score and rank', done: !!DB.getResultByStudentId(student.id) },
       ];
 
       document.getElementById('statusTimeline').innerHTML = steps.map(s => `
@@ -339,24 +487,30 @@
         </div>
       `).join('');
 
-      // Detail box
-      const statusDetails = {
-        pending: { icon:'⏳', title:'Application Under Review', msg:'Your application has been submitted and is pending admin review.', color:'warning' },
-        approved: { icon:'🎉', title:'Application Approved!', msg:`Congratulations! Your application has been approved. Your Student ID is <strong>${student.studentId || 'Ready'}</strong>.`, color:'success' },
-        rejected: { icon:'❌', title:'Application Rejected', msg:`We\'re sorry. Your application was not approved. Reason: ${student.rejectionReason || 'Not specified'}.`, color:'danger' },
-      };
-      // Fallback object to prevent undefined crash if student status is completely malformed
-      const d = statusDetails[student.status] || statusDetails['pending'];
+      // Status detail box
+      let d;
+      if (isPending) {
+        d = { icon:'⏳', title:'Application Under Review', msg:'Your application has been submitted and payment received. Admin approval is pending.', color:'warning' };
+      } else if (isApproved) {
+        d = { icon:'🎉', title:'Application Approved!', msg:`Congratulations! Your application has been approved. Your Student ID is <strong>${student.studentId || 'Ready'}</strong>.`, color:'success' };
+      } else if (isRejected) {
+        d = { icon:'❌', title:'Application Rejected', msg:`We're sorry. Your application was not approved. Reason: ${student.rejectionReason || 'Not specified'}.`, color:'danger' };
+      } else {
+        d = { icon:'⏳', title:'Application Under Review', msg:'Your application has been submitted. Admin approval is pending.', color:'warning' };
+      }
       
       const fullProfileDetails = [
-        ['Email Address', student.email],
-        ['Mobile Number', student.mobile],
-        ['Course Applied For', student.courseApplied],
-        ['12th Board Percentage', student.twelfthPercent + '%'],
-        ['12th Maths Marks', student.mathsMarks ? student.mathsMarks : '--'],
-        ['Academic Stream', student.stream],
-        ['Year of Passing', student.yearOfPassing],
-        ['Date of Application', new Date(student.appliedAt).toLocaleDateString('en-IN')]
+        ['Email Address',        student.email],
+        ['Mobile Number',        student.mobile],
+        ['Course Applied For',   student.courseApplied || student.academicDetails?.courseApplied],
+        ['12th Board Percentage',student.academicDetails?.twelfthPercent + '%'],
+        ['12th Maths Marks',     student.academicDetails?.mathsMarks || '--'],
+        ['Academic Stream',      student.academicDetails?.stream || student.stream],
+        ['Year of Passing',      student.academicDetails?.yearOfPassing],
+        ['Payment Status',       student.paymentStatus || '--'],
+        ['Payment UTR',          student.paymentUtr || student.transactionId || '--'],
+        ['Application Status',   appStatus],
+        ['Date of Application',  student.appliedAt ? new Date(student.appliedAt).toLocaleDateString('en-IN') : '--'],
       ];
 
       document.getElementById('statusDetailBox').innerHTML = `
@@ -364,19 +518,19 @@
           <div style="font-size:40px; margin-bottom:12px;">${d.icon}</div>
           <strong style="font-size:16px;">${d.title}</strong>
           <p style="margin-top:8px; font-size:14px;">${d.msg}</p>
+          ${isPending ? '<p style="font-size:13px;color:#fcd34d;margin-top:6px;">⚠ Admin approval pending. You will be notified once approved.</p>' : ''}
         </div>
-        ${student.photoData ? `
+        ${student.uploadedFiles?.photoFile ? `
         <div style="background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:20px; margin-bottom:20px; display:flex; align-items:center; gap:20px;">
-          <img src="${student.photoData}" alt="Profile Photo" style="width:100px; height:100px; object-fit:cover; border-radius:50%; border:3px solid var(--primary-light); box-shadow: 0 4px 15px rgba(0,0,0,0.2);" />
+          <img src="${student.uploadedFiles.photoFile}" alt="Profile Photo" style="width:100px; height:100px; object-fit:cover; border-radius:50%; border:3px solid var(--primary-light);" />
           <div>
             <h3 style="color:var(--white); font-size:18px; font-weight:600; margin-bottom:4px;">${student.fullName}</h3>
             <p style="color:var(--mid); font-size:14px; margin-bottom:8px;">Student ID: <span style="color:var(--light); font-weight:600;">${student.studentId || 'Pending'}</span></p>
-            <span class="badge badge-${student.status}" style="font-size:11px; padding:4px 10px;">${student.status.toUpperCase()}</span>
+            <span class="badge badge-${student.status || 'pending'}" style="font-size:11px; padding:4px 10px;">${appStatus}</span>
           </div>
         </div>` : ''}
-
         <div style="background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:24px;">
-          <h3 style="font-size:15px; font-weight:600; color:var(--white); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--card-border);">Comprehensive Profile Details</h3>
+          <h3 style="font-size:15px; font-weight:600; color:var(--white); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--card-border);">Application Details</h3>
           ${fullProfileDetails.map(([label, val]) => `
             <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.03);">
               <span style="font-size:13px; color:var(--mid);">${label}</span>
@@ -388,45 +542,54 @@
     }
 
     function renderSchedule() {
-      const schedule = DB.getSchedule();
-      if (!schedule.date) {
+      let config = null;
+      try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+      
+      if (!config || !config.examDate || !config.startTime) {
         document.getElementById('scheduleContent').innerHTML = `
           <div class="empty-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <h3>No Exam Scheduled Yet</h3>
-            <p>The admin has not set an exam date, but testing mode allows you to bypass this.</p>
-            <br/>
-            <button onclick="startExam()" id="scheduleStartBtn" class="btn btn-solid btn-lg" style="display:none; margin: 0 auto;">🚀 TESTING: Start Exam</button>
+            <p>The admin has not set an exam date yet.</p>
           </div>`;
         return;
       }
 
-      const examDate = new Date(schedule.date + 'T' + schedule.time);
+      const start = new Date(`${config.examDate}T${config.startTime}`);
+      const end = new Date(start.getTime() + (config.durationMinutes * 60000));
       const now = new Date();
-      const diff = examDate - now;
-      const countdown = diff > 0 ? `${Math.floor(diff/86400000)}d ${Math.floor((diff%86400000)/3600000)}h ${Math.floor((diff%3600000)/60000)}m` : 'Exam time reached!';
+      
+      let countdown = '';
+      if (now < start) {
+        const diff = start - now;
+        countdown = `${Math.floor(diff/86400000)}d ${Math.floor((diff%86400000)/3600000)}h ${Math.floor((diff%3600000)/60000)}m left`;
+      } else if (now >= start && now <= end) {
+        countdown = '<span style="color:var(--success);">LIVE NOW!</span>';
+      } else {
+        countdown = '<span style="color:var(--danger);">ENDED</span>';
+      }
 
       document.getElementById('scheduleContent').innerHTML = `
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; margin-bottom:28px;">
           <div style="text-align:center; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">📅</div>
             <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Exam Date</p>
-            <p style="font-size:20px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${new Date(schedule.date).toLocaleDateString('en-IN', {weekday:'short', day:'numeric', month:'long', year:'numeric'})}</p>
+            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${start.toLocaleDateString()}</p>
           </div>
           <div style="text-align:center; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">⏰</div>
             <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Exam Time</p>
-            <p style="font-size:20px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${schedule.time}</p>
+            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</p>
           </div>
           <div style="text-align:center; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">⏱</div>
             <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Duration</p>
-            <p style="font-size:20px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${schedule.duration} Minutes</p>
+            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${config.durationMinutes} Minutes</p>
           </div>
           <div style="text-align:center; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">⌛</div>
-            <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Countdown</p>
-            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif; color:var(--primary-light);" id="liveCountdown">${countdown}</p>
+            <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Status</p>
+            <p style="font-size:16px; font-weight:700; font-family:'Space Grotesk',sans-serif;" id="liveCountdown">${countdown}</p>
           </div>
         </div>
         <div style="display:flex; justify-content:center;">
@@ -464,11 +627,23 @@
         return;
       }
 
+      if (student.examStatus === 'TERMINATED') {
+         document.getElementById('resultContent').innerHTML = `
+           <div class="alert alert-danger" style="flex-direction:column; align-items:center; text-align:center; padding:32px; border-radius:16px;">
+             <div style="font-size:48px; margin-bottom:16px;">🚨</div>
+             <h3 style="font-size:24px; font-weight:700; margin-bottom:8px;">Exam Terminated</h3>
+             <p style="font-size:16px;">Your exam was terminated due to security violations.</p>
+             <p style="font-size:14px; margin-top:8px; color:var(--light);">If you believe this is an error, please contact the administrator.</p>
+           </div>
+         `;
+         return;
+      }
+
       const pct = Math.round((result.score / result.total) * 100);
       const grade = pct >= 80 ? { label:'Excellent', color:'var(--success)' } : pct >= 60 ? { label:'Good', color:'var(--primary-light)' } : pct >= 40 ? { label:'Average', color:'var(--warning)' } : { label:'Below Average', color:'var(--danger)' };
 
       document.getElementById('resultContent').innerHTML = `
-        <div class="card-header"><div><p class="card-title">🏆 Exam Result</p><p class="card-subtitle">Submitted on ${new Date(result.submittedAt).toLocaleString('en-IN')}</p></div><button onclick="printResult()" class="btn btn-outline-sm">🖨 Print</button></div>
+        <div class="card-header"><div><p class="card-title">🏆 Exam Result</p><p class="card-subtitle">Submitted on ${new Date(result.submittedAt).toLocaleString('en-IN')}</p></div></div>
         <div style="text-align:center; padding:32px 0;">
           <div style="width:140px; height:140px; border-radius:50%; border:6px solid ${grade.color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; background:rgba(99,102,241,0.05);">
             <span style="font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:${grade.color};">${pct}%</span>
@@ -497,43 +672,114 @@
     }
 
     function checkExamEligibility() {
-      // TESTING OVERRIDE: Show 'Start Exam' button immediately if approved, regardless of the time schedule.
-      if (student.status !== 'approved' || student.hasAttempted) return;
-
-      const startBtn = document.getElementById('startExamBtn');
-      const headerBtn = document.getElementById('startExamHeaderBtn');
-      const schedBtn = document.getElementById('scheduleStartBtn');
-      const waitMsg = document.getElementById('scheduleWaitMsg');
-
-      // Forcibly display the buttons and add pulse animations!
-      if (startBtn) { startBtn.style.display = 'flex'; startBtn.classList.add('pulse-active'); }
-      if (headerBtn) { headerBtn.style.display = 'flex'; headerBtn.classList.add('pulse-active'); }
-      if (schedBtn) { schedBtn.style.display = 'flex'; schedBtn.classList.add('pulse-active'); }
-      if (waitMsg) waitMsg.style.display = 'none';
+      // Require applicationStatus === 'Approved' (set by admin) AND not already attempted
+      const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
+      const isApproved = appStatus === 'Approved' || student.status === 'approved';
+      if (!isApproved || student.hasAttempted) return;
+      
+      let config = null;
+      try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+      
+      const startBtn   = document.getElementById('startExamBtn');
+      const headerBtn  = document.getElementById('startExamHeaderBtn');
+      const schedBtn   = document.getElementById('scheduleStartBtn');
+      const waitMsg    = document.getElementById('scheduleWaitMsg');
+      const headStat   = document.getElementById('headerStatus');
+      
+      if (!config || !config.examDate || !config.startTime) {
+        // Allow start in dev/demo mode even without config
+        if(startBtn)  { startBtn.style.display = 'flex'; startBtn.textContent = '🚀 Start Exam (Demo)'; }
+        if(headerBtn) { headerBtn.style.display = 'flex'; headerBtn.textContent = '🚀 Start Exam (Demo)'; }
+        if(headStat)  headStat.innerHTML = '<span style="color:var(--success);">Approved — Exam Ready</span>';
+        return;
+      }
+      
+      const start = new Date(`${config.examDate}T${config.startTime}`);
+      const end   = new Date(start.getTime() + (config.durationMinutes * 60000));
+      const now   = new Date();
+      
+      if (now < start) {
+        if(headStat) headStat.innerHTML = `<span style="color:var(--warning);">Exam starts at ${start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
+        if(waitMsg)  { waitMsg.style.display = 'block'; waitMsg.innerHTML = 'Please wait for the exam time to start.'; }
+        if(startBtn)  startBtn.style.display = 'none';
+        if(headerBtn) headerBtn.style.display = 'none';
+        if(schedBtn)  schedBtn.style.display = 'none';
+      } else if (now >= start && now <= end) {
+        if(headStat) headStat.innerHTML = '<span style="color:var(--success); font-weight:bold;">● LIVE NOW</span>';
+        if(waitMsg)  waitMsg.style.display = 'none';
+        if(startBtn)  { startBtn.style.display = 'flex';  startBtn.classList.add('pulse-active'); }
+        if(headerBtn) { headerBtn.style.display = 'flex'; headerBtn.classList.add('pulse-active'); }
+        if(schedBtn)  { schedBtn.style.display = 'flex';  schedBtn.classList.add('pulse-active'); }
+      } else {
+        if(headStat) headStat.innerHTML = '<span style="color:var(--danger);">Exam time is over</span>';
+        if(waitMsg)  { waitMsg.style.display = 'block'; waitMsg.innerHTML = 'The exam time has ended.'; }
+        if(startBtn)  startBtn.style.display = 'none';
+        if(headerBtn) headerBtn.style.display = 'none';
+        if(schedBtn)  schedBtn.style.display = 'none';
+      }
     }
 
     function startExam() {
       try {
-        if (student.hasAttempted) { 
-          alert('You have already attempted this exam. Only one attempt is allowed.'); 
-          return; 
+        if (student.hasAttempted) {
+          alert('You have already attempted this exam. Only one attempt is allowed.');
+          return;
         }
-        if (student.status !== 'approved') { 
-          alert('Your application must be approved before taking the exam.'); 
-          return; 
+        const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
+        const isApproved = appStatus === 'Approved' || student.status === 'approved';
+        if (!isApproved) {
+          alert('Your application must be approved by admin before taking the exam.');
+          return;
         }
-        
-        // CLEANUP: Reset violation counts for a completely fresh start
-        localStorage.removeItem('cet_violations');
-        localStorage.removeItem('cet_violation_count');
-        localStorage.removeItem('cet_tab_switches');
-        
-        // SMOOTH TRANSITION: Use replace() to destroy back-button history targeting setup logic
-        window.location.replace('exam.html');
+
+        let config = null;
+        try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+
+        // Check time constraints if config exists
+        if (config && config.examDate && config.startTime) {
+           const start = new Date(`${config.examDate}T${config.startTime}`);
+           const end   = new Date(start.getTime() + (config.durationMinutes * 60000));
+           const now   = new Date();
+
+           if (now < start) { alert('The exam has not started yet. Please wait until ' + start.toLocaleString()); return; }
+           if (now > end)   { alert('The exam time is over.'); return; }
+        }
+
+        // Show Rules Modal instead of jumping straight to exam
+        document.getElementById('examRulesModal').classList.add('active');
+        document.getElementById('acceptRulesCheck').checked = false;
+        document.getElementById('finalStartExamBtn').disabled = true;
+        document.getElementById('finalStartExamBtn').style.opacity = '0.5';
+        document.getElementById('finalStartExamBtn').style.cursor = 'not-allowed';
+
       } catch (e) {
         console.error('Failed to start exam:', e);
-        alert('System error occurred while trying to launch the exam: ' + e.message);
+        alert('System error: ' + e.message);
       }
+    }
+
+    function toggleStartBtn() {
+      const isChecked = document.getElementById('acceptRulesCheck').checked;
+      const btn = document.getElementById('finalStartExamBtn');
+      btn.disabled = !isChecked;
+      if(isChecked) {
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      } else {
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      }
+    }
+
+    function closeExamRules() {
+      document.getElementById('examRulesModal').classList.remove('active');
+    }
+
+    function proceedToExam() {
+      localStorage.removeItem('cet_violations');
+      localStorage.removeItem('cet_violation_count');
+      localStorage.removeItem('cet_tab_switches');
+      window.location.replace('exam.html');
     }
 
     function scrollToSection(id) {
@@ -549,7 +795,7 @@
       window.location.href = 'login.html';
     }
 
-    function printResult() { window.print(); }
+
 
     init();
     // Refresh eligibility every minute

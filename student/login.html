@@ -39,7 +39,7 @@
 
       <div class="form-footer">
         <p>Don't have an account? <a href="apply.html">Apply Now</a></p>
-        <p style="margin-top:8px;"><a href="../admin/login.html" style="color:var(--mid); font-size:13px;">Admin Login →</a></p>
+        <p style="margin-top:8px;"><a href="../admin/login.html" style="color:var(--mid); font-size:13px;">Admin Login &rarr;</a></p>
       </div>
     </div>
   </div>
@@ -70,18 +70,25 @@
       btn.textContent = '⏳ Logging in...';
 
       setTimeout(() => {
-        const student = DB.getStudentByEmail(email);
-        if (!student) {
-          showAlert('❌ No account found with this email. Please apply first.', 'danger');
-          btn.disabled = false; btn.textContent = 'Login to Portal'; return;
-        }
-        if (student.password !== pwd) {
-          showAlert('❌ Incorrect password. Use your registered mobile number.', 'danger');
-          btn.disabled = false; btn.textContent = 'Login to Portal'; return;
-        }
+        try {
+          const student = DB.getStudentByEmail(email);
+          if (!student) {
+            showAlert('❌ No account found with this email. Please apply first.', 'danger');
+            btn.disabled = false; btn.textContent = 'Login to Portal'; return;
+          }
+          if (student.password !== pwd) {
+            showAlert('❌ Incorrect password. Use your registered mobile number.', 'danger');
+            btn.disabled = false; btn.textContent = 'Login to Portal'; return;
+          }
 
-        DB.setCurrentStudent(student);
-        window.location.href = 'dashboard.html';
+          DB.setCurrentStudent(student);
+          window.location.href = 'dashboard.html';
+        } catch (error) {
+          console.error('Login error:', error);
+          showAlert('❌ ' + (error.message || 'An error occurred during login.'), 'danger');
+          btn.disabled = false; 
+          btn.textContent = 'Login to Portal';
+        }
       }, 800);
     });
   </script>

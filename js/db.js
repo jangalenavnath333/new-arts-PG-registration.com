@@ -18,7 +18,14 @@ const DB = {
     try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
   },
   set(key, val) {
-    localStorage.setItem(key, JSON.stringify(val));
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+        throw new Error('Your browser storage is full. Please delete some old applications or upload smaller images.');
+      }
+      throw e;
+    }
   },
 
   // ---- Students ----
@@ -26,13 +33,29 @@ const DB = {
   saveStudents(students) { this.set(this.KEYS.STUDENTS, students); },
   addStudent(student) {
     const students = this.getStudents();
-    student.id = 'STU' + Date.now();
-    student.studentId = null;
-    student.status = 'pending';
-    student.appliedAt = new Date().toISOString();
-    student.hasAttempted = false;
+    
+    // During testing, if email exists, overwrite to save space
+    const existingIdx = students.findIndex(s => s.email === student.email);
+    
+    student.id = existingIdx !== -1 ? students[existingIdx].id : ('STU' + Date.now());
+    // Preserve caller-supplied studentId (e.g. CET2026XXXX from demo payment)
+    if (!student.studentId) {
+      student.studentId = existingIdx !== -1 ? students[existingIdx].studentId : null;
+    }
+    // Preserve caller-supplied status (e.g. 'approved' from demo payment)
+    if (!student.status) {
+      student.status = existingIdx !== -1 ? students[existingIdx].status : 'pending';
+    }
+    student.appliedAt = existingIdx !== -1 ? students[existingIdx].appliedAt : new Date().toISOString();
+    student.hasAttempted = existingIdx !== -1 ? students[existingIdx].hasAttempted : false;
     student.password = student.mobile; // default password = mobile
-    students.push(student);
+    
+    if (existingIdx !== -1) {
+      students[existingIdx] = student;
+    } else {
+      students.push(student);
+    }
+    
     this.saveStudents(students);
     return student;
   },
@@ -118,7 +141,11 @@ const DB = {
 
   // ---- Session ----
   getCurrentStudent() { return this.get(this.KEYS.CURRENT_STUDENT); },
-  setCurrentStudent(student) { this.set(this.KEYS.CURRENT_STUDENT, student); },
+  setCurrentStudent(student) { 
+    // Store only minimal data to prevent QuotaExceededError from duplicating large base64 strings
+    const minimalStudent = student ? { id: student.id, email: student.email, fullName: student.fullName } : null;
+    this.set(this.KEYS.CURRENT_STUDENT, minimalStudent); 
+  },
   clearCurrentStudent() { localStorage.removeItem(this.KEYS.CURRENT_STUDENT); },
 
   isAdminLoggedIn() { return this.get(this.KEYS.ADMIN_SESSION) === true; },
@@ -133,7 +160,7 @@ function getDefaultQuestions() {
     { id: 'Q3', subject: 'Computer Science', text: 'Which data structure uses LIFO (Last In, First Out) order?', options: ['Queue','Stack','Array','Linked List'], correct: 1 },
     { id: 'Q4', subject: 'English', text: 'Choose the correct spelling:', options: ['Accomodate','Accommodate','Acommodate','Accommodat'], correct: 1 },
     { id: 'Q5', subject: 'Logical Reasoning', text: 'If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?', options: ['5','10','20','100'], correct: 0 },
-    { id: 'Q6', subject: 'Mathematics', text: 'What is the value of √144?', options: ['11','12','13','14'], correct: 1 },
+    { id: 'Q6', subject: 'Mathematics', text: 'What is the value of âˆš144?', options: ['11','12','13','14'], correct: 1 },
     { id: 'Q7', subject: 'Computer Science', text: 'What does HTML stand for?', options: ['HyperText Markup Language','HighText Markup Language','HyperText Machine Language','HyperTool Markup Language'], correct: 0 },
     { id: 'Q8', subject: 'General Knowledge', text: 'Which planet is known as the Red Planet?', options: ['Venus','Jupiter','Mars','Saturn'], correct: 2 },
     { id: 'Q9', subject: 'Mathematics', text: 'What is the next number in the sequence: 2, 6, 12, 20, 30, __?', options: ['40','42','44','46'], correct: 1 },
@@ -149,4 +176,5 @@ function getDefaultQuestions() {
 // ---- Export ----
 window.DB = DB;
 window.getDefaultQuestions = getDefaultQuestions;
+export { getDefaultQuestions };
 export default DB;

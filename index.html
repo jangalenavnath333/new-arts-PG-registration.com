@@ -18,7 +18,7 @@
   <!-- Navigation -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
-      <div class="nav-brand">
+      <a href="index.html" class="nav-brand" style="text-decoration:none">
         <div class="nav-logo">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
             <rect width="32" height="32" rx="8" fill="url(#logoGrad)"/>
@@ -36,7 +36,7 @@
           <span class="brand-name">CET Portal</span>
           <span class="brand-sub">Online Exam System</span>
         </div>
-      </div>
+      </a>
       <div class="nav-links">
         <a href="student/login.html" class="nav-btn btn-outline">Student Login</a>
         <a href="admin/login.html" class="nav-btn btn-primary">Admin Panel</a>
@@ -44,28 +44,61 @@
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="hero-badge" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3);">
-        <span class="badge-dot"></span>
-        Admission Academic Year 2026-27
-      </div>
-
-      <div style="margin-bottom: 24px; margin-top: 16px;">
-        <p style="font-size: 14px; color: var(--primary-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Ahmednagar Jilha Maratha Vidya Prasarak Samaj</p>
-        <h2 style="font-size: 28px; color: var(--white); font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 6px; line-height: 1.3;">New Arts, Commerce and Science College, Ahmednagar</h2>
-        <div style="margin-top: 12px;">
-          <span style="font-size: 18px; font-weight: 700; color: #ffffff; background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 8px 24px; border-radius: 50px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); display: inline-block; border: 1px solid rgba(255,255,255,0.2);">Department of Computer Science</span>
+  <!-- Responsive HTML Branding Card -->
+  <section class="branding-card-container" style="padding-top: 110px; max-width: 1280px; margin: 0 auto; position: relative; z-index: 2; padding-left: 32px; padding-right: 32px;">
+    
+    <!-- Gradient Border Wrapper -->
+    <div style="background: linear-gradient(135deg, rgba(99,102,241,0.6), rgba(15,23,42,0) 40%, rgba(15,23,42,0) 60%, rgba(139,92,246,0.5)); padding: 1px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(99,102,241,0.15);">
+      
+      <!-- Inner Glass Card -->
+      <div class="branding-glass-card" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 23px; padding: 36px 48px; display: flex; align-items: center; justify-content: space-between; gap: 32px;">
+        
+        <!-- College Logo -->
+        <div class="branding-logo" style="width: 120px; height: 120px; background: #fff; border-radius: 50%; padding: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(99,102,241,0.1);">
+          <img src="images/maharaj.jpeg" alt="College Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
         </div>
+
+        <!-- Center Text -->
+        <div class="branding-text" style="text-align: center; flex: 1;">
+          <h3 style="font-size: clamp(10px, 1.5vw, 13px); color: var(--light); font-weight: 700; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">Ahmednagar Jilha Maratha Vidya Prasarak Samaj</h3>
+          <h2 style="font-size: clamp(16px, 2.5vw, 24px); color: #fff; font-weight: 600; margin-bottom: 10px; font-family: 'Space Grotesk', sans-serif;">New Arts, Commerce and Science College Ahmednagar</h2>
+          <h1 style="font-size: clamp(20px, 3.5vw, 34px); font-weight: 800; color: transparent; background: linear-gradient(135deg, #ffffff 30%, var(--primary-light)); -webkit-background-clip: text; background-clip: text; margin-bottom: 0; letter-spacing: 0.5px;">Department of Computer Science</h1>
+        </div>
+
+        <!-- Department Logo -->
+        <div class="branding-logo" style="width: 120px; height: 120px; background: #fff; border-radius: 50%; padding: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(139,92,246,0.1);">
+          <img src="images/department logo.jpeg" alt="Department Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
+        </div>
+
       </div>
+    </div>
+  </section>
 
-      <h1 class="hero-title" style="font-size: 46px; line-height: 1.15; margin-bottom: 20px;">
-        Online CET Entrance<br/>
-        <span class="gradient-text">Examination Portal</span>
-      </h1>
+  <style>
+    @media (max-width: 900px) {
+      .branding-glass-card {
+        flex-direction: column;
+        padding: 32px 20px !important;
+        text-align: center;
+        gap: 24px !important;
+      }
+      .branding-logo {
+        width: 90px !important;
+        height: 90px !important;
+      }
+      .branding-text h3 { margin-bottom: 8px; }
+      .branding-text h2 { margin-bottom: 8px; }
+    }
+  </style>
 
-      <p class="hero-desc">
+  <section class="hero" style="padding-top: 40px; min-height: auto;">
+    <div class="hero-content">
+
+      <h2 style="font-size: 34px; line-height: 1.2; font-weight: 800; margin-bottom: 16px; font-family: 'Space Grotesk', sans-serif; text-align: left;">
+        Online CET Entrance <span class="gradient-text">Examination Portal</span>
+      </h2>
+
+      <p class="hero-desc" style="max-width: 580px; margin-bottom: 32px; font-size: 16px; opacity: 0.9;">
         A fully secure, AI-monitored examination platform with real-time proctoring, automated scheduling, and instant results.
       </p>
       <div class="hero-actions">
@@ -79,7 +112,7 @@
           Apply Now
         </a>
         <a href="student/login.html" class="btn-hero-secondary">
-          Student Login →
+          Student Login &rarr;
         </a>
       </div>
       <div class="hero-stats">
@@ -237,7 +270,7 @@
             <p>Fill application form, upload documents and photo</p>
           </div>
         </div>
-        <div class="step-arrow">→</div>
+        <div class="step-arrow">&rarr;</div>
         <div class="step">
           <div class="step-num">02</div>
           <div class="step-content">
@@ -245,7 +278,7 @@
             <p>Admin reviews and approves your application</p>
           </div>
         </div>
-        <div class="step-arrow">→</div>
+        <div class="step-arrow">&rarr;</div>
         <div class="step">
           <div class="step-num">03</div>
           <div class="step-content">
@@ -253,7 +286,7 @@
             <p>Secure proctored exam at the scheduled time</p>
           </div>
         </div>
-        <div class="step-arrow">→</div>
+        <div class="step-arrow">&rarr;</div>
         <div class="step">
           <div class="step-num">04</div>
           <div class="step-content">

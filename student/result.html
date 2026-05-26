@@ -30,7 +30,7 @@
         <div class="empty-state">
           <h3>No Result Found</h3>
           <p>You haven't taken the exam yet.</p>
-          <a href="dashboard.html" class="btn btn-solid" style="margin-top:20px; display:inline-flex;">← Back to Dashboard</a>
+          <a href="dashboard.html" class="btn btn-solid" style="margin-top:20px; display:inline-flex;">&larr; Back to Dashboard</a>
         </div>`;
     } else {
       const pct = Math.round((result.score / result.total) * 100);
@@ -96,8 +96,7 @@
 
         <!-- Actions -->
         <div style="display:flex; gap:12px; justify-content:center;">
-          <button onclick="window.print()" class="btn btn-outline-sm btn-lg">🖨 Print Result</button>
-          <a href="dashboard.html" class="btn btn-solid btn-lg" style="text-decoration:none;">← Back to Dashboard</a>
+          <a href="dashboard.html" class="btn btn-solid btn-lg" style="text-decoration:none;">&larr; Back to Dashboard</a>
         </div>
       `;
     }
@@ -109,9 +108,7 @@
       70% { transform: scale(0.9); }
       100% { transform: scale(1); opacity: 1; }
     }
-    @media print {
-      .bg-particles, button, a.btn-solid { display: none !important; }
-    }
+
   </style>
 </body>
 </html>

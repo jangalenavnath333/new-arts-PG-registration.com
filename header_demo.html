@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Header Design</title>
+    <style>
+        /* Modern Design System Tokens */
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --dark: #0f172a;
+            --white: #ffffff;
+            --gray-light: #f8fafc;
+            --shadow: 0 4px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--gray-light);
+        }
+
+        /* 1. Full-Width Responsive Banner Section */
+        .banner-container {
+            width: 100%;
+            background-color: #fff;
+            line-height: 0; /* Removes potential whitespace below image */
+            box-shadow: var(--shadow);
+        }
+
+        .banner-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            /* Ensures the aspect ratio is maintained while scaling */
+            aspect-ratio: auto; 
+        }
+
+        /* 2. Navigation Bar Section */
+        .main-nav {
+            background-color: var(--dark);
+            width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-item a {
+            display: block;
+            padding: 18px 15px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-item a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background-color: var(--primary);
+            transition: var(--transition);
+            transform: translateX(-50%);
+        }
+
+        .nav-item a:hover {
+            color: var(--white);
+        }
+
+        .nav-item a:hover::after {
+            width: 100%;
+        }
+
+        /* Mobile Responsive Adjustments */
+        @media (max-width: 768px) {
+            .nav-inner {
+                padding: 10px;
+            }
+            
+            .nav-list {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px;
+            }
+
+            .nav-item a {
+                padding: 12px 10px;
+                font-size: 12px;
+            }
+
+            /* The banner handles scaling automatically due to width: 100% and height: auto */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Banner -->
+    <header class="banner-container">
+        <!-- 'images/logo.png' used as the source to match your project's filename -->
+        <img src="images/logo.png" alt="College Banner" class="banner-image">
+    </header>
+
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-inner">
+            <ul class="nav-list">
+                <li class="nav-item"><a href="index.html">Home</a></li>
+                <li class="nav-item"><a href="#about">About CET</a></li>
+                <li class="nav-item"><a href="student/apply.html">Apply Now</a></li>
+                <li class="nav-item"><a href="#contact">Contact Us</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Page Content Placeholder -->
+    <main style="padding: 50px 20px; text-align: center; color: #64748b;">
+        <p>Your main portal content will appear here.</p>
+    </main>
+
+</body>
+</html>

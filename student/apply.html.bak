@@ -108,7 +108,8 @@
         <p>Fill all fields carefully. All information must be accurate.</p>
       </div>
 
-      <!-- Progress Steps -->      <div class="steps">
+      <!-- Progress Steps -->
+      <div class="steps">
         <div class="step active" id="stepTab1" onclick="window.showStep(1)">
           1. Personal Info
         </div>
@@ -116,7 +117,10 @@
           2. Academic Details
         </div>
         <div class="step" id="stepTab3" onclick="if(validateStep(1) && validateStep(2)) window.showStep(3)">
-          3. Documents & Payment
+          3. Documents
+        </div>
+        <div class="step" id="stepTab4" onclick="if(validateStep(1) && validateStep(2) && validateStep(3)) window.showStep(4)">
+          4. Payment
         </div>
       </div>
       <div id="alertBox"></div>
@@ -141,33 +145,9 @@
               <label class="form-label" for="dob">Date of Birth <span>*</span></label>
               <input type="date" id="dob" class="form-input" required />
             </div>
-            <div class="form-group">
-              <label class="form-label" for="addressLine1">Address Line 1 <span>*</span></label>
-              <input type="text" id="addressLine1" class="form-input" placeholder="House No, Street Name" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="addressLine2">Address Line 2</label>
-              <input type="text" id="addressLine2" class="form-input" placeholder="Landmark, Area (optional)" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="village">Village / City <span>*</span></label>
-              <input type="text" id="village" class="form-input" placeholder="Enter village or city" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="taluka">Taluka <span>*</span></label>
-              <input type="text" id="taluka" class="form-input" placeholder="Enter taluka" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="district">District <span>*</span></label>
-              <input type="text" id="district" class="form-input" placeholder="Enter district" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="state">State <span>*</span></label>
-              <input type="text" id="state" class="form-input" placeholder="Enter state" value="Maharashtra" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="pinCode">PIN Code <span>*</span></label>
-              <input type="text" id="pinCode" class="form-input" placeholder="6-digit PIN code" maxlength="6" required />
+            <div class="form-group full-width">
+              <label class="form-label" for="address">Address</label>
+              <textarea id="address" class="form-textarea" placeholder="Full address with city and state" style="min-height:80px;"></textarea>
             </div>
           </div>
           <div class="form-actions" style="justify-content: flex-end;">
@@ -208,7 +188,12 @@
               <label class="form-label" for="tenthPercent">10th Percentage <span>*</span></label>
               <input type="number" id="tenthPercent" class="form-input" placeholder="e.g. 78.2" min="0" max="100" step="0.1" required />
             </div>
-            
+            <div class="form-group">
+                <label class="form-label">Upload 10th Marksheet <span>*</span></label>
+                <input type="file" id="tenthFile" class="form-input" accept="image/*,.pdf" onchange="handleFileUpload('tenthFile','tenthPreview','tenthName')" required />
+                <p id="tenthName" style="font-size:11px; color:var(--success); margin-top:4px;"></p>
+                <div id="tenthPreview" class="upload-preview" style="display:none; height:40px; margin-top:5px;"></div>
+            </div>
             <div class="form-group">
               <label class="form-label" for="casteCategory">Caste Category <span>*</span></label>
               <select id="casteCategory" class="form-select" onchange="handleCasteChange()" required>
@@ -248,34 +233,9 @@
             <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(2)">Continue &rarr;</button>
           </div>
         </div>
-        <!-- Step 3: Documents & Payment -->
-        <div class="form-step" id="step3">
-          <!-- Marksheet Uploads -->
-          <div class="form-grid" style="margin-bottom:20px;">
-            <div class="form-group">
-              <label class="form-label">Upload 10th Marksheet <span>*</span></label>
-              <div class="upload-area" id="tenthUpload">
-                <input type="file" id="tenthFile" accept="image/*,.pdf" onchange="handleFileUpload('tenthFile','tenthPreview','tenthName')" />
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Upload 10th Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
-                <div id="tenthPreview" class="upload-preview"></div>
-              </div>
-              <p id="tenthName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">Upload 12th Marksheet <span>*</span></label>
-              <div class="upload-area" id="twelfthUpload">
-                <input type="file" id="twelfthFile" accept="image/*,.pdf" onchange="handleFileUpload('twelfthFile','twelfthPreview','twelfthName')" />
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Upload 12th Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
-                <div id="twelfthPreview" class="upload-preview"></div>
-              </div>
-              <p id="twelfthName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
-            </div>
-          </div>
 
-          <!-- Passport Photo -->
+        <!-- Step 3: Documents -->
+        <div class="form-step" id="step3">
           <div class="form-group mb-6">
             <label class="form-label">Passport Photo <span>*</span></label>
             <div class="upload-area" id="photoUpload">
@@ -287,21 +247,6 @@
             <p id="photoName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
           </div>
 
-          <!-- Signature Upload -->
-          <div class="form-grid" style="margin-bottom:20px;">
-            <div class="form-group">
-              <label class="form-label">Signature Upload <span>*</span></label>
-              <div class="upload-area" id="signatureUpload">
-                <input type="file" id="signatureFile" accept="image/*" onchange="handleFileUpload('signatureFile','signaturePreview','signatureName')" />
-                <div class="upload-icon">✍️</div>
-                <div class="upload-text">Upload Signature<br><strong>JPG, PNG</strong> • Max 2MB</div>
-                <div id="signaturePreview" class="upload-preview"></div>
-              </div>
-              <p id="signatureName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
-            </div>
-          </div>
-
-          <!-- Dynamic caste-based documents -->
           <div id="dynamicDocContainer" class="form-grid">
              <!-- Dynamically injected document fields will appear here -->
           </div>
@@ -323,8 +268,17 @@
             </label>
           </div>
 
-          <!-- Payment Section -->
-          <div style="background:rgba(99,102,241,0.05); border:1px solid var(--card-border); border-radius:16px; padding:28px; margin:20px 0;">
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(2)">&larr; Back</button>
+            <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(3)">Continue &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Payment -->
+        <!-- DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook. -->
+        <div class="form-step" id="step4">
+          <div style="background:rgba(99,102,241,0.05); border:1px solid var(--card-border); border-radius:16px; padding:28px; margin-bottom:20px;">
+            
             <!-- Payment Header -->
             <div style="text-align:center; margin-bottom:24px;">
               <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:24px;padding:6px 16px;margin-bottom:12px;">
@@ -335,6 +289,7 @@
             </div>
 
             <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; justify-content:center;">
+              
               <!-- QR + UPI Info -->
               <div style="text-align:center; min-width:200px;">
                 <div style="background:#fff; padding:12px; border-radius:12px; display:inline-block; margin-bottom:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
@@ -386,6 +341,7 @@
 
                 <!-- Payment Status Banner (hidden initially) -->
                 <div id="paymentStatusBanner" style="display:none; padding:16px; border-radius:12px; text-align:center; margin-bottom:16px;"></div>
+
               </div>
             </div>
 
@@ -395,7 +351,7 @@
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(2)">&larr; Back</button>
+            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(3)">&larr; Back</button>
             <button type="submit" class="btn btn-solid btn-lg" id="submitBtn">
               💳 Submit Payment & Apply
             </button>
@@ -515,19 +471,19 @@
     let fileDataMap = {}; 
 
     const casteDocumentMap = {
-      "Open / General": ["Domicile Certificate", "ID Proof"],
-      "OBC": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "SBC": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "EWS": ["EWS Certificate", "Domicile Certificate", "ID Proof"],
-      "SEBC": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "VJ": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "NT-A": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "NT-B": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "NT-C": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "NT-D": ["Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
-      "SC": ["Caste Certificate", "Domicile Certificate", "ID Proof"],
-      "ST": ["Caste Certificate", "Domicile Certificate", "ID Proof"],
-      "Other": ["Domicile Certificate", "ID Proof"]
+      "Open / General": ["12th Marksheet", "Domicile Certificate", "ID Proof"],
+      "OBC": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "SBC": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "EWS": ["12th Marksheet", "EWS Certificate", "Domicile Certificate", "ID Proof"],
+      "SEBC": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "VJ": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "NT-A": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "NT-B": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "NT-C": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "NT-D": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "Non-Creamy Layer Certificate", "ID Proof"],
+      "SC": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "ID Proof"],
+      "ST": ["12th Marksheet", "Caste Certificate", "Domicile Certificate", "ID Proof"],
+      "Other": ["12th Marksheet", "Domicile Certificate", "ID Proof"]
     };
 
     window.handleCasteChange = function() {
@@ -644,14 +600,8 @@
         const email = document.getElementById('email').value.trim();
         const mobile = document.getElementById('mobileNumber').value.trim();
         const dob = document.getElementById('dob').value.trim();
-        const addr1 = document.getElementById('addressLine1').value.trim();
-        const villageCity = document.getElementById('village').value.trim();
-        const talukaVal = document.getElementById('taluka').value.trim();
-        const districtVal = document.getElementById('district').value.trim();
-        const stateVal = document.getElementById('state').value.trim();
-        const pinVal = document.getElementById('pinCode').value.trim();
 
-        if (!name || !email || !mobile || !dob || !addr1 || !villageCity || !talukaVal || !districtVal || !stateVal || !pinVal) { 
+        if (!name || !email || !mobile || !dob) { 
           showAlert('⚠ Please fill all required fields.', 'warning'); 
           return false; 
         }
@@ -662,10 +612,6 @@
         if (!/^\d{10}$/.test(mobile)) { 
           showAlert('⚠ Mobile number must be 10 digits.', 'warning'); 
           return false; 
-        }
-        if (!/^\d{6}$/.test(pinVal)) {
-          showAlert('⚠ PIN Code must be 6 digits.', 'warning');
-          return false;
         }
       }
       if (step === 2) {
@@ -679,8 +625,8 @@
         const mathsEl = document.getElementById('mathsMarks');
         const maths = mathsEl ? mathsEl.value : '';
 
-        if (!tenthPct) { 
-          showAlert('⚠ Please provide 10th percentage.', 'warning'); 
+        if (!tenthPct || !fileDataMap['tenthFile']) { 
+          showAlert('⚠ Please provide 10th details and upload marksheet.', 'warning'); 
           return false; 
         }
         if (stream === 'Arts / Humanities') {
@@ -701,28 +647,16 @@
         if (parseFloat(maths) < 0 || parseFloat(maths) > 100) { showAlert('⚠ Please enter valid Maths marks.', 'warning'); return false; }
       }
       if (step === 3) {
-        if (!fileDataMap['tenthFile']) { 
-          showAlert('⚠ Please upload your 10th Marksheet.', 'warning'); 
-          return false; 
-        }
-        if (!fileDataMap['twelfthFile']) { 
-          showAlert('⚠ Please upload your 12th Marksheet.', 'warning'); 
-          return false; 
-        }
-        if (!fileDataMap['signatureFile']) { 
-          showAlert('⚠ Please upload your signature.', 'warning'); 
-          return false; 
-        }
-        if (!fileDataMap['photoFile']) { 
-          showAlert('⚠ Please upload your passport photo.', 'warning'); 
-          return false; 
-        }
         if (!document.getElementById('termsCheck').checked) {
           showAlert('⚠ Please agree to terms and conditions.', 'warning');
           return false;
         }
 
-
+        if (!fileDataMap['photoFile']) { 
+          showAlert('⚠ Please upload your passport photo.', 'warning'); 
+          return false; 
+        }
+        
         const caste = document.getElementById('casteCategory').value;
         const requiredDocs = casteDocumentMap[caste] || [];
         
@@ -758,15 +692,15 @@
       // Payment validation
       const txnId = document.getElementById('transactionId').value.trim();
       if (!txnId || txnId.length < 8) {
-        fail(3, '⚠ Please enter a valid UTR / Transaction ID (minimum 8 characters).');
+        fail(4, '⚠ Please enter a valid UTR / Transaction ID (minimum 8 characters).');
         return;
       }
       if (!fileDataMap['paymentScreenshot']) {
-        fail(3, '⚠ Please upload your payment screenshot.');
+        fail(4, '⚠ Please upload your payment screenshot.');
         return;
       }
       if (!document.getElementById('finalTermsCheck').checked) {
-        fail(3, '⚠ Please check the confirmation box before submitting.');
+        fail(4, '⚠ Please check the confirmation box before submitting.');
         return;
       }
 
@@ -810,10 +744,6 @@
         const uploadedDocs = [];
         if (fileDataMap['photoFile'])  uploadedDocs.push('Passport Photo');
         if (fileDataMap['tenthFile'])  uploadedDocs.push('10th Marksheet');
-        if (fileDataMap['twelfthFile'])  uploadedDocs.push('12th Marksheet');
-        if (fileDataMap['signatureFile'])  uploadedDocs.push('Signature');
-        if (fileDataMap['twelfthFile'])  uploadedDocs.push('12th Marksheet');
-        if (fileDataMap['signatureFile'])  uploadedDocs.push('Signature');
         const requiredDocs = casteDocumentMap[caste] || [];
         for (const docName of requiredDocs) {
           const docId = docName.replace(/\s+/g, '') + 'File';
@@ -829,15 +759,7 @@
           email:     document.getElementById('email').value.trim().toLowerCase(),
           mobile:    document.getElementById('mobileNumber').value.trim(),
           dob:       document.getElementById('dob').value.trim(),
-          address:   [
-            document.getElementById('addressLine1').value.trim(),
-            document.getElementById('addressLine2').value.trim(),
-            document.getElementById('village').value.trim(),
-            'Taluka: ' + document.getElementById('taluka').value.trim(),
-            'District: ' + document.getElementById('district').value.trim(),
-            document.getElementById('state').value.trim(),
-            'PIN: ' + document.getElementById('pinCode').value.trim()
-          ].filter(Boolean).join(', '),
+          address:   document.getElementById('address').value.trim(),
           courseApplied: course,
           stream:        stream,
           category:      caste,
@@ -869,13 +791,13 @@
           password:    document.getElementById('mobileNumber').value.trim(),
         };
 
-        // Strip heavy files to save localStorage space across ALL stores except the main DB
+        // Strip heavy files to save localStorage space across ALL stores
         let lightApp = { ...applicationData };
         delete lightApp.uploadedFiles;
         delete lightApp.paymentScreenshotData;
 
-        // 1. Save to DB (cet_students) for student login (needs full data for admin preview)
-        const student = DB.addStudent(applicationData);
+        // 1. Save to DB (cet_students) for student login
+        const student = DB.addStudent(lightApp);
         DB.updateStudent(student.id, {
           status:            'pending',
           studentId:         generatedStudentId,
@@ -1034,9 +956,9 @@
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const stepParam = parseInt(params.get('step'));
-      if (stepParam && stepParam >= 1 && stepParam <= 3) {
+      if (stepParam && stepParam >= 1 && stepParam <= 4) {
         window.showStep(stepParam);
-        if (stepParam === 3) startPaymentCountdown();
+        if (stepParam === 4) startPaymentCountdown();
       }
     });
 
@@ -1044,7 +966,7 @@
     const _origShowStep = window.showStep;
     window.showStep = function(step) {
       _origShowStep(step);
-      if (step === 3) startPaymentCountdown();
+      if (step === 4) startPaymentCountdown();
     };
   </script>
 </body>

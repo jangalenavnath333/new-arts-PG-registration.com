@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CET Application Receipt</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: rgba(255, 255, 255, 0.1);
+      --primary: #6366f1;
+      --white: #ffffff;
+      --mid: #94a3b8;
+      --success: #10b981;
+    }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .receipt-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      overflow: hidden;
+      margin: 0 auto;
+    }
+    .receipt-header {
+      background: linear-gradient(135deg, #312e81, #4c1d95);
+      padding: 30px;
+      text-align: center;
+    }
+    .receipt-header h2 { margin: 0 0 5px 0; font-size: 22px; }
+    .receipt-header p { margin: 0 0 15px 0; color: #c4b5fd; font-size: 14px; }
+    .badge {
+      background: rgba(255,255,255,0.15);
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .receipt-body {
+      padding: 30px;
+    }
+    .receipt-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #818cf8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 8px;
+    }
+    .grid-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .info-item {
+      background: rgba(255,255,255,0.05);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .info-label {
+      font-size: 12px;
+      color: var(--mid);
+      margin-bottom: 4px;
+    }
+    .info-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--white);
+      word-wrap: break-word;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      border: none;
+      font-size: 14px;
+    }
+    .btn-solid { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    
+    .missing-data-msg {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    /* ── Print / PDF Styles ───────────────────────────────────────── */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .receipt-box {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        max-width: 100%;
+        width: 100% !important;
+        border-radius: 0;
+      }
+      .receipt-header {
+        background: transparent !important;
+        border-bottom: 2px solid #ccc;
+        color: black !important;
+      }
+      .receipt-header h2, .receipt-header p, .badge {
+        color: black !important;
+      }
+      .info-item {
+        background: transparent !important;
+        border: 1px solid #ddd !important;
+      }
+      .info-label { color: #555 !important; }
+      .info-value, .receipt-section-title { color: black !important; }
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VISIBLE BY DEFAULT (Fallback if JS fails) -->
+  <div class="receipt-box" id="missingDataContent">
+    <div class="missing-data-msg">
+      <h3 style="color: #fca5a5;">No application data found. Please submit application first.</h3>
+      <a href="apply.html" class="btn btn-solid" style="margin-top:20px;">Back to Application</a>
+    </div>
+  </div>
+
+  <!-- HIDDEN BY DEFAULT (Shown via JS if data exists) -->
+  <div class="receipt-box" id="receiptContent" style="display: none;">
+    <div class="receipt-header">
+      <h2>New Arts, Commerce and Science College</h2>
+      <p>Department of Computer Science — CET Online Exam Portal</p>
+      <div class="badge">CET APPLICATION RECEIPT</div>
+    </div>
+
+    <div class="receipt-body">
+      <div style="text-align:center; margin-bottom:30px;">
+        <p style="font-size:12px;color:var(--mid);">Application Tracking ID</p>
+        <p id="r_id" style="font-size:24px;font-weight:700;color:var(--success);letter-spacing:2px; margin: 5px 0;">—</p>
+        <div style="margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap: wrap;">
+            <span id="r_app_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Application: Submitted</span>
+            <span id="r_pay_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Payment: Pending Verification</span>
+        </div>
+      </div>
+
+      <p class="receipt-section-title">Personal Information</p>
+      <div class="grid-info">
+        <div class="info-item"><div class="info-label">Full Name</div><div class="info-value" id="r_name">—</div></div>
+        <div class="info-item"><div class="info-label">Email</div><div class="info-value" id="r_email">—</div></div>
+        <div class="info-item"><div class="info-label">Mobile Number</div><div class="info-value" id="r_mobile">—</div></div>
+        <div class="info-item"><div class="info-label">Date of Birth</div><div class="info-value" id="r_dob">—</div></div>
+        <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">Address</div><div class="info-value" id="r_address">—</div></div>
+      </div>
+
+      <p class="receipt-section-title">Academic Details</p>
+      <div class="grid-info">
+        <div class="info-item"><div class="info-label">Course Applied</div><div class="info-value" id="r_course">—</div></div>
+        <div class="info-item"><div class="info-label">12th Stream</div><div class="info-value" id="r_stream">—</div></div>
+        <div class="info-item"><div class="info-label">10th Percentage</div><div class="info-value" id="r_10th">—</div></div>
+        <div class="info-item"><div class="info-label">12th Percentage</div><div class="info-value" id="r_12th">—</div></div>
+        <div class="info-item"><div class="info-label">Board / University</div><div class="info-value" id="r_board">—</div></div>
+        <div class="info-item"><div class="info-label">Passing Year</div><div class="info-value" id="r_year">—</div></div>
+        <div class="info-item"><div class="info-label">12th Maths Marks</div><div class="info-value" id="r_maths">—</div></div>
+        <div class="info-item"><div class="info-label">Caste Category</div><div class="info-value" id="r_caste">—</div></div>
+      </div>
+
+      <p class="receipt-section-title">Documents Details</p>
+      <div class="grid-info">
+        <div class="info-item" style="grid-column: 1 / -1;">
+          <div class="info-label">Uploaded Documents</div>
+          <div class="info-value" id="r_docs">—</div>
+        </div>
+      </div>
+
+      <p class="receipt-section-title">Submission & Payment Details</p>
+      <div class="grid-info">
+        <div class="info-item"><div class="info-label">Transaction ID / UTR</div><div class="info-value" id="r_txn">—</div></div>
+        <div class="info-item"><div class="info-label">Payment Proof File</div><div class="info-value" id="r_proof">—</div></div>
+        <div class="info-item"><div class="info-label">Amount Paid</div><div class="info-value">₹1.00</div></div>
+        <div class="info-item"><div class="info-label">Date Submitted</div><div class="info-value" id="r_date">—</div></div>
+      </div>
+
+      <div class="no-print" style="background:rgba(255,255,255,0.02); padding:16px; border-radius:8px; border:1px dashed rgba(255,255,255,0.1); text-align:center; margin-top:20px;">
+        <p style="font-size:12px; color:var(--mid); margin:0;">Your application is under review. Your mobile number will serve as your login password.</p>
+      </div>
+    </div>
+
+    <div class="action-buttons no-print">
+      <button onclick="window.print()" class="btn btn-solid" style="background: #6366f1;">🖨️ Print Application</button>
+      <button onclick="window.print()" class="btn btn-solid" style="background: #0ea5e9;">📄 Save as PDF</button>
+      <a href="apply.html" class="btn btn-outline">Back to Application</a>
+    </div>
+  </div>
+
+  <script>
+    // This script executes immediately and safely
+    (function() {
+      try {
+        const dataStr = localStorage.getItem('cetApplication');
+        
+        // If data is found, hide the missing data message and show the receipt
+        if (dataStr) {
+          const data = JSON.parse(dataStr);
+          
+          document.getElementById('missingDataContent').style.display = 'none';
+          document.getElementById('receiptContent').style.display = 'block';
+          
+          document.getElementById('r_id').textContent = data.applicationId || data.studentId || 'Pending';
+          
+          // Personal
+          document.getElementById('r_name').textContent = data.fullName || '—';
+          document.getElementById('r_email').textContent = data.email || '—';
+          document.getElementById('r_mobile').textContent = data.mobile || '—';
+          document.getElementById('r_dob').textContent = data.dob || '—';
+          document.getElementById('r_address').textContent = data.address || '—';
+          
+          // Academic
+          if (data.academicDetails) {
+              document.getElementById('r_course').textContent = data.academicDetails.courseApplied || '—';
+              document.getElementById('r_stream').textContent = data.academicDetails.stream || '—';
+              document.getElementById('r_10th').textContent = data.academicDetails.tenthPercent ? data.academicDetails.tenthPercent + '%' : '—';
+              document.getElementById('r_12th').textContent = data.academicDetails.twelfthPercent ? data.academicDetails.twelfthPercent + '%' : '—';
+              document.getElementById('r_board').textContent = data.academicDetails.board || '—';
+              document.getElementById('r_year').textContent = data.academicDetails.yearOfPassing || '—';
+              document.getElementById('r_maths').textContent = data.academicDetails.mathsMarks || '—';
+              document.getElementById('r_caste').textContent = data.academicDetails.casteCategory || '—';
+          }
+          
+          // Documents
+          if (data.uploadedDocuments && data.uploadedDocuments.length > 0) {
+              document.getElementById('r_docs').textContent = data.uploadedDocuments.join(', ');
+          } else {
+              document.getElementById('r_docs').textContent = '—';
+          }
+          
+          // Payment & Status
+          document.getElementById('r_txn').textContent = data.transactionId || '—';
+          document.getElementById('r_proof').textContent = data.paymentProof || '—';
+          
+          if (data.applicationStatus) {
+              document.getElementById('r_app_status').textContent = 'Application: ' + data.applicationStatus;
+          }
+          if (data.paymentStatus) {
+              document.getElementById('r_pay_status').textContent = 'Payment: ' + data.paymentStatus;
+          }
+          
+          if(data.submittedAt) {
+              const dt = new Date(data.submittedAt);
+              document.getElementById('r_date').textContent = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString();
+          }
+        }
+      } catch (err) {
+        console.error("Error reading receipt data:", err);
+      }
+    })();
+  </script>
+</body>
+</html>
