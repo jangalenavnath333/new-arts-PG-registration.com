@@ -33,6 +33,37 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Admin Action Button Loading State */
+    button[disabled] { opacity: 0.6; cursor: not-allowed !important; pointer-events: none; }
+    .admin-btn-processing { position: relative; }
+    .admin-btn-processing::after {
+      content: '';
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 6px;
+      vertical-align: middle;
+      animation: admin-spin 0.6s linear infinite;
+    }
+    @keyframes admin-spin { to { transform: rotate(360deg); } }
+
+    /* Toast Notification Styles */
+    .admin-toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+      font-weight: 700; font-size: 13px; padding: 14px 22px;
+      border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      transition: opacity 0.4s, transform 0.4s;
+      transform: translateY(0);
+      display: flex; align-items: center; gap: 8px;
+      max-width: 400px;
+    }
+    .admin-toast.success { background: #065f46; color: #d1fae5; }
+    .admin-toast.error { background: #991b1b; color: #fee2e2; }
+    .admin-toast.info { background: #1e293b; color: #fff; }
+    .admin-toast.hide { opacity: 0; transform: translateY(20px); }
   </style>
 </head>
 <body class="flex h-screen overflow-hidden text-slate-800 antialiased">
@@ -81,6 +112,10 @@
         <button onclick="showTab('results')" id="nav-results" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white nav-item text-slate-400">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
           Live Results
+        </button>
+        <button onclick="showTab('monitoring')" id="nav-monitoring" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white nav-item text-slate-400">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          Live Monitoring
         </button>
         <button onclick="showTab('payments')" id="nav-payments" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white nav-item text-slate-400">
           <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -348,8 +383,19 @@
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
-                  <input type="time" id="examTime" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
+                  <label class="block text-sm font-semibold text-slate-700 mb-1">Start Time (12-hour AM/PM) *</label>
+                  <div class="flex gap-2">
+                    <select id="examHour" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 text-center bg-white cursor-pointer hover:border-indigo-300 transition-colors">
+                      <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                    </select>
+                    <span class="text-xl font-bold text-slate-400 self-center mb-1">:</span>
+                    <select id="examMinute" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 text-center bg-white cursor-pointer hover:border-indigo-300 transition-colors">
+                      <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option><option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                    </select>
+                    <select id="examAmPm" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 text-center bg-white cursor-pointer hover:border-indigo-300 transition-colors font-bold text-slate-700">
+                      <option value="AM">AM</option><option value="PM">PM</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label class="block text-sm font-semibold text-slate-700 mb-1">Duration (Min) *</label>
@@ -365,6 +411,14 @@
             <p class="text-sm text-slate-500 mb-6">Preview of the active exam settings.</p>
             <div id="configPreview" class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
               <!-- Injected by JS -->
+            </div>
+            
+            <div class="mt-6 pt-6 border-t border-slate-100">
+               <h3 class="font-bold text-slate-800 mb-2">Notifications</h3>
+               <p class="text-xs text-slate-500 mb-4">Send an automated reminder email with exam rules to all approved and scheduled students.</p>
+               <button onclick="sendExamReminders()" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold py-2 px-4 rounded-lg transition-colors border border-indigo-200 flex items-center gap-2">
+                 <span>📧</span> Send Exam Reminders Now
+               </button>
             </div>
           </div>
         </div>
@@ -506,6 +560,61 @@
         </div>
       </div>
 
+      <!-- TAB: LIVE MONITORING -->
+      <div class="tab-content" id="tab-monitoring">
+        <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span> Live Exam Monitoring</h2>
+              <p class="text-sm text-slate-500">Monitor active exam sessions and security violations in real-time.</p>
+            </div>
+            <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
+          </div>
+
+          <div class="grid grid-cols-5 gap-4 mb-8">
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Total Online</p>
+              <p class="text-3xl font-black text-indigo-900" id="mon-online">0</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-blue-600 uppercase mb-1">In Progress</p>
+              <p class="text-3xl font-black text-blue-900" id="mon-progress">0</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-emerald-600 uppercase mb-1">Completed</p>
+              <p class="text-3xl font-black text-emerald-900" id="mon-completed">0</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-amber-600 uppercase mb-1">Warnings</p>
+              <p class="text-3xl font-black text-amber-900" id="mon-warnings">0</p>
+            </div>
+            <div class="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-red-600 uppercase mb-1">Locked</p>
+              <p class="text-3xl font-black text-red-900" id="mon-locked">0</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                <tr>
+                  <th class="p-4">Student</th>
+                  <th class="p-4">CET ID</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4">Time Remaining</th>
+                  <th class="p-4">Security Violations</th>
+                  <th class="p-4">Camera Status</th>
+                  <th class="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="monitoringTableBody" class="divide-y divide-slate-100">
+                <!-- Data populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- TAB: PAYMENT VERIFICATION -->
       <!-- DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook. -->
       <div class="tab-content" id="tab-payments">
@@ -570,19 +679,31 @@
           <div class="bg-indigo-600 text-white font-bold text-center py-2 rounded-lg mb-6">
             RESULT MODULE UPDATED SUCCESSFULLY
           </div>
+          </div>
           <div class="flex justify-between items-center mb-6">
             <div>
               <h2 class="text-xl font-bold text-slate-900">Live Exam Results</h2>
               <p class="text-sm text-slate-500">Auto-graded secure execution reports.</p>
             </div>
             
-            <select id="resultsDownloadSelect" onchange="handleResultsDownload(this.value); this.value='';" class="bg-slate-800 text-white font-bold text-sm px-4 py-2 rounded-lg border border-slate-700 outline-none hover:bg-slate-700 transition">
-              <option value="">Download Results...</option>
-              <option value="pdf">Download PDF</option>
-              <option value="word">Download Word</option>
-              <option value="excel">Download Excel</option>
-              <option value="csv">Download CSV</option>
-            </select>
+            <div class="flex gap-3">
+              <button onclick="publishGlobalResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-lg border border-blue-700 transition shadow-lg">
+                🚀 Publish Results
+              </button>
+              <button onclick="generateRankList()" class="bg-amber-100 text-amber-700 hover:bg-amber-200 font-bold text-sm px-4 py-2 rounded-lg border border-amber-200 transition">
+                🏆 Overall Merit List
+              </button>
+              <button onclick="generateCategoryRankList()" class="bg-purple-100 text-purple-700 hover:bg-purple-200 font-bold text-sm px-4 py-2 rounded-lg border border-purple-200 transition">
+                📊 Category Merit List
+              </button>
+              <select id="resultsDownloadSelect" onchange="handleResultsDownload(this.value); this.value='';" class="bg-slate-800 text-white font-bold text-sm px-4 py-2 rounded-lg border border-slate-700 outline-none hover:bg-slate-700 transition">
+                <option value="">Download Results...</option>
+                <option value="pdf">Download PDF</option>
+                <option value="word">Download Word</option>
+                <option value="excel">Download Excel</option>
+                <option value="csv">Download CSV</option>
+              </select>
+            </div>
           </div>
           
           <!-- Summary Cards -->
@@ -618,6 +739,8 @@
               <option value="OBC">OBC</option>
               <option value="SC">SC</option>
               <option value="ST">ST</option>
+              <option value="NT">NT</option>
+              <option value="EWS">EWS</option>
             </select>
             <select id="resFilterCourse" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
               <option value="">All Courses</option>
@@ -893,6 +1016,57 @@
   <!-- JS Dependencies -->
   <script type="module">
     import DB, { getDefaultQuestions } from '../js/db.js';
+    import { createClient } from '@supabase/supabase-js';
+
+    // ── Supabase client (Phase 3) ──
+    const _sUrl = import.meta.env.VITE_SUPABASE_URL;
+    const _sKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const supabase = (_sUrl && _sKey) ? createClient(_sUrl, _sKey) : null;
+    let _supabaseAppsCache = null;  // in-memory cache to avoid re-fetching on every render
+    let _supabaseFetched = false;
+
+    // ============================================
+    // RELIABILITY INFRASTRUCTURE
+    // ============================================
+
+    // Cache invalidation — MUST be called after every mutation
+    function invalidateCache() {
+      _supabaseAppsCache = null;
+      _supabaseFetched = false;
+      console.log('[Admin Cache] Invalidated Supabase cache');
+    }
+
+    // Improved toast notification system
+    function showToast(msg, type = 'info') {
+      // type: 'success' | 'error' | 'info'
+      let t = document.getElementById('adminToast');
+      if (t) t.remove(); // Remove any existing toast
+      t = document.createElement('div');
+      t.id = 'adminToast';
+      t.className = `admin-toast ${type}`;
+      const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+      t.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
+      document.body.appendChild(t);
+      // Auto-hide after 4 seconds
+      setTimeout(() => { t.classList.add('hide'); }, 4000);
+      setTimeout(() => { if (t.parentNode) t.remove(); }, 4500);
+    }
+
+    // Button loading state helpers
+    function setBtnLoading(btn, loadingText = 'Processing...') {
+      if (!btn) return;
+      btn._origText = btn.textContent;
+      btn._origDisabled = btn.disabled;
+      btn.disabled = true;
+      btn.textContent = loadingText;
+      btn.classList.add('admin-btn-processing');
+    }
+    function resetBtn(btn) {
+      if (!btn) return;
+      btn.disabled = btn._origDisabled || false;
+      btn.textContent = btn._origText || btn.textContent;
+      btn.classList.remove('admin-btn-processing');
+    }
 
     // System Guard
     if (!DB.isAdminLoggedIn()) window.location.href = 'login.html';
@@ -968,11 +1142,74 @@
       const titles = { overview:'Dashboard Overview', applications:'Student Applications', students:'Approved Students Registry', schedule:'Examination Scheduling', questions:'Secure Question Bank', results:'Live Exam Results', payments:'Payment Verification', locked:'Locked Examinations' };
       document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
 
-      if (tab === 'applications') window.renderApplications();
-      if (tab === 'students') window.renderStudents();
+      if (tab === 'applications') {
+        // RELIABILITY FIX: Always invalidate cache on tab switch for fresh data
+        invalidateCache();
+        window.renderApplications(); // render immediately with local data
+        if (supabase) {
+          fetchApplicationsFromSupabase().then(() => { window.renderApplications(); });
+        }
+      }
+      if (tab === 'students') {
+        // RELIABILITY FIX: Always invalidate and re-fetch on tab switch
+        invalidateCache();
+        window.renderStudents();
+        if (supabase) {
+          fetchApplicationsFromSupabase().then(() => { window.renderStudents(); });
+        }
+      }
       if (tab === 'questions') window.renderQuestions();
-      if (tab === 'results') window.renderResults();
-      if (tab === 'payments') window.renderPayments();
+      if (tab === 'results') {
+        window.renderResults();
+        // Also fetch results from Supabase
+        if (supabase) {
+          supabase.from('exam_results').select('*').order('submitted_at', { ascending: false })
+            .then(({ data, error }) => {
+              if (!error && data && data.length > 0) {
+                const supaResults = data.map(r => ({
+                  id: r.id, studentId: r.cet_student_id, name: r.student_name,
+                  course: r.course, category: r.category, score: r.score, total: r.total,
+                  correctAnswers: r.correct_answers, wrongAnswers: r.wrong_answers,
+                  unanswered: r.unanswered, violations: r.violations,
+                  status: 'Completed', submittedAt: r.submitted_at,
+                }));
+                // Merge with localStorage results
+                let localRes = []; try { localRes = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
+                const merged = [...supaResults];
+                localRes.forEach(lr => { if (!merged.find(sr => sr.studentId === lr.studentId)) merged.push(lr); });
+                localStorage.setItem('cetExamResults', JSON.stringify(merged));
+                window.renderResults();
+                console.log('[Supabase] Loaded', supaResults.length, 'results from cloud');
+              }
+            });
+        }
+      }
+      if (tab === 'payments') {
+        window.renderPayments();
+        // Fetch payments from Supabase
+        if (supabase) {
+          supabase.from('payments').select('*').order('submitted_at', { ascending: false })
+            .then(({ data, error }) => {
+              if (!error && data && data.length > 0) {
+                const supaPayments = data.map(p => ({
+                  applicationId: p.application_id, studentId: p.cet_student_id,
+                  fullName: p.full_name, email: p.email, courseApplied: p.course_applied,
+                  paymentStatus: p.payment_status, paymentAmount: p.payment_amount,
+                  paymentUtr: p.payment_utr, paymentDate: p.payment_date,
+                  screenshotUrl: p.screenshot_url, submittedAt: p.submitted_at,
+                  supabaseId: p.student_id,
+                }));
+                // Merge with localStorage
+                let localPay = []; try { localPay = JSON.parse(localStorage.getItem('cetPayments')) || []; } catch(e){}
+                const merged = [...supaPayments];
+                localPay.forEach(lp => { if (!merged.find(sp => sp.email === lp.email)) merged.push(lp); });
+                localStorage.setItem('cetPayments', JSON.stringify(merged));
+                window.renderPayments();
+                console.log('[Supabase] Loaded', supaPayments.length, 'payments from cloud');
+              }
+            });
+        }
+      }
       if (tab === 'locked') window.renderLockedExams();
     }
 
@@ -1027,8 +1264,12 @@
           : '<span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fde68a;">PENDING</span>';
 
         const screenshotBtn = s.paymentScreenshotData
-          ? `<button type="button" onclick="previewPaymentScreenshot('${s.applicationId}')" style="cursor:pointer;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;">View</button>`
+          ? `<button type="button" onclick="previewPaymentScreenshot('${s.applicationId}')" style="cursor:pointer;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-right:4px;">View</button>`
           : '<span style="color:#94a3b8;font-size:11px;">--</span>';
+
+        const verifyBtn = (!isPaidDemo && s.paymentStatus !== 'PAID')
+          ? `<button type="button" onclick="verifyPayment('${s.applicationId}')" style="cursor:pointer;background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;">Verify</button>`
+          : '';
 
         const date = s.paymentDate
           ? new Date(s.paymentDate).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
@@ -1042,7 +1283,7 @@
           <td class="p-4 font-bold text-emerald-700">${s.paymentAmount || 'Rs.1'}</td>
           <td class="p-4 font-mono text-xs text-slate-700">${s.paymentUtr || s.transactionId || '--'}</td>
           <td class="p-4 text-center">${statusBadge}</td>
-          <td class="p-4 text-center">${screenshotBtn}</td>
+          <td class="p-4 text-center">${screenshotBtn}${verifyBtn}</td>
           <td class="p-4 text-xs text-slate-500">${date}</td>
         </tr>`;
       }).join('');
@@ -1077,6 +1318,52 @@
       const w = window.open();
       w.document.write('<html><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + record.paymentScreenshotData + '" style="max-width:90vw;max-height:90vh;border-radius:12px;" /></body></html>');
       w.document.title = 'Payment Screenshot - ' + (record.fullName || record.studentId || appOrStudentId);
+    };
+
+    window.verifyPayment = async function(id) {
+      if(!confirm('Mark this payment as verified?')) return;
+      console.log('[Admin Action] Start: Verify payment', id);
+      const dbStudents = DB.getStudents();
+      const st = dbStudents.find(s => s.applicationId === id || s.studentId === id);
+      if (st) {
+        st.paymentStatus = 'PAID';
+        localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+
+        // Also sync cetPayments
+        try {
+          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+          const pi = payments.findIndex(p => p.applicationId === id || p.studentId === id || p.email === st.email);
+          if (pi !== -1) { payments[pi].paymentStatus = 'PAID'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
+        } catch(e) {}
+
+        // Also sync cetApplications
+        try {
+          let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+          const ai = apps.findIndex(a => a.email === st.email);
+          if (ai !== -1) { apps[ai].paymentStatus = 'PAID'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
+        } catch(e) {}
+        
+        // Supabase dual-write
+        if (supabase) {
+          await supabase.from('students').update({ payment_status: 'PAID' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email)
+            .then(({error}) => { if(!error) console.log('[Admin Action] Success: Payment verified in cloud'); else console.warn('[Admin Action] Failed: Payment verify error:', error.message); });
+        }
+        
+        // Email Notification
+        if (st.email) {
+          import('../js/email-service.js').then(({ default: EmailSvc }) => {
+            const emailHtml = EmailSvc.EmailTemplates.paymentVerified(st.fullName, st.paymentAmount, st.paymentUtr || st.transactionId).html;
+            const emailSubject = EmailSvc.EmailTemplates.paymentVerified(st.fullName, st.paymentAmount, st.paymentUtr || st.transactionId).subject;
+            EmailSvc.sendEmail(st.email, emailSubject, emailHtml);
+          }).catch(err => console.warn('Email service import failed', err));
+        }
+
+        invalidateCache();
+        renderOverview();
+        renderPayments();
+        showToast('Payment verified and email sent', 'success');
+        console.log('[Admin Action] Success: Payment verified', id);
+      }
     };
 
     // ============================================
@@ -1169,8 +1456,12 @@
       });
     }
 
-    // --- DATA MIGRATION ---
+    // --- DATA SOURCE: Supabase-first, localStorage fallback ---
     window.getApplications = function() {
+      // Return cached Supabase data if available
+      if (_supabaseFetched && _supabaseAppsCache) return _supabaseAppsCache;
+
+      // Fallback: localStorage
       let apps = [];
       try { apps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e){}
       
@@ -1187,7 +1478,61 @@
       }
       return apps;
     }
-    
+
+    // Async fetch from Supabase — call once on tab switch, then use cache
+    window.fetchApplicationsFromSupabase = async function() {
+      if (!supabase) return null;
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) { console.warn('[Supabase] Fetch applications error:', error.message); return null; }
+        // Map Supabase columns to the format renderApplications expects
+        _supabaseAppsCache = (data || []).map(s => ({
+          // IDs
+          id: s.id,
+          applicationId: s.transaction_id ? 'APP' + s.transaction_id : s.id,
+          studentId: s.student_id,
+          supabaseId: s.id,
+          // Personal
+          fullName: s.full_name,
+          name: s.full_name,
+          email: s.email,
+          mobile: s.mobile,
+          dob: s.dob,
+          address: s.address,
+          category: s.category,
+          courseApplied: s.course_applied,
+          stream: s.stream,
+          // Status
+          applicationStatus: s.application_status || 'PENDING_APPROVAL',
+          status: s.status || 'pending',
+          examStatus: s.exam_status,
+          hasAttempted: s.has_attempted,
+          // Payment
+          paymentStatus: s.payment_status || 'Pending Verification',
+          paymentUtr: s.payment_utr,
+          transactionId: s.transaction_id || s.payment_utr,
+          paymentDate: s.payment_date,
+          paymentAmount: s.payment_amount,
+          // Academic
+          academicDetails: s.academic_details || {},
+          // Timestamps
+          submittedAt: s.submitted_at || s.created_at,
+          appliedAt: s.applied_at || s.created_at,
+          // Flag for Supabase origin
+          _fromSupabase: true,
+        }));
+        _supabaseFetched = true;
+        console.log('[Supabase] Loaded', _supabaseAppsCache.length, 'applications from cloud');
+        return _supabaseAppsCache;
+      } catch(e) {
+        console.warn('[Supabase] Fetch error:', e);
+        return null;
+      }
+    }
+
     window.saveApplications = function(apps) {
       localStorage.setItem('cetApplications', JSON.stringify(apps));
     }
@@ -1286,7 +1631,7 @@
       }).join('');
     }
 
-    window.previewApplication = function(appId) {
+    window.previewApplication = async function(appId) {
       const apps = getApplications();
       let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
       if (!app) {
@@ -1295,22 +1640,41 @@
          else return;
       }
       
-      let dbApp = DB.getStudentByEmail(app.email);
-      if (dbApp && dbApp.uploadedFiles && Object.keys(dbApp.uploadedFiles).length > 0) {
-         app.uploadedFiles = dbApp.uploadedFiles;
+      // Try loading documents from Supabase first (for Supabase-origin apps)
+      let supabaseDocs = {};
+      if (supabase && app.supabaseId) {
+        try {
+          const { data, error } = await supabase
+            .from('student_documents')
+            .select('doc_type, file_url, file_name')
+            .eq('student_id', app.supabaseId);
+          if (!error && data && data.length > 0) {
+            data.forEach(d => { supabaseDocs[d.doc_type] = d.file_url; });
+            console.log('[Supabase] Loaded', data.length, 'document URLs for preview');
+          }
+        } catch(e) { console.warn('[Supabase] Doc fetch error:', e); }
+      }
+
+      // If Supabase has docs, use those; otherwise fall back to localStorage
+      if (Object.keys(supabaseDocs).length > 0) {
+        app.uploadedFiles = supabaseDocs;
       } else {
-         // Fallback for older applications where images were deleted from storage
-         app.uploadedFiles = {
-            tenthFile: 'data:application/pdf;base64,JVBERi0xLg==',
-            twelfthFile: 'data:application/pdf;base64,JVBERi0xLg==',
-            photoFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-            signatureFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-            paymentScreenshot: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-         };
-         // If they had a specific category, add a dummy caste certificate
-         if (app.category && app.category !== 'Open / General') {
-            app.uploadedFiles.casteCertificateFile = 'data:application/pdf;base64,JVBERi0xLg==';
-         }
+        let dbApp = DB.getStudentByEmail(app.email);
+        if (dbApp && dbApp.uploadedFiles && Object.keys(dbApp.uploadedFiles).length > 0) {
+           app.uploadedFiles = dbApp.uploadedFiles;
+        } else {
+           // Fallback for older applications where images were deleted from storage
+           app.uploadedFiles = {
+              tenthFile: 'data:application/pdf;base64,JVBERi0xLg==',
+              twelfthFile: 'data:application/pdf;base64,JVBERi0xLg==',
+              photoFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+              signatureFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+              paymentScreenshot: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+           };
+           if (app.category && app.category !== 'Open / General') {
+              app.uploadedFiles.casteCertificateFile = 'data:application/pdf;base64,JVBERi0xLg==';
+           }
+        }
       }
       
       const acad = app.academicDetails || {};
@@ -1332,10 +1696,16 @@
           if (!data) continue;
           let displayName = keyMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).replace('File', '').trim();
           
-          if (data.startsWith('data:image')) {
+          const isImage = data.startsWith('data:image') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(data);
+          const isPdf = data.startsWith('data:application/pdf') || /\.pdf(\?|$)/i.test(data);
+          const isUrl = data.startsWith('http://') || data.startsWith('https://');
+
+          if (isImage) {
             docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" title="Click to view full image"><img src="${data}" class="max-w-full h-32 object-contain rounded bg-slate-50 border border-slate-100" /></a></div>`;
-          } else if (data.startsWith('data:application/pdf')) {
+          } else if (isPdf) {
             docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-indigo-100"><span>📄</span> Open PDF Document</a></div>`;
+          } else if (isUrl) {
+            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-indigo-100"><span>🔗</span> View Document</a></div>`;
           } else {
             docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" download="${displayName}" class="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors">Download File</a></div>`;
           }
@@ -1392,38 +1762,116 @@
       document.getElementById('previewModal').classList.remove('hidden');
     }
     
-    window.updatePaymentStatus = function(appId, status) {
+    window.updatePaymentStatus = async function(appId, status) {
+      console.log('[Admin Action] Start: Update payment status', appId, status);
       let apps = getApplications();
       let app = apps.find(a => a.applicationId === appId);
       if(app) {
         app.paymentStatus = status;
         saveApplications(apps);
+
+        // Also sync cet_students
+        const dbStudents = DB.getStudents();
+        const dbStu = dbStudents.find(s => s.email === app.email);
+        if (dbStu) {
+          dbStu.paymentStatus = status;
+          localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+        }
+
+        // Sync cetPayments
+        try {
+          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+          const pi = payments.findIndex(p => p.applicationId === appId || p.email === app.email);
+          if (pi !== -1) { payments[pi].paymentStatus = status; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
+        } catch(e) {}
+
+        // Supabase dual-write
+        if (supabase && app.supabaseId) {
+          await supabase.from('students').update({ payment_status: status }).eq('id', app.supabaseId)
+            .then(({ error }) => { if (error) console.warn('[Supabase] Payment status update error:', error.message); else console.log('[Admin Action] Success: Payment status updated to', status); });
+        } else if (supabase && app.email) {
+          await supabase.from('students').update({ payment_status: status }).eq('email', app.email)
+            .then(({ error }) => { if (error) console.warn('[Supabase] Payment status update error:', error.message); });
+        }
+
+        invalidateCache();
         renderApplications();
-        previewApplication(appId); // refresh modal
+        previewApplication(appId);
+        showToast('Payment status updated to: ' + status, 'success');
+        console.log('[Admin Action] Success: Payment status updated');
       }
     }
     
-    window.deleteApplication = function(appId) {
+    window.deleteApplication = async function(appId) {
       if(!confirm('Are you sure you want to delete this application?')) return;
+      console.log('[Admin Action] Start: Delete application', appId);
+      
       let apps = getApplications();
+      const app = apps.find(a => a.applicationId === appId);
       apps = apps.filter(a => a.applicationId !== appId);
       saveApplications(apps);
+
+      // Also purge from cet_students
+      if (app) {
+        const dbStudents = DB.getStudents();
+        const filtered = dbStudents.filter(s => s.email !== app.email);
+        if (filtered.length !== dbStudents.length) {
+          localStorage.setItem('cet_students', JSON.stringify(filtered));
+        }
+
+        // Also purge from cetApprovedStudents
+        try {
+          let approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+          approved = approved.filter(a => a.applicationId !== appId && a.email !== app.email);
+          localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+        } catch(e) {}
+
+        // Also purge from cetPayments
+        try {
+          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+          payments = payments.filter(p => p.applicationId !== appId && p.email !== app.email);
+          localStorage.setItem('cetPayments', JSON.stringify(payments));
+        } catch(e) {}
+      }
+
+      // Supabase: delete student
+      if (supabase && app) {
+        try {
+          const q = app.supabaseId ? supabase.from('students').delete().eq('id', app.supabaseId)
+                                   : supabase.from('students').delete().eq('email', app.email);
+          const { error } = await q;
+          if (error) {
+            console.error('[Admin Action] Failed: Supabase delete error', error.message);
+            showToast('Delete failed in cloud – retry', 'error');
+          } else {
+            console.log('[Admin Action] Success: Application deleted from cloud');
+          }
+        } catch(e) {
+          console.error('[Admin Action] Failed: Supabase delete exception', e);
+        }
+      }
+
+      invalidateCache();
       renderApplications();
       renderOverview();
+      showToast('Application deleted successfully', 'success');
+      console.log('[Admin Action] Success: Application deleted', appId);
     }
 
-    window.approveStudent = function(appId) {
+    window.approveStudent = async function(appId) {
       let apps = getApplications();
       let app = apps.find(a => a.applicationId === appId);
-      if (!app) { alert('Application not found.'); return; }
+      if (!app) { showToast('Application not found', 'error'); return; }
 
       // Allow PAID_DEMO or Payment Done — block only if truly no payment
       const validPayment = ['PAID_DEMO', 'Payment Done', 'PAID'].includes(app.paymentStatus);
       if (!validPayment) {
-        alert('Payment not verified for this application. Payment status: ' + (app.paymentStatus || 'None'));
+        showToast('Payment not verified. Status: ' + (app.paymentStatus || 'None'), 'error');
         return;
       }
       if (!confirm('Approve this application and generate Student ID?')) return;
+
+      console.log('[Admin Action] Start: Approve student', appId);
 
       // Generate studentId if not already set
       const newStudentId = app.studentId || ('CET2026' + String(Math.floor(Math.random() * 9000) + 1000));
@@ -1469,25 +1917,100 @@
         if (pi !== -1) { payments[pi].applicationStatus = 'Approved'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
       } catch(e) {}
 
+      // 5. Supabase dual-write: update student status
+      if (supabase) {
+        const updateData = {
+          status: 'approved',
+          student_id: newStudentId,
+          application_status: 'Approved',
+          exam_status: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
+        };
+        try {
+          const matchField = app.supabaseId ? supabase.from('students').update(updateData).eq('id', app.supabaseId)
+                                            : supabase.from('students').update(updateData).eq('email', app.email);
+          const { error } = await matchField;
+          if (error) {
+            console.warn('[Admin Action] Failed: Supabase approve error:', error.message);
+            showToast('Approval saved locally but cloud sync failed – retry', 'error');
+          } else {
+            console.log('[Admin Action] Success: Student approved in cloud:', newStudentId);
+          }
+        } catch(e) {
+          console.error('[Admin Action] Failed: Supabase approve exception', e);
+        }
+      }
+
+      // Email Notification
+      import('../js/email-service.js').then(({ default: EmailSvc }) => {
+        const emailHtml = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime).html;
+        const emailSubject = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime).subject;
+        EmailSvc.sendEmail(app.email, emailSubject, emailHtml);
+      }).catch(err => console.warn('Email service import failed', err));
+
+      invalidateCache();
       renderApplications();
+      renderStudents();
       renderOverview();
-      alert('Student approved! Student ID: ' + newStudentId);
+      showToast('Student approved! ID: ' + newStudentId, 'success');
+      console.log('[Admin Action] Success: Student approved', newStudentId);
     }
 
-    window.rejectStudent = function(appId) {
+    window.rejectStudent = async function(appId) {
       if (!confirm('Reject this application?')) return;
+      console.log('[Admin Action] Start: Reject student', appId);
       let apps = getApplications();
       let app = apps.find(a => a.applicationId === appId);
       if (app) {
         app.applicationStatus = 'Rejected';
         app.status = 'rejected';
         localStorage.setItem('cetApplications', JSON.stringify(apps));
+
         // Sync cet_students
         const dbStudents = DB.getStudents();
         const dbIdx = dbStudents.findIndex(s => s.email === app.email);
-        if (dbIdx !== -1) { dbStudents[dbIdx].status = 'rejected'; localStorage.setItem('cet_students', JSON.stringify(dbStudents)); }
+        if (dbIdx !== -1) {
+          dbStudents[dbIdx].status = 'rejected';
+          dbStudents[dbIdx].applicationStatus = 'Rejected';
+          localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+        }
+
+        // Also remove from cetApprovedStudents (in case it was previously approved)
+        try {
+          let approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+          approved = approved.filter(a => a.applicationId !== appId && a.email !== app.email);
+          localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+        } catch(e) {}
+
+        // Supabase dual-write
+        if (supabase) {
+          try {
+            const q = app.supabaseId ? supabase.from('students').update({ status: 'rejected', application_status: 'Rejected' }).eq('id', app.supabaseId)
+                                     : supabase.from('students').update({ status: 'rejected', application_status: 'Rejected' }).eq('email', app.email);
+            const { error } = await q;
+            if (error) {
+              console.warn('[Admin Action] Failed: Supabase reject error:', error.message);
+              showToast('Rejection saved locally but cloud sync failed', 'error');
+            } else {
+              console.log('[Admin Action] Success: Student rejected in cloud');
+            }
+          } catch(e) {
+            console.error('[Admin Action] Failed: Supabase reject exception', e);
+          }
+        }
+
+        // Email Notification
+        import('../js/email-service.js').then(({ default: EmailSvc }) => {
+          const emailHtml = EmailSvc.EmailTemplates.rejection(app.fullName, "Application did not meet the criteria or documents were missing/invalid.").html;
+          const emailSubject = EmailSvc.EmailTemplates.rejection(app.fullName, "").subject;
+          EmailSvc.sendEmail(app.email, emailSubject, emailHtml);
+        }).catch(err => console.warn('Email service import failed', err));
+
+        invalidateCache();
         renderApplications();
+        renderStudents();
         renderOverview();
+        showToast('Application rejected successfully', 'success');
+        console.log('[Admin Action] Success: Student rejected', appId);
       }
     }
 
@@ -1495,11 +2018,16 @@
     // APPROVED STUDENTS & EXAM RESULTS
     // ============================================
     window.renderStudents = function() {
-      // ONLY read from cetApprovedStudents (populated by admin Approve action, NOT by student payment)
+      // Read from localStorage first
       let students = [];
       try { students = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
-      // Filter: only truly approved ones (applicationStatus === 'Approved')
       students = students.filter(s => s.applicationStatus === 'Approved' || s.status === 'approved');
+
+      // If Supabase cache has approved students, merge/replace
+      if (_supabaseFetched && _supabaseAppsCache) {
+        const supaApproved = _supabaseAppsCache.filter(s => s.status === 'approved' || s.applicationStatus === 'Approved');
+        if (supaApproved.length > 0) students = supaApproved;
+      }
 
       const results = DB.getResults();
       
@@ -1600,14 +2128,15 @@
       `).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-500">No locked exams currently.</td></tr>';
     }
 
-    window.unlockExam = function(studentId) {
+    window.unlockExam = async function(studentId) {
        if(!confirm('Are you sure you want to unlock this exam? The student will be able to resume.')) return;
+       console.log('[Admin Action] Start: Unlock exam', studentId);
        
        let students = DB.getStudents();
        const stIdx = students.findIndex(s => s.studentId === studentId);
        if(stIdx !== -1) {
           students[stIdx].examStatus = 'ACTIVE';
-          students[stIdx].activeViolations = 0; // Reset active warnings to give them a fresh 3-strike threshold (logs still persist)
+          students[stIdx].activeViolations = 0;
           students[stIdx].unlockedAt = new Date().toISOString();
           students[stIdx].unlockedBy = 'Admin';
           localStorage.setItem('cet_students', JSON.stringify(students));
@@ -1626,12 +2155,24 @@
        lockedExams = lockedExams.filter(l => l.studentId !== studentId);
        localStorage.setItem('cetLockedExams', JSON.stringify(lockedExams));
        
+       // Supabase dual-write
+       if (supabase) {
+         await supabase.from('students').update({ exam_status: 'ACTIVE', active_violations: 0 }).eq('student_id', studentId)
+           .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Unlock error:', error.message); else console.log('[Admin Action] Success: Exam unlocked in cloud'); });
+         await supabase.from('locked_exams').delete().eq('cet_student_id', studentId)
+           .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Locked exam delete error:', error.message); });
+       }
+       
+       invalidateCache();
+       showToast('Exam unlocked successfully', 'success');
+       console.log('[Admin Action] Success: Exam unlocked', studentId);
        renderLockedExams();
-       renderStudents(); // Refresh main table
+       renderStudents();
     }
 
-    window.terminateLockedExam = function(studentId) {
+    window.terminateLockedExam = async function(studentId) {
        if(!confirm('Are you sure you want to PERMANENTLY TERMINATE this exam? The student will be scored 0.')) return;
+       console.log('[Admin Action] Start: Terminate exam', studentId);
        
        let students = DB.getStudents();
        const stIdx = students.findIndex(s => s.studentId === studentId);
@@ -1655,6 +2196,17 @@
        lockedExams = lockedExams.filter(l => l.studentId !== studentId);
        localStorage.setItem('cetLockedExams', JSON.stringify(lockedExams));
        
+       // Supabase dual-write
+       if (supabase) {
+         await supabase.from('students').update({ exam_status: 'TERMINATED', has_attempted: true }).eq('student_id', studentId)
+           .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Terminate error:', error.message); else console.log('[Admin Action] Success: Exam terminated in cloud'); });
+         await supabase.from('locked_exams').delete().eq('cet_student_id', studentId)
+           .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Locked exam delete error:', error.message); });
+       }
+       
+       invalidateCache();
+       showToast('Exam terminated permanently', 'success');
+       console.log('[Admin Action] Success: Exam terminated', studentId);
        renderLockedExams();
        renderStudents();
     }
@@ -1668,7 +2220,19 @@
       
       document.getElementById('examType').value = config.examType || 'CET Exam';
       document.getElementById('examDate').value = config.examDate;
-      document.getElementById('examTime').value = config.startTime;
+      
+      if (config.startTime) {
+         let [hours, minutes] = config.startTime.split(':');
+         let h = parseInt(hours, 10);
+         let ampm = h >= 12 ? 'PM' : 'AM';
+         h = h % 12;
+         h = h ? h : 12; // the hour '0' should be '12'
+         
+         document.getElementById('examHour').value = h.toString().padStart(2, '0');
+         document.getElementById('examMinute').value = minutes;
+         document.getElementById('examAmPm').value = ampm;
+      }
+      
       document.getElementById('examDuration').value = config.durationMinutes;
       
       renderConfigPreview(config);
@@ -1711,17 +2275,27 @@
     
     window.saveSchedule = function() {
       const date = document.getElementById('examDate').value;
-      const time = document.getElementById('examTime').value;
+      
+      let hourStr = document.getElementById('examHour').value;
+      const minStr = document.getElementById('examMinute').value;
+      const ampm = document.getElementById('examAmPm').value;
+      
+      let h = parseInt(hourStr, 10);
+      if (ampm === 'PM' && h < 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      const time = h.toString().padStart(2, '0') + ':' + minStr;
+      
       const duration = parseInt(document.getElementById('examDuration').value) || 60;
       
       if(!date || !time) {
-        alert("Please select both Date and Start Time.");
+        showToast('Please select both Date and Start Time', 'error');
         return;
       }
+      console.log('[Admin Action] Start: Save exam schedule');
       
       const startObj = new Date(`${date}T${time}`);
       const endObj = new Date(startObj.getTime() + duration * 60000);
-      const endTimeStr = endObj.toTimeString().substring(0, 5); // HH:MM
+      const endTimeStr = endObj.toTimeString().substring(0, 5);
       
       const examType = document.getElementById('examType').value;
       const config = {
@@ -1733,8 +2307,50 @@
       };
       
       localStorage.setItem('cetExamConfig', JSON.stringify(config));
-      alert('Exam configuration saved securely.');
+      // Supabase dual-write: save to exam_config table
+      if (supabase) {
+        supabase.from('exam_config').select('id').limit(1).then(({ data }) => {
+          const row = { exam_date: date, start_time: time, duration_minutes: duration, is_active: true };
+          if (data && data.length > 0) {
+            supabase.from('exam_config').update(row).eq('id', data[0].id)
+              .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config update error:', error.message); else console.log('[Admin Action] Success: Exam config saved to cloud'); });
+          } else {
+            supabase.from('exam_config').insert(row)
+              .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config insert error:', error.message); else console.log('[Admin Action] Success: Exam config created in cloud'); });
+          }
+        });
+      }
+      showToast('Exam configuration saved securely', 'success');
+      console.log('[Admin Action] Success: Exam schedule saved');
       renderConfigPreview(config);
+    }
+
+    window.sendExamReminders = function() {
+      const config = JSON.parse(localStorage.getItem('cetExamConfig'));
+      if (!config || !config.examDate) {
+        showToast('Please save the Exam Configuration first', 'error');
+        return;
+      }
+      
+      const dbStudents = DB.getStudents().filter(s => s.status === 'approved' && s.examStatus === 'SCHEDULED');
+      if (dbStudents.length === 0) {
+        alert('No students found with SCHEDULED exam status.');
+        return;
+      }
+
+      if (!confirm(`Send exam reminder emails to ${dbStudents.length} scheduled students?`)) return;
+
+      import('../js/email-service.js').then(({ default: EmailSvc }) => {
+        let count = 0;
+        dbStudents.forEach(st => {
+          if (st.email) {
+            const tmpl = EmailSvc.EmailTemplates.examReminder(st.fullName, config.examDate, config.startTime);
+            EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html);
+            count++;
+          }
+        });
+        alert(`Successfully queued ${count} exam reminder emails.`);
+      }).catch(err => console.warn('Email service import failed', err));
     }
 
     let currentlyViewingSetId = null;
@@ -1748,6 +2364,15 @@
 
     window.saveQuestionSets = function(sets) {
       localStorage.setItem('cetQuestionSets', JSON.stringify(sets));
+      // Supabase dual-write: sync question sets
+      if (supabase) {
+        sets.forEach(set => {
+          const row = { name: set.name, is_active: set.isActive || false, questions: set.questions || [] };
+          supabase.from('question_sets').upsert({ ...row, id: set.supabaseId || undefined }, { onConflict: 'id' })
+            .then(({ error }) => { if (error) console.warn('[Supabase] Question set sync error:', error.message); });
+        });
+        console.log('[Supabase] Question sets synced to cloud');
+      }
     }
 
     window.createQuestionSet = function() {
@@ -2051,6 +2676,87 @@
       }).join('') || '<p class="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">No questions added yet. Use the form above.</p>';
     }
 
+    window.renderMonitoring = async function() {
+      let stats = { online: 0, progress: 0, completed: 0, warnings: 0, locked: 0 };
+      let studentsList = [];
+
+      try {
+        if (supabase) {
+          // Fetch from Supabase
+          const { data, error } = await supabase.from('students')
+            .select('student_id, full_name, exam_status, active_violations, has_attempted')
+            .not('exam_status', 'is', null);
+            
+          if (!error && data) {
+             studentsList = data.map(s => ({
+                studentId: s.student_id,
+                name: s.full_name,
+                status: s.exam_status || (s.has_attempted ? 'COMPLETED' : 'PENDING'),
+                violations: s.active_violations || 0
+             }));
+          }
+        }
+        
+        // Fallback or combine with localStorage if empty
+        if (studentsList.length === 0) {
+          const localStudents = DB.getStudents() || [];
+          studentsList = localStudents.filter(s => s.examStatus || s.hasAttempted).map(s => ({
+            studentId: s.studentId,
+            name: s.fullName,
+            status: s.examStatus || (s.hasAttempted ? 'COMPLETED' : 'PENDING'),
+            violations: s.violations || 0
+          }));
+        }
+
+        let html = '';
+        studentsList.forEach(s => {
+           stats.online++;
+           if (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED') stats.progress++;
+           if (s.status === 'COMPLETED') stats.completed++;
+           if (s.status === 'LOCKED' || s.status === 'TERMINATED') stats.locked++;
+           stats.warnings += (s.violations || 0);
+
+           let statusBadge = '';
+           if (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED') statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">In Progress</span>';
+           else if (s.status === 'COMPLETED') statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Completed</span>';
+           else if (s.status === 'LOCKED') statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Locked</span>';
+           else statusBadge = `<span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-bold">${s.status || 'Pending'}</span>`;
+
+           html += `
+             <tr class="hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors">
+               <td class="p-4 font-medium text-slate-800">${s.name}</td>
+               <td class="p-4 font-mono text-xs text-indigo-600">${s.studentId || 'N/A'}</td>
+               <td class="p-4">${statusBadge}</td>
+               <td class="p-4 text-slate-600 font-mono text-xs">--:--</td>
+               <td class="p-4">
+                 ${s.violations > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-bold">${s.violations} Warnings</span>` : '<span class="text-slate-400 text-xs">None</span>'}
+               </td>
+               <td class="p-4">
+                 <span class="flex items-center gap-1 text-emerald-600 text-xs font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Active</span>
+               </td>
+               <td class="p-4 text-right">
+                 ${s.status === 'LOCKED' ? `<button onclick="unlockExam('${s.studentId}')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold px-3 py-1.5 rounded transition">Unlock</button>` : ''}
+               </td>
+             </tr>
+           `;
+        });
+
+        if (html === '') {
+           html = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No active exam sessions found.</td></tr>';
+        }
+
+        document.getElementById('mon-online').textContent = stats.online;
+        document.getElementById('mon-progress').textContent = stats.progress;
+        document.getElementById('mon-completed').textContent = stats.completed;
+        document.getElementById('mon-warnings').textContent = stats.warnings;
+        document.getElementById('mon-locked').textContent = stats.locked;
+        document.getElementById('monitoringTableBody').innerHTML = html;
+
+      } catch(e) {
+        console.error('[Admin] Monitoring error:', e);
+      }
+    }
+
     window.renderResults = function() {
       let res = [];
       try { res = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
@@ -2062,6 +2768,9 @@
           { id: '2', studentId: 'CET20262406', name: 'Navnath', course: 'BSc Computer Science', category: 'OPEN', score: 1, total: 2, status: 'Completed', submittedAt: new Date().toISOString() }
         ];
       }
+
+      // Sort by score descending to form Rank List
+      res.sort((a, b) => (b.score || 0) - (a.score || 0));
 
       // Filter Logic
       const filterSearch = (document.getElementById('resFilterSearch')?.value || '').toLowerCase();
@@ -2115,9 +2824,189 @@
               <button type="button" onclick="viewAnswersModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 hover:bg-emerald-100">View Answers</button>
               <button type="button" onclick="downloadStudentPDF(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-slate-600 font-bold text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200 hover:bg-slate-200">Download PDF</button>
             </div>
-          </td>
         </tr>
       `}).join('') || '<tr><td colspan="10" class="p-8 text-center text-slate-500">No results found matching filters.</td></tr>';
+    }
+
+    window.publishGlobalResults = async function() {
+      if(!confirm("Are you sure you want to publish results? This will make them visible to students and send email notifications.")) return;
+      let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+      if (resList.length === 0) {
+         showToast('No results to publish.', 'error'); return;
+      }
+      
+      const allStudents = JSON.parse(localStorage.getItem('cet_students')) || [];
+      resList.sort((a,b) => (b.score||0) - (a.score||0));
+      
+      let emailsPromises = [];
+      resList.forEach((r, idx) => {
+         r.result_published = true;
+         
+         // Find student to get email and category
+         const st = allStudents.find(s => s.id === r.studentId || s.studentId === r.studentId);
+         if (st && st.email) {
+            const overallRank = idx + 1;
+            
+            // Calc category rank
+            const stCat = st.category || st.academicDetails?.category || 'OPEN';
+            const catResults = resList.filter(cr => {
+               const cs = allStudents.find(s => s.id === cr.studentId || s.studentId === cr.studentId);
+               const csCat = cs?.category || cs?.academicDetails?.category || 'OPEN';
+               return csCat === stCat;
+            });
+            const catIdx = catResults.findIndex(cr => cr.studentId === r.studentId);
+            const catRank = catIdx !== -1 ? catIdx + 1 : 'N/A';
+            
+            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
+              const url = window.location.origin + '/student/login.html';
+              const html = `
+                <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #eee; border-radius:10px;">
+                  <h2 style="color:#4f46e5; text-align:center;">CET Exam Result Published</h2>
+                  <p>Dear <strong>${r.name}</strong>,</p>
+                  <p>Your CET Exam results have been officially published by the administration.</p>
+                  <div style="background:#f8fafc; padding:15px; border-radius:8px; margin:20px 0;">
+                    <p><strong>Student ID:</strong> ${r.studentId}</p>
+                    <p><strong>Score:</strong> ${r.score} / ${r.totalQuestions || r.total || 0}</p>
+                    <p><strong>Overall Rank:</strong> #${overallRank}</p>
+                    <p><strong>Category Rank (${stCat}):</strong> #${catRank}</p>
+                  </div>
+                  <div style="text-align:center; margin-top:30px;">
+                    <a href="${url}" style="background:#4f46e5; color:white; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">View Scorecard Dashboard</a>
+                  </div>
+                </div>
+              `;
+              return EmailSvc.sendEmail(st.email, "CET Exam Result Published", html);
+            }).catch(e => console.error("Email fail", e));
+            emailsPromises.push(p);
+         }
+      });
+      
+      localStorage.setItem('cetExamResults', JSON.stringify(resList));
+      
+      // Update local copy too
+      let cetResults = JSON.parse(localStorage.getItem('cet_results')) || [];
+      cetResults.forEach(r => r.result_published = true);
+      localStorage.setItem('cet_results', JSON.stringify(cetResults));
+
+      showToast('Publishing results and sending emails...', 'success');
+      Promise.allSettled(emailsPromises).then(() => {
+         showToast('Results published successfully!', 'success');
+         renderResults();
+      });
+    }
+
+    window.generateCategoryRankList = async function() {
+      let resList = window._allResults || JSON.parse(localStorage.getItem('cetExamResults')) || [];
+      if (resList.length === 0) {
+        showToast('No results available to generate rank list', 'error'); return;
+      }
+      
+      const filterCat = document.getElementById('resFilterCategory')?.value || '';
+      if (!filterCat) {
+        showToast('Please select a Category from the dropdown filter first.', 'error'); return;
+      }
+      
+      let sorted = [...resList].sort((a,b) => (b.score || 0) - (a.score || 0));
+      
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('PDF library not loaded yet', 'error'); return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      doc.setFontSize(22);
+      doc.setTextColor(30, 58, 138);
+      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Official Rank List - ${filterCat} Category`, 105, 30, { align: "center" });
+      
+      const config = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      if (config.examDate) {
+         doc.setFontSize(12);
+         doc.text(`Exam Date: ${new Date(config.examDate).toLocaleDateString()}`, 105, 38, { align: "center" });
+      }
+      
+      const tableData = sorted.map((r, idx) => [
+        idx + 1,
+        r.studentId,
+        r.name || r.studentName,
+        r.score || 0,
+        r.totalQuestions || r.total || 0,
+        r.status || (r.score >= (0.4 * (r.total||100)) ? 'Passed' : 'Failed')
+      ]);
+      
+      doc.autoTable({
+        startY: 45,
+        head: [['Cat. Rank', 'Student ID', 'Name', 'Score', 'Total', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 58, 138] },
+        styles: { fontSize: 10, cellPadding: 3 }
+      });
+      
+      doc.save(`CET_Category_Merit_List_${filterCat}_${new Date().toISOString().split('T')[0]}.pdf`);
+      showToast('Category Merit List downloaded successfully', 'success');
+    }
+
+    window.generateRankList = async function() {
+      let resList = window._allResults || JSON.parse(localStorage.getItem('cetExamResults')) || [];
+      if (resList.length === 0) {
+        showToast('No results available to generate rank list', 'error');
+        return;
+      }
+      
+      let sorted = [...resList].sort((a,b) => (b.score || 0) - (a.score || 0));
+      
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('PDF library not loaded yet', 'error');
+        return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      doc.setFontSize(22);
+      doc.setTextColor(30, 58, 138); // blue
+      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Official Rank List", 105, 30, { align: "center" });
+      
+      const config = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      if (config.examDate) {
+         doc.setFontSize(12);
+         doc.text(`Exam Date: ${new Date(config.examDate).toLocaleDateString()}`, 105, 38, { align: "center" });
+      }
+      
+      if (typeof doc.autoTable !== 'function') {
+         showToast("PDF AutoTable plugin not loaded", "error");
+         return;
+      }
+      
+      let tableData = sorted.map((r, i) => [
+         i + 1,
+         r.studentId,
+         r.name || r.studentName || 'Unknown',
+         r.course || 'BSc CS',
+         `${r.score} / ${r.totalQuestions || r.total || 0}`,
+         ((r.score / (r.totalQuestions || r.total || 1)) * 100).toFixed(2) + '%'
+      ]);
+      
+      doc.autoTable({
+         startY: 45,
+         head: [['Rank', 'CET ID', 'Student Name', 'Course', 'Score', 'Percentage']],
+         body: tableData,
+         theme: 'grid',
+         headStyles: { fillColor: [30, 58, 138], textColor: 255 },
+      });
+      
+      doc.save(`CET_RankList.pdf`);
+      showToast('Rank List PDF generated successfully', 'success');
+      console.log('[Admin Action] Success: Rank List generated');
     }
 
     let currentEvalResultId = null;
@@ -2227,6 +3116,18 @@
        resList[resIndex].status = 'Published';
 
        localStorage.setItem('cetExamResults', JSON.stringify(resList));
+       
+       // Email Notification
+       const res = resList[resIndex];
+       const st = DB.getStudentById(res.studentId);
+       if (st && st.email) {
+         import('../js/email-service.js').then(({ default: EmailSvc }) => {
+           const emailHtml = EmailSvc.EmailTemplates.resultPublished(st.fullName, totalM + (res.score || 0), res.totalQuestions || 0).html;
+           const emailSubject = EmailSvc.EmailTemplates.resultPublished(st.fullName, totalM + (res.score || 0), res.totalQuestions || 0).subject;
+           EmailSvc.sendEmail(st.email, emailSubject, emailHtml);
+         }).catch(err => console.warn('Email service import failed', err));
+       }
+
        tempManualMarks = {};
        document.getElementById('evalModal').classList.add('hidden');
        alert('Result Published Successfully!');
@@ -2411,57 +3312,144 @@
       showModal('rescheduleModal');
     }
 
-    window.saveReschedule = function() {
+    window.saveReschedule = async function() {
       const id = document.getElementById('rescheduleStudentId').value;
       const date = document.getElementById('rescheduleDate').value;
       const time = document.getElementById('rescheduleTime').value;
-      console.log('[Reschedule] saving for', id, date, time);
-      if (!date || !time) { alert('Please select both date and time.'); return; }
-      DB.updateStudent(id, { rescheduleDate: date, rescheduleTime: time });
+      console.log('[Admin Action] Start: Reschedule exam', id, date, time);
+      if (!date || !time) { showToast('Please select both date and time', 'error'); return; }
+      const s = DB.getStudentById(id);
+      DB.updateStudent(id, { rescheduleDate: date, rescheduleTime: time, examStatus: 'SCHEDULED' });
+
+      // Also sync cetApprovedStudents
+      try {
+        let approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+        const apIdx = approved.findIndex(a => a.id === id || a.studentId === (s?.studentId));
+        if (apIdx !== -1) {
+          approved[apIdx].rescheduleDate = date;
+          approved[apIdx].rescheduleTime = time;
+          approved[apIdx].examStatus = 'SCHEDULED';
+          localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+        }
+      } catch(e) {}
+
+      // Supabase dual-write
+      if (supabase && s) {
+        await supabase.from('students').update({ exam_status: 'SCHEDULED' }).eq('student_id', s.studentId || id)
+          .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Reschedule error:', error.message); else console.log('[Admin Action] Success: Exam rescheduled in cloud'); });
+      }
+
+      // Email Notification
+      if (s && s.email) {
+        import('../js/email-service.js').then(({ default: EmailSvc }) => {
+          const emailHtml = EmailSvc.EmailTemplates.scheduleUpdate(s.fullName, date, time).html;
+          const emailSubject = EmailSvc.EmailTemplates.scheduleUpdate(s.fullName, date, time).subject;
+          EmailSvc.sendEmail(s.email, emailSubject, emailHtml);
+        }).catch(err => console.warn('Email service import failed', err));
+      }
+
+      invalidateCache();
       hideModal('rescheduleModal');
-      // Show toast
-      showToast('Exam rescheduled to ' + date + ' at ' + time);
+      showToast('Exam rescheduled to ' + date + ' at ' + time, 'success');
+      console.log('[Admin Action] Success: Exam rescheduled', id);
       renderStudents();
     }
 
-    window.resumeExam = function(id) {
-      console.log('[Resume] clicked, student id:', id);
+    window.resumeExam = async function(id) {
+      console.log('[Admin Action] Start: Resume exam', id);
       const s = DB.getStudentById(id);
       if (s) {
         DB.updateStudent(id, { examStatus: 'Active Exam' });
-        showToast('Exam resumed! Status set to Active Exam.');
+
+        // Also sync cetApprovedStudents
+        try {
+          let approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+          const apIdx = approved.findIndex(a => a.id === id || a.studentId === s.studentId);
+          if (apIdx !== -1) {
+            approved[apIdx].examStatus = 'Active Exam';
+            localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+          }
+        } catch(e) {}
+
+        // Supabase dual-write
+        if (supabase) {
+          await supabase.from('students').update({ exam_status: 'ACTIVE' }).eq('student_id', s.studentId || id)
+            .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Resume error:', error.message); else console.log('[Admin Action] Success: Exam resumed in cloud'); });
+        }
+        invalidateCache();
+        showToast('Exam resumed! Status set to Active Exam.', 'success');
+        console.log('[Admin Action] Success: Exam resumed', id);
         renderStudents();
       }
     }
 
     window.deleteApprovedStudent = function(id) {
-      console.log('[Delete] clicked, student id:', id);
+      console.log('[Admin Action] Start: Open delete modal', id);
       document.getElementById('deleteStudentConfirmId').value = id;
       document.getElementById('deleteStudentName').textContent = DB.getStudentById(id)?.fullName || 'this student';
       showModal('deleteStudentModal');
     }
 
-    window.confirmDeleteStudent = function() {
+    window.confirmDeleteStudent = async function() {
       const id = document.getElementById('deleteStudentConfirmId').value;
-      console.log('[Delete] confirmed for', id);
-      DB.updateStudent(id, { status: 'deleted' });
+      console.log('[Admin Action] Start: Delete approved student', id);
+      const s = DB.getStudentById(id);
+      const studentEmail = s?.email;
+      const studentStudentId = s?.studentId;
+
+      // 1. Remove from cet_students completely (not just status change)
+      if (s) {
+        const allStudents = DB.getStudents();
+        const filtered = allStudents.filter(st => st.id !== id);
+        localStorage.setItem('cet_students', JSON.stringify(filtered));
+      }
+
+      // 2. Remove from cetApprovedStudents
+      try {
+        let approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+        approved = approved.filter(a => a.id !== id && a.email !== studentEmail && a.studentId !== studentStudentId);
+        localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+      } catch(e) {}
+
+      // 3. Remove from cetApplications
+      try {
+        let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+        apps = apps.filter(a => a.email !== studentEmail && a.studentId !== studentStudentId);
+        localStorage.setItem('cetApplications', JSON.stringify(apps));
+      } catch(e) {}
+
+      // 4. Remove from cetPayments
+      try {
+        let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+        payments = payments.filter(p => p.email !== studentEmail && p.studentId !== studentStudentId);
+        localStorage.setItem('cetPayments', JSON.stringify(payments));
+      } catch(e) {}
+
+      // 5. Supabase: delete from cloud
+      if (supabase && s) {
+        try {
+          const { error } = await supabase.from('students').delete().eq('student_id', studentStudentId || id);
+          if (error) {
+            console.error('[Admin Action] Failed: Supabase delete student error:', error.message);
+            showToast('Delete failed in cloud – retry', 'error');
+          } else {
+            console.log('[Admin Action] Success: Student deleted from cloud');
+          }
+        } catch(e) {
+          console.error('[Admin Action] Failed: Supabase delete exception', e);
+        }
+      }
+
+      invalidateCache();
       hideModal('deleteStudentModal');
-      showToast('Student deleted successfully.');
+      showToast('Student deleted successfully', 'success');
+      console.log('[Admin Action] Success: Student fully deleted', id);
       renderStudents();
+      renderApplications();
+      renderOverview();
     }
 
-    function showToast(msg) {
-      let t = document.getElementById('adminToast');
-      if (!t) {
-        t = document.createElement('div');
-        t.id = 'adminToast';
-        t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:#1e293b;color:#fff;font-weight:700;font-size:13px;padding:12px 20px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.3);transition:opacity 0.3s;';
-        document.body.appendChild(t);
-      }
-      t.textContent = msg;
-      t.style.opacity = '1';
-      setTimeout(() => { t.style.opacity = '0'; }, 3000);
-    }
+    // Old showToast removed — using the improved version defined in RELIABILITY INFRASTRUCTURE section above
     
     // Assign DB to window for inline onclick hooks in HTML
     window.DB = DB;

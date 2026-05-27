@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supabase Connection Test | CET Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .test-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 20px;
+      padding: 36px;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .test-card h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .test-card p.sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+    .env-box {
+      background: rgba(99,102,241,0.08);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      word-break: break-all;
+      line-height: 1.8;
+    }
+    .env-box strong { color: #a5b4fc; }
+    .env-box .val { color: #34d399; }
+    .env-box .missing { color: #f87171; }
+    .test-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(51,65,85,0.5);
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    .test-row.ok { border-color: rgba(16,185,129,0.4); }
+    .test-row.fail { border-color: rgba(239,68,68,0.4); }
+    .test-row .icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+    .test-row .label { flex: 1; font-weight: 500; }
+    .test-row .status { font-weight: 700; font-size: 12px; text-align: right; min-width: 100px; }
+    .pending { color: #f59e0b; }
+    .ok-text { color: #10b981; }
+    .fail-text { color: #ef4444; }
+    #runBtn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
+    }
+    #runBtn:hover { opacity: 0.92; transform: translateY(-1px); }
+    #runBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #finalMsg {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 14px;
+      color: #94a3b8;
+      min-height: 24px;
+      font-weight: 500;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #64748b;
+      text-decoration: none;
+    }
+    .back-link:hover { color: #a5b4fc; }
+  </style>
+</head>
+<body>
+  <div class="test-card">
+    <h1>🔌 Supabase Connection Test</h1>
+    <p class="sub">Verifying CET Exam Portal ↔ Supabase connection</p>
+
+    <div class="env-box">
+      <div><strong>VITE_SUPABASE_URL:</strong> <span id="envUrl" class="val">loading...</span></div>
+      <div><strong>VITE_SUPABASE_ANON_KEY:</strong> <span id="envKey" class="val">loading...</span></div>
+    </div>
+
+    <div class="test-row" id="row-env">
+      <span class="icon">📋</span>
+      <span class="label">Environment Variables</span>
+      <span class="status pending" id="stat-env">⏳ Waiting...</span>
+    </div>
+    <div class="test-row" id="row-client">
+      <span class="icon">🔧</span>
+      <span class="label">Supabase Client Init</span>
+      <span class="status pending" id="stat-client">⏳ Waiting...</span>
+    </div>
+    <div class="test-row" id="row-connect">
+      <span class="icon">🌐</span>
+      <span class="label">Database Connection</span>
+      <span class="status pending" id="stat-connect">⏳ Waiting...</span>
+    </div>
+    <div class="test-row" id="row-storage">
+      <span class="icon">📦</span>
+      <span class="label">Storage Buckets</span>
+      <span class="status pending" id="stat-storage">⏳ Waiting...</span>
+    </div>
+
+    <button id="runBtn">▶ Run Connection Tests</button>
+    <p id="finalMsg"></p>
+    <a href="dashboard.html" class="back-link">← Back to Admin Dashboard</a>
+  </div>
+
+  <script type="module">
+    // Import Supabase directly — Vite resolves npm packages in ES modules
+    import { createClient } from '@supabase/supabase-js';
+
+    // Read env vars
+    const url = import.meta.env.VITE_SUPABASE_URL || '';
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+    // Show env values
+    document.getElementById('envUrl').textContent = url || '❌ NOT SET';
+    document.getElementById('envUrl').className = url ? 'val' : 'missing';
+    document.getElementById('envKey').textContent = key ? key.substring(0, 30) + '...' : '❌ NOT SET';
+    document.getElementById('envKey').className = key ? 'val' : 'missing';
+
+    // Create client (may be null)
+    let supabase = null;
+    if (url && key) {
+      try {
+        supabase = createClient(url, key);
+      } catch (e) {
+        console.error('Supabase init error:', e);
+      }
+    }
+
+    function setStatus(statId, rowId, ok, text) {
+      const stat = document.getElementById(statId);
+      const row = document.getElementById(rowId);
+      stat.textContent = text;
+      stat.className = 'status ' + (ok ? 'ok-text' : 'fail-text');
+      row.className = 'test-row ' + (ok ? 'ok' : 'fail');
+    }
+
+    document.getElementById('runBtn').addEventListener('click', async function() {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = '⏳ Running tests...';
+      document.getElementById('finalMsg').textContent = '';
+
+      // Test 1: Env vars
+      const hasEnv = !!(url && key);
+      setStatus('stat-env', 'row-env', hasEnv, hasEnv ? '✅ Found' : '❌ Missing');
+      if (!hasEnv) {
+        document.getElementById('finalMsg').textContent = '⚠️ Create .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart Vite (npm run dev).';
+        btn.disabled = false; btn.textContent = '▶ Run Connection Tests';
+        return;
+      }
+
+      // Test 2: Client init
+      const clientOk = supabase !== null;
+      setStatus('stat-client', 'row-client', clientOk, clientOk ? '✅ Ready' : '❌ Failed');
+      if (!clientOk) {
+        document.getElementById('finalMsg').textContent = '⚠️ Supabase client could not initialize. Check your .env values.';
+        btn.disabled = false; btn.textContent = '▶ Run Connection Tests';
+        return;
+      }
+
+      // Test 3: DB connection
+      try {
+        const { data, error } = await supabase.from('students').select('id').limit(1);
+        if (error) {
+          if (error.message.includes('does not exist') || error.code === '42P01') {
+            setStatus('stat-connect', 'row-connect', true, '✅ Connected (tables not yet created)');
+          } else {
+            setStatus('stat-connect', 'row-connect', false, '❌ ' + error.message);
+          }
+        } else {
+          setStatus('stat-connect', 'row-connect', true, '✅ Connected! (' + (data?.length || 0) + ' rows)');
+        }
+      } catch (e) {
+        setStatus('stat-connect', 'row-connect', false, '❌ ' + e.message);
+      }
+
+      // Test 4: Storage — probe each bucket directly (listBuckets needs service_role)
+      try {
+        const buckets = ['student-documents', 'student-photos', 'payment-screenshots'];
+        const found = [];
+        for (const bucket of buckets) {
+          const { error } = await supabase.storage.from(bucket).list('', { limit: 1 });
+          if (!error) {
+            found.push(bucket);
+          } else if (error.message && error.message.includes('not found')) {
+            // bucket doesn't exist
+          } else {
+            found.push(bucket); // permission error means it exists but access is restricted — still counts
+          }
+        }
+        if (found.length === 3) {
+          setStatus('stat-storage', 'row-storage', true, '✅ All 3 buckets ready');
+        } else if (found.length > 0) {
+          setStatus('stat-storage', 'row-storage', true, '✅ ' + found.join(', '));
+        } else {
+          setStatus('stat-storage', 'row-storage', false, '⚠️ No buckets detected');
+        }
+      } catch (e) {
+        setStatus('stat-storage', 'row-storage', false, '❌ ' + e.message);
+      }
+
+      // Final
+      const allGreen = document.querySelectorAll('.test-row.ok').length === 4;
+      document.getElementById('finalMsg').innerHTML = allGreen
+        ? '🎉 <strong style="color:#10b981;">All systems go!</strong> Supabase is fully connected.'
+        : '⚠️ <strong style="color:#f59e0b;">Partial success.</strong> Check failed items above.';
+
+      btn.disabled = false;
+      btn.textContent = '▶ Run Again';
+    });
+  </script>
+</body>
+</html>

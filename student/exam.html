@@ -7,6 +7,7 @@
   
   <link rel="stylesheet" href="../css/tailwind.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; user-select: none; -webkit-user-select: none; }
@@ -115,7 +116,7 @@
   <div id="lockedOverlay" class="absolute inset-0 z-[100] bg-slate-900/95 backdrop-blur-md hidden flex-col items-center justify-center p-6">
     <div class="bg-slate-800 border-2 border-red-900/50 rounded-2xl shadow-2xl p-8 max-w-lg w-full text-center">
       <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">🔒</div>
-      <h2 class="text-3xl font-black text-white mb-2 tracking-tight">EXAM LOCKED</h2>
+      <h2 class="text-3xl font-black text-white mb-2 tracking-tight">Your exam is locked.</h2>
       <p class="text-red-400 font-bold mb-6" id="lockReasonDisplay">Security violation detected.</p>
       
       <div class="bg-slate-900 rounded-xl p-5 mb-6 text-left border border-slate-700 space-y-3">
@@ -133,16 +134,17 @@
         <strong class="block mb-1">Action Required</strong>
         Please raise your hand or contact the administrator immediately. You cannot resume until the admin unlocks your session.
       </div>
-      <p class="text-xs text-slate-500 animate-pulse">Waiting for administrator unlock... <span class="font-mono" id="lockPollingTicks"></span></p>
+      <p class="text-xs text-slate-500 animate-pulse">Waiting for admin unlock... <span class="font-mono" id="lockPollingTicks"></span></p>
     </div>
   </div>
 
   <div id="notificationToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-2xl font-bold text-white transition-all transform translate-y-20 opacity-0 z-[110]"></div>
 
-  <script>
+  <script type="module">
     /* ============================================================== 
-       PURE VANILLA JAVASCRIPT & LOCALSTORAGE (No External Imports)
+       EXAM ENGINE WITH SUPABASE DUAL-WRITE (Phase 4)
        ============================================================== */
+    import ExamSupa from '../js/supabase-exam.js';
 
     let currentStudent = null;
     let examData = [];
@@ -153,15 +155,19 @@
     let timerID = null;
     let activeViolations = 0;
     let isExamActive = false;
+    let isSetupPhase = true;
+    let warningGracePeriod = false;
     let mediaStream = null;
     let examConfig = null;
+    let _supaStudentUUID = null; // Supabase student UUID for cloud ops
+    let faceDetectionEnabled = false;
 
     const LocalDB = {
       get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
       set(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
     };
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       // 1. Fetch Session
       const session = LocalDB.get('cet_current_student');
       if(!session) { alert('No active session.'); window.location.replace('login.html'); return; }
@@ -170,6 +176,26 @@
       currentStudent = allStudents.find(s => s.id === session.id || s.studentId === session.studentId);
       
       if(!currentStudent) { window.location.replace('login.html'); return; }
+
+      // Supabase eligibility check (non-blocking fallback)
+      if (ExamSupa.isReady()) {
+        const supaStudent = await ExamSupa.checkEligibility(currentStudent.studentId, currentStudent.email);
+        if (supaStudent) {
+          _supaStudentUUID = supaStudent.id;
+          // Sync cloud status to local if cloud is more authoritative
+          if (supaStudent.exam_status === 'TERMINATED' && currentStudent.examStatus !== 'TERMINATED') {
+            currentStudent.examStatus = 'TERMINATED'; currentStudent.hasAttempted = true;
+          }
+          if (supaStudent.exam_status === 'LOCKED' && currentStudent.examStatus !== 'LOCKED') {
+            currentStudent.examStatus = 'LOCKED';
+          }
+          if (supaStudent.has_attempted && !currentStudent.hasAttempted) {
+            currentStudent.hasAttempted = true; currentStudent.examStatus = 'COMPLETED';
+          }
+          console.log('[ExamSupa] Student UUID:', _supaStudentUUID, 'Status:', supaStudent.exam_status);
+        }
+      }
+
       if(currentStudent.hasAttempted && currentStudent.examStatus === 'COMPLETED') { alert('You have already completed the exam.'); window.location.replace('dashboard.html'); return; }
       if(currentStudent.examStatus === 'TERMINATED') { alert('Your exam was terminated.'); window.location.replace('dashboard.html'); return; }
       
@@ -193,12 +219,14 @@
         if(now < start) {
           alert('Exam has not started yet. Please wait.'); window.location.replace('dashboard.html'); return;
         }
-        if(now > end) {
-          alert('Exam time is over.'); window.location.replace('dashboard.html'); return;
+        if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
+           examTimeLeft = currentStudent.examTimeLeft;
+        } else {
+           if(now > end) {
+             alert('Exam time is over.'); window.location.replace('dashboard.html'); return;
+           }
+           examTimeLeft = Math.floor((end - now) / 1000);
         }
-        
-        // Calculate strict remaining time based on absolute end time
-        examTimeLeft = Math.floor((end - now) / 1000);
       }
       
       // 3. Restore any previously backed up answers for this session
@@ -237,6 +265,17 @@
         document.getElementById('previewVideo').srcObject = mediaStream;
         setCheck('chk-media', true);
 
+        // Load Face API models silently in background
+        if (typeof faceapi !== 'undefined') {
+          try {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+            faceDetectionEnabled = true;
+            console.log('[FaceAPI] Models loaded successfully');
+          } catch (e) {
+            console.warn('[FaceAPI] Could not load face models:', e);
+          }
+        }
+
         setTimeout(() => {
           const cvs = document.createElement('canvas');
           const vid = document.getElementById('previewVideo');
@@ -251,7 +290,7 @@
         setCheck('chk-media', false);
         btn.textContent = 'Retry Permissions';
         btn.disabled = false;
-        return errbox.textContent = "CRITICAL: You must allow Camera AND Microphone permissions to proceed.";
+        return errbox.textContent = "Camera permission required to start exam";
       }
 
       try {
@@ -266,11 +305,14 @@
       setTimeout(() => engageExam(), 800);
     }
 
-    function engageExam() {
-      isExamActive = true;
+    async function engageExam() {
       document.getElementById('setupOverlay').classList.add('hidden');
       document.getElementById('mainExamInterface').classList.remove('hidden');
       document.getElementById('mainExamInterface').classList.add('flex');
+      isSetupPhase = false;
+      warningGracePeriod = true;
+      // 30 seconds grace period where violations are ignored/suppressed
+      setTimeout(() => { warningGracePeriod = false; }, 30000);
       
       document.getElementById('topStudentDisplay').textContent = `${currentStudent.fullName} | ID: ${currentStudent.studentId}`;
       const photoSrc = currentStudent.photoData || currentStudent.uploadedFiles?.photoFile;
@@ -278,44 +320,93 @@
         document.getElementById('headerProfilePhoto').innerHTML = `<img src="${photoSrc}" class="w-full h-full object-cover" />`;
       }
       document.getElementById('liveVideo').srcObject = mediaStream;
-      
-      const allSets = LocalDB.get('cetQuestionSets') || [];
-      const activeSet = allSets.find(s => s.isActive);
-      
-      if(!activeSet || !activeSet.questions || activeSet.questions.length === 0) {
-        alert('Exam not configured. No active question set found.');
-        window.location.replace('dashboard.html');
-        return;
+      // Try to load previously shuffled data for this session
+      let existingShuffled = LocalDB.get('cetExamShuffledData_' + currentStudent.id);
+      if (existingShuffled && existingShuffled.length > 0) {
+        examData = existingShuffled;
+      } else {
+        // Try Supabase question set first, fallback to localStorage
+        let questionsLoaded = false;
+        let rawData = [];
+        if (ExamSupa.isReady()) {
+          const supaSet = await ExamSupa.fetchActiveQuestionSet();
+          if (supaSet && supaSet.questions.length > 0) {
+            rawData = supaSet.questions;
+            questionsLoaded = true;
+            console.log('[ExamSupa] Using cloud question set:', supaSet.setName);
+          }
+        }
+        if (!questionsLoaded) {
+          const allSets = LocalDB.get('cetQuestionSets') || [];
+          const activeSet = allSets.find(s => s.isActive);
+          if(!activeSet || !activeSet.questions || activeSet.questions.length === 0) {
+            alert('Exam not configured. No active question set found.');
+            window.location.replace('dashboard.html');
+            return;
+          }
+          rawData = activeSet.questions;
+        }
+
+        // Randomize questions and options
+        examData = JSON.parse(JSON.stringify(rawData));
+        for (let i = examData.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [examData[i], examData[j]] = [examData[j], examData[i]];
+        }
+        
+        examData.forEach(q => {
+          if (q.options && q.options.length > 0) {
+            let optObjs = q.options.map((opt, idx) => ({ 
+              text: opt, 
+              isCorrect: (q.type === 'mcq_multi') ? (q.correctMulti && q.correctMulti[idx]) : (idx === q.correct)
+            }));
+            for (let i = optObjs.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [optObjs[i], optObjs[j]] = [optObjs[j], optObjs[i]];
+            }
+            q.options = optObjs.map(o => o.text);
+            if (q.type === 'mcq_multi') {
+              q.correctMulti = optObjs.map(o => !!o.isCorrect);
+            } else {
+              q.correct = optObjs.findIndex(o => o.isCorrect);
+            }
+          }
+        });
+        LocalDB.set('cetExamShuffledData_' + currentStudent.id, examData);
       }
       
-      examData = activeSet.questions;
+      // Start Supabase exam attempt
+      if (ExamSupa.isReady() && _supaStudentUUID) {
+        await ExamSupa.startExamAttempt(_supaStudentUUID, currentStudent.studentId, examData.length);
+      }
       
-      // Recalculate strict time just before starting the clock
-      const now = new Date();
-      const end = new Date(new Date(`${examConfig.examDate}T${examConfig.startTime}`).getTime() + (examConfig.durationMinutes * 60000));
-      
-      // If resuming, use saved time left, otherwise calculate fresh
       if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
          examTimeLeft = currentStudent.examTimeLeft;
       } else {
+         const now = new Date();
+         const end = new Date(new Date(`${examConfig.examDate}T${examConfig.startTime}`).getTime() + (examConfig.durationMinutes * 60000));
          examTimeLeft = Math.floor((end - now) / 1000);
       }
       
-      if (examTimeLeft <= 0) {
-        executeFinalSubmit('Auto Submitted', true);
-        return;
-      }
+      if (examTimeLeft <= 0) { executeFinalSubmit('Auto Submitted', true); return; }
       
       activeViolations = currentStudent.activeViolations || 0;
       updateViolationsUI();
-      
       updateUIMap();
       renderCurrentQuestion();
-      timerID = setInterval(examClockTick, 1000);
-      examClockTick(); // Call immediately to render first tick
       
-      // Start polling for locks/terminations from admin
+      isExamActive = true; // Exam is fully active now
+      
+      timerID = setInterval(examClockTick, 1000);
+      examClockTick();
       setInterval(pollUnlockStatus, 5000);
+      
+      // Supabase autosave every 30 seconds
+      setInterval(() => {
+        if (isExamActive && ExamSupa.isReady()) {
+          ExamSupa.scheduleAutosave(answersStore, examTimeLeft, activeViolations);
+        }
+      }, 30000);
     }
 
     function renderCurrentQuestion() {
@@ -379,6 +470,7 @@
          answersStore[currentIdx] = ansData;
       }
       LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
+      ExamSupa.scheduleAutosave(answersStore, examTimeLeft, activeViolations);
       if(type === 'single' || type === 'multi') renderCurrentQuestion();
       updateUIMap();
     }
@@ -386,6 +478,7 @@
     function saveTextAnswer(val) {
       answersStore[currentIdx] = val;
       LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
+      ExamSupa.scheduleAutosave(answersStore, examTimeLeft, activeViolations);
       updateUIMap();
     }
 
@@ -423,6 +516,22 @@
       examTimeLeft--;
       const [h, m, s] = [Math.floor(examTimeLeft / 3600), Math.floor((examTimeLeft % 3600) / 60), Math.floor(examTimeLeft % 60)];
       document.getElementById('topTimer').textContent = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+
+      // AI Face Tracking (runs every 5 seconds)
+      if (faceDetectionEnabled && isExamActive && examTimeLeft % 5 === 0) {
+        const video = document.getElementById('liveVideo');
+        if (video && !video.paused && !video.ended) {
+          faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).then(detections => {
+            if (detections.length === 0) {
+              logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
+              registerViolation('No face detected! Please look at the camera.');
+            } else if (detections.length > 1) {
+              logSecurityEvent('MULTIPLE_FACES', `Detected ${detections.length} faces.`);
+              registerViolation('Multiple faces detected! You must be alone.');
+            }
+          }).catch(e => {});
+        }
+      }
     }
 
     function logSecurityEvent(type, message) {
@@ -436,6 +545,10 @@
         timestamp: new Date().toISOString()
       });
       LocalDB.set('cetExamSecurityLogs', logs);
+      // Supabase dual-write
+      if (_supaStudentUUID) {
+        ExamSupa.logSecurityToSupabase(_supaStudentUUID, currentStudent?.studentId, currentStudent?.fullName, type, message);
+      }
     }
 
     document.addEventListener('contextmenu', e => { 
@@ -468,7 +581,7 @@
     });
 
     document.addEventListener('keydown', e => {
-      const blockedKeys = ['F12'];
+      const blockedKeys = ['F12', 'PrintScreen'];
       const blockedCombos = ['c', 'v', 'x', 's', 'p', 'a', 'r', 'i', 'j'];
       
       if(blockedKeys.includes(e.key) || (e.ctrlKey && blockedCombos.includes(e.key.toLowerCase())) || (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(e.key.toLowerCase())) || e.key === 'F5' || e.key === 'Escape' || (e.altKey && e.key === 'Tab')) {
@@ -481,13 +594,21 @@
       }
     });
 
+    document.addEventListener('keyup', e => {
+      if (e.key === 'PrintScreen' || e.code === 'PrintScreen') {
+        navigator.clipboard.writeText(''); // Attempt to clear clipboard
+        logSecurityEvent('SCREENSHOT', 'PrintScreen key pressed.');
+        registerViolation('Taking screenshots is strictly prohibited!');
+      }
+    });
+
     function updateViolationsUI() {
       const dotsHTML = Array(3).fill(0).map((_, i) => `<div class="w-3 h-3 rounded-sm border border-red-500/50 ${i < activeViolations ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-slate-900'}"></div>`).join('');
       document.getElementById('violationIndicators').innerHTML = dotsHTML;
     }
 
     function registerViolation(msg) {
-      if(!isExamActive) return;
+      if(!isExamActive || isSetupPhase || warningGracePeriod) return;
       activeViolations++;
       
       // Save warnings to student profile to persist across refresh
@@ -510,7 +631,6 @@
     }
 
     function executeExamLock(reason) {
-       // Save state
        let students = LocalDB.get('cet_students') || [];
        const stIdx = students.findIndex(s=>s.id === currentStudent.id);
        if(stIdx !== -1) { 
@@ -536,6 +656,14 @@
        else lockedExams.push(lockObj);
        LocalDB.set('cetLockedExams', lockedExams);
        
+       // Supabase dual-write
+       if (_supaStudentUUID) {
+         ExamSupa.lockExamInSupabase(_supaStudentUUID, currentStudent.studentId, currentStudent.fullName, currentStudent.courseApplied, activeViolations, reason);
+         if (ExamSupa.isReady()) {
+           ExamSupa.forceAutosave(answersStore, examTimeLeft, activeViolations);
+         }
+       }
+       
        showLockedScreen(reason, activeViolations);
     }
     
@@ -549,7 +677,19 @@
        if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
     }
     
-    function pollUnlockStatus() {
+    async function pollUnlockStatus() {
+       // Check Supabase first for real-time status
+       let cloudStatus = null;
+       if (_supaStudentUUID && ExamSupa.isReady()) {
+         cloudStatus = await ExamSupa.pollExamStatus(_supaStudentUUID);
+         if (cloudStatus === 'TERMINATED') {
+           alert('Admin has permanently terminated your exam.');
+           window.location.replace('dashboard.html'); return;
+         } else if (cloudStatus === 'ACTIVE' && currentStudent.examStatus === 'LOCKED') {
+           handleUnlock(); return;
+         }
+       }
+       // Fallback: check localStorage if cloudStatus didn't match
        const students = LocalDB.get('cet_students') || [];
        const me = students.find(s => s.id === currentStudent.id);
        if(!me) return;
@@ -557,13 +697,48 @@
        if (me.examStatus === 'TERMINATED') {
           alert('Admin has permanently terminated your exam.');
           window.location.replace('dashboard.html');
-       } else if (me.examStatus === 'ACTIVE' || me.examStatus === 'pending' || me.examStatus === 'approved') {
-          // Unlocked!
-          window.location.reload();
+       } else if ((me.examStatus === 'ACTIVE' || me.examStatus === 'pending' || me.examStatus === 'approved') && currentStudent.examStatus === 'LOCKED') {
+          handleUnlock();
        } else {
           document.getElementById('lockPollingTicks').textContent += '.';
           if(document.getElementById('lockPollingTicks').textContent.length > 5) document.getElementById('lockPollingTicks').textContent = '.';
        }
+    }
+
+    async function handleUnlock() {
+      sysToast('Exam resumed successfully', 'bg-emerald-600');
+      document.getElementById('lockedOverlay').classList.add('hidden');
+      
+      // Reset warnings locally
+      activeViolations = 0;
+      updateViolationsUI();
+      
+      let students = LocalDB.get('cet_students') || [];
+      const stIdx = students.findIndex(s=>s.id === currentStudent.id);
+      if(stIdx !== -1) { 
+        students[stIdx].examStatus = 'ACTIVE';
+        students[stIdx].activeViolations = 0;
+        LocalDB.set('cet_students', students); 
+        currentStudent = students[stIdx];
+      }
+
+      // Restart camera seamlessly
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('liveVideo').srcObject = mediaStream;
+      } catch (e) {
+        console.warn("[Exam] Camera resumed failed:", e);
+      }
+      
+      try { await document.documentElement.requestFullscreen(); } catch (e) {}
+      
+      // Temporary grace period on unlock
+      warningGracePeriod = true;
+      setTimeout(() => { warningGracePeriod = false; }, 10000);
+
+      isExamActive = true;
+      timerID = setInterval(examClockTick, 1000);
+      examClockTick();
     }
 
     function sysToast(msg, bgClass) {
@@ -579,19 +754,14 @@
       } 
     }
 
-    function executeFinalSubmit(submitStatus = 'Submitted', isAuto = false) {
+    async function executeFinalSubmit(submitStatus = 'Submitted', isAuto = false) {
       isExamActive = false;
       clearInterval(timerID);
       
-      let scoreAmt = 0;
-      let correctAmt = 0;
-      let wrongAmt = 0;
-      let unansweredAmt = 0;
+      let scoreAmt = 0, correctAmt = 0, wrongAmt = 0, unansweredAmt = 0;
       
       examData.forEach((q, i) => {
-        let isCorrect = false;
-        let requiresManual = false;
-        
+        let isCorrect = false, requiresManual = false;
         if(answersStore[i] !== undefined && answersStore[i] !== null && answersStore[i] !== '') {
            if(q.type === 'mcq_single' || !q.type) {
               if(answersStore[i] === q.correct) isCorrect = true;
@@ -599,63 +769,31 @@
               const sel = answersStore[i] || [];
               const correctArr = q.correctMulti || [];
               let match = true;
-              for(let k=0; k<4; k++) {
-                 const isSel = sel.includes(k);
-                 const isCor = !!correctArr[k];
-                 if(isSel !== isCor) { match = false; break; }
-              }
+              for(let k=0; k<4; k++) { if(sel.includes(k) !== !!correctArr[k]) { match = false; break; } }
               if(match) isCorrect = true;
            } else if(q.type === 'short_answer') {
-              const uAns = String(answersStore[i]).trim().toLowerCase();
-              const cAns = String(q.correctText || '').trim().toLowerCase();
-              if(uAns === cAns && cAns !== '') isCorrect = true;
-           } else {
-              requiresManual = true;
-           }
-
-           if(isCorrect) {
-              correctAmt++;
-              scoreAmt += parseFloat(q.marks) || 1;
-           } else if(!requiresManual) {
-              wrongAmt++;
-           }
-        } else {
-           unansweredAmt++;
-        }
+              if(String(answersStore[i]).trim().toLowerCase() === String(q.correctText || '').trim().toLowerCase() && q.correctText) isCorrect = true;
+           } else { requiresManual = true; }
+           if(isCorrect) { correctAmt++; scoreAmt += parseFloat(q.marks) || 1; }
+           else if(!requiresManual) { wrongAmt++; }
+        } else { unansweredAmt++; }
       });
       
       const startDur = examConfig.durationMinutes * 60;
       const elapsedSec = startDur - (examTimeLeft > 0 ? examTimeLeft : 0);
 
       let results = LocalDB.get('cetExamResults') || [];
-      results.push({
-        id: 'RES' + Date.now(),
-        studentId: currentStudent.studentId || currentStudent.id,
-        name: currentStudent.fullName,
-        score: scoreAmt,
-        totalQuestions: examData.length,
-        violations: activeViolations,
-        timeUsed: elapsedSec,
-        submittedAt: new Date().toISOString(),
-        status: submitStatus,
-        autoSubmitted: isAuto,
-        answers: answersStore // Preserve answers for manual grading
-      });
+      results.push({ id: 'RES' + Date.now(), studentId: currentStudent.studentId || currentStudent.id, name: currentStudent.fullName, score: scoreAmt, totalQuestions: examData.length, violations: activeViolations, timeUsed: elapsedSec, submittedAt: new Date().toISOString(), status: submitStatus, autoSubmitted: isAuto, answers: answersStore, result_published: false });
       LocalDB.set('cetExamResults', results);
 
       let students = LocalDB.get('cet_students') || [];
       const stIdx = students.findIndex(s=>s.id === currentStudent.id);
       if(stIdx !== -1) { 
         students[stIdx].hasAttempted = true; 
-        if (submitStatus.includes('Terminated')) {
-           students[stIdx].examStatus = 'TERMINATED';
-        } else {
-           students[stIdx].examStatus = 'COMPLETED';
-        }
+        students[stIdx].examStatus = submitStatus.includes('Terminated') ? 'TERMINATED' : 'COMPLETED';
         LocalDB.set('cet_students', students); 
       }
       
-      // Update cetApprovedStudents
       let approved = LocalDB.get('cetApprovedStudents') || [];
       const apIdx = approved.findIndex(s => s.id === currentStudent.id || s.studentId === currentStudent.studentId);
       if (apIdx !== -1) {
@@ -664,35 +802,41 @@
          LocalDB.set('cetApprovedStudents', approved);
       }
 
-      // Cleanup backup to save space since exam is over
-      localStorage.removeItem(`cetExamAnswers_${currentStudent.id}`);
+      // ── SUPABASE: Submit result to cloud ──
+      if (_supaStudentUUID && ExamSupa.isReady()) {
+        try {
+          await ExamSupa.forceAutosave(answersStore, 0, activeViolations);
+          await ExamSupa.submitExamResult(_supaStudentUUID, currentStudent.studentId, {
+            name: currentStudent.fullName, score: scoreAmt, total: examData.length,
+            correctAnswers: correctAmt, wrongAnswers: wrongAmt, unanswered: unansweredAmt,
+            violations: activeViolations, timeUsed: elapsedSec, submitStatus, isAuto, answers: answersStore,
+            course: currentStudent.courseApplied || 'BSc Computer Science', category: currentStudent.category || 'OPEN',
+          });
+        } catch (e) { console.warn('[ExamSupa] Submit to cloud failed:', e); }
+      }
 
+      localStorage.removeItem(`cetExamAnswers_${currentStudent.id}`);
       if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
       if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
-      // Clear standard cet_results to prevent conflict if old logic exists
       let oldResults = LocalDB.get('cet_results') || [];
-      oldResults.push({
-         id: 'RES' + Date.now(),
-         studentId: currentStudent.id,
-         studentName: currentStudent.fullName,
-         studentCetId: currentStudent.studentId,
-         score: scoreAmt,
-         correctAnswers: correctAmt,
-         wrongAnswers: wrongAmt,
-         unanswered: unansweredAmt,
-         violations: activeViolations,
-         total: examData.length,
-         submittedAt: new Date().toISOString()
-      });
+      oldResults.push({ id: 'RES' + Date.now(), studentId: currentStudent.id, studentName: currentStudent.fullName, studentCetId: currentStudent.studentId, score: scoreAmt, correctAnswers: correctAmt, wrongAnswers: wrongAmt, unanswered: unansweredAmt, violations: activeViolations, total: examData.length, submittedAt: new Date().toISOString(), result_published: false });
       LocalDB.set('cet_results', oldResults);
 
-      if (submitStatus.includes('Terminated')) {
-        window.location.replace('dashboard.html');
-      } else {
-        window.location.replace('result.html');
-      }
+      if (submitStatus.includes('Terminated')) { window.location.replace('dashboard.html'); }
+      else { window.location.replace('dashboard.html?submitted=true'); }
     }
+
+    // ── Expose functions to window for inline onclick handlers (module scope) ──
+    window.runSetupSequence = runSetupSequence;
+    window.selectAnswer = selectAnswer;
+    window.saveTextAnswer = saveTextAnswer;
+    window.saveFileUpload = saveFileUpload;
+    window.navQuestion = navQuestion;
+    window.triggerSubmit = triggerSubmit;
+    window.renderCurrentQuestion = renderCurrentQuestion;
+    window.updateUIMap = updateUIMap;
+    Object.defineProperty(window, 'currentIdx', { get: () => currentIdx, set: (v) => { currentIdx = v; } });
   </script>
 </body>
 </html>

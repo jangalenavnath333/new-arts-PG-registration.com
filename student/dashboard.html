@@ -6,6 +6,8 @@
   <title>Student Dashboard | CET Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/main.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     @keyframes startPulse {
       0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
@@ -82,73 +84,104 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <div class="content-header">
-        <div class="content-header-left">
-          <h1 id="pageTitle">Dashboard Overview</h1>
-          <p id="pageSubtitle">Welcome back to CET Portal</p>
-        </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-          <div id="headerStatus"></div>
-          <button onclick="startExam()" id="startExamHeaderBtn" class="btn btn-solid" style="display:none;">
-            🚀 Start Exam
-          </button>
-        </div>
-      </div>
-
+      <div class="content-header hidden-old-header" style="display:none;"></div>
+      
       <div class="content-body">
-
-        <!-- OVERVIEW TAB -->
+        <!-- OVERVIEW TAB (New Premium Design) -->
         <div id="section-overview" style="margin-bottom: 40px; padding-top: 10px;">
-          <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
-            <div class="stat-widget blue">
-              <div class="stat-widget-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <!-- Welcome Header -->
+          <div style="background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(16,185,129,0.05)); border: 1px solid var(--card-border); border-radius: 20px; padding: 32px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);">
+            <div style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(99,102,241,0.15); border-radius: 50%; filter: blur(50px);"></div>
+            <div style="position: absolute; bottom: -50px; left: 20%; width: 150px; height: 150px; background: rgba(16,185,129,0.1); border-radius: 50%; filter: blur(40px);"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1; position: relative; flex-wrap: wrap; gap: 24px;">
+              <div style="flex: 1; min-width: 250px;">
+                <p style="color: var(--primary-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; margin-bottom: 8px;">CET Exam Portal</p>
+                <h1 style="font-size: 32px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 12px; color: var(--white); line-height: 1.2;">Welcome, <span id="headerStudentName" style="color: var(--primary-light);">Student</span></h1>
+                
+                <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+                  <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="font-size: 16px;">🎓</span>
+                    <span id="headerCourse" style="font-size: 13px; color: var(--light); font-weight: 500;">--</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="font-size: 16px;">🆔</span>
+                    <span id="headerCetId" style="font-size: 13px; color: var(--light); font-weight: 700; font-family: monospace;">--</span>
+                  </div>
+                </div>
+                
+                <div id="headerStatus"></div>
               </div>
-              <div class="stat-widget-num" id="statStatus">--</div>
-              <div class="stat-widget-label">Application Status</div>
-            </div>
-            <div class="stat-widget green">
-              <div class="stat-widget-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+              
+              <div style="display: flex; flex-direction: column; gap: 12px; min-width: 280px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Date</p>
+                    <p id="headerExamDate" style="font-size: 15px; font-weight: 700; color: var(--white);">TBD</p>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px;">
+                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Time</p>
+                    <p id="headerExamTime" style="font-size: 15px; font-weight: 700; color: var(--white);">TBD</p>
+                  </div>
+                </div>
+                <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 4px 15px rgba(16,185,129,0.1);">
+                  <p id="headerTimerLabel" style="font-size: 12px; color: var(--emerald-400); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;">Time Until Exam</p>
+                  <p id="headerCountdown" style="font-size: 26px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; color: var(--emerald-400); letter-spacing: 2px;">--:--:--</p>
+                </div>
               </div>
-              <div class="stat-widget-num" id="statStudentId">--</div>
-              <div class="stat-widget-label">Student ID</div>
-            </div>
-            <div class="stat-widget orange">
-              <div class="stat-widget-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <div class="stat-widget-num" id="statExamDate">--</div>
-              <div class="stat-widget-label">Exam Date</div>
-            </div>
-            <div class="stat-widget purple">
-              <div class="stat-widget-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              </div>
-              <div class="stat-widget-num" id="statScore">--</div>
-              <div class="stat-widget-label">Exam Score</div>
             </div>
           </div>
-
-          <!-- Profile Card -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
-            <div class="card">
-              <div class="card-header">
-                <div><p class="card-title">My Profile</p><p class="card-subtitle">Application Information</p></div>
+          
+          <!-- Instructions & Action Row -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
+            <!-- Important Instructions Card -->
+            <div class="card" style="border: 1px solid var(--warning); background: linear-gradient(180deg, rgba(245,158,11,0.05) 0%, rgba(15,23,42,1) 100%);">
+              <div class="card-header" style="border-bottom: 1px solid rgba(245,158,11,0.2);">
+                <div>
+                  <p class="card-title" style="color: var(--warning); display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Important Instructions
+                  </p>
+                  <p class="card-subtitle">Mandatory rules for the online examination</p>
+                </div>
               </div>
-              <div id="profileDetails"></div>
+              <div style="padding-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; color: var(--light); font-size: 14px;">
+                  <div style="background: rgba(245,158,11,0.2); padding: 6px; border-radius: 6px; color: var(--warning);">📷</div>
+                  <p><strong>Camera MUST stay ON</strong> and face clearly visible</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; color: var(--light); font-size: 14px;">
+                  <div style="background: rgba(245,158,11,0.2); padding: 6px; border-radius: 6px; color: var(--warning);">🖥</div>
+                  <p><strong>Fullscreen required</strong> throughout the exam</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; color: var(--light); font-size: 14px;">
+                  <div style="background: rgba(239,68,68,0.2); padding: 6px; border-radius: 6px; color: var(--danger);">🚫</div>
+                  <p><strong>NO tab switching</strong> or losing window focus</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; color: var(--light); font-size: 14px;">
+                  <div style="background: rgba(239,68,68,0.2); padding: 6px; border-radius: 6px; color: var(--danger);">🚫</div>
+                  <p><strong>NO copy/paste</strong> or screenshots allowed</p>
+                </div>
+                <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); padding: 12px; border-radius: 8px; margin-top: 8px; text-align: center;">
+                  <p style="color: #fca5a5; font-size: 13px; font-weight: 700;">⚠ 3 WARNINGS = EXAM AUTO-LOCK</p>
+                </div>
+              </div>
             </div>
-            <div class="card">
-              <div class="card-header">
-                <div><p class="card-title">Quick Actions</p></div>
+            
+            <!-- Actions Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 40px 20px;">
+              <div style="margin-bottom: 24px;">
+                <h3 style="font-size: 20px; font-weight: 700; color: var(--white); margin-bottom: 8px;">Ready for your Exam?</h3>
+                <p style="color: var(--mid); font-size: 14px; max-width: 300px; margin: 0 auto;">Ensure you have a stable internet connection and are in a quiet room before starting.</p>
               </div>
-              <div style="display:flex; flex-direction:column; gap:12px;">
-                <button onclick="scrollToSection('status')" class="btn btn-primary-sm" style="justify-content:flex-start;">📋 View Application Status</button>
-                <button onclick="scrollToSection('schedule')" class="btn btn-primary-sm" style="justify-content:flex-start;">📅 Check Exam Schedule</button>
-                <button onclick="scrollToSection('rules')" class="btn btn-primary-sm" style="justify-content:flex-start;">📜 Read Exam Rules</button>
-                <button onclick="scrollToSection('result')" class="btn btn-primary-sm" style="justify-content:flex-start;">🏆 View Result</button>
-                <button onclick="startExam()" id="startExamBtn" class="btn btn-solid" style="display:none; justify-content:flex-start;">🚀 Start Exam Now</button>
-              </div>
+              
+              <button onclick="startExam()" id="premiumStartExamBtn" class="btn btn-solid" style="width: 100%; max-width: 300px; padding: 18px 24px; font-size: 18px; font-weight: 800; border-radius: 12px; margin-bottom: 16px; opacity: 0.5; cursor: not-allowed; transition: all 0.3s ease;">
+                <span style="margin-right: 8px;">🚀</span> START EXAM NOW
+              </button>
+              
+              <button onclick="downloadAdmitCard()" id="premiumAdmitCardBtn" class="btn" style="width: 100%; max-width: 300px; display: none; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 12px 24px; font-weight: 600; border-radius: 12px; transition: all 0.2s ease;">
+                📄 Download Admit Card
+              </button>
             </div>
           </div>
         </div>
@@ -401,6 +434,11 @@
       student.status = student.status.toLowerCase();
 
       DB.setCurrentStudent(student);
+      
+      if (student.status === 'approved' && DB.getSchedule()?.examDate) {
+        const btn = document.getElementById('downloadAdmitCardBtn');
+        if (btn) btn.style.display = 'flex';
+      }
 
       // Sidebar
       try {
@@ -427,41 +465,69 @@
     }
 
     function renderOverview() {
+      // 1. Populate Premium Header Info
       const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
-      const statusIcon = { pending:'⏳', approved:'✅', rejected:'❌' };
-      const statusLabel = { pending:'Under Review', approved:'Approved', rejected:'Rejected' };
-      document.getElementById('statStatus').textContent = (statusIcon[student.status] || '⏳') + ' ' + (statusLabel[student.status] || 'Pending');
-      document.getElementById('statStudentId').textContent = student.studentId || 'N/A';
-
-      const schedule = DB.getSchedule();
-      document.getElementById('statExamDate').textContent = schedule.date ? new Date(schedule.date).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : 'TBD';
-
-      const result = DB.getResultByStudentId(student.id);
-      document.getElementById('statScore').textContent = result ? `${result.score}/${result.total}` : 'N/A';
-
-      // Profile
-      const profileItems = [
-        ['Full Name', student.fullName],
-        ['Email', student.email],
-        ['Mobile', student.mobile],
-        ['Course Applied', student.courseApplied],
-        ['12th Percentage', student.twelfthPercent + '%'],
-        ['Stream', student.stream],
-        ['Year of Passing', student.yearOfPassing],
-        ['Applied On', new Date(student.appliedAt).toLocaleDateString('en-IN')],
-      ];
-      const profilePhotoHtml = student.photoData ? `
-        <div style="display:flex; justify-content:center; padding:16px 0; border-bottom:1px solid var(--card-border);">
-          <img src="${student.photoData}" alt="Profile Photo" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.2);" />
-        </div>
-      ` : '';
       
-      document.getElementById('profileDetails').innerHTML = profilePhotoHtml + profileItems.map(([label, val]) => `
-        <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--card-border);">
-          <span style="font-size:13px; color:var(--mid);">${label}</span>
-          <span style="font-size:13px; color:var(--lighter); font-weight:500;">${val || '--'}</span>
-        </div>
-      `).join('');
+      document.getElementById('headerStudentName').textContent = student.fullName ? student.fullName.split(' ')[0] : 'Student';
+      document.getElementById('headerCourse').textContent = student.courseApplied || student.academicDetails?.courseApplied || '--';
+      document.getElementById('headerCetId').textContent = student.studentId || 'Pending ID';
+      
+      const badgeColors = { pending: 'bg-amber-500 text-white', approved: 'bg-emerald-500 text-white', rejected: 'bg-red-500 text-white' };
+      const displayStatus = appStatus === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
+      document.getElementById('headerStatus').innerHTML = `<span class="px-3 py-1 text-xs font-bold uppercase rounded-full ${badgeColors[student.status] || badgeColors.pending}">${displayStatus}</span>`;
+      
+      // 2. Exam Schedule & Countdown Logic
+      const schedule = DB.getSchedule();
+      let config = null;
+      try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+      
+      if (!config || !config.examDate || !config.startTime) {
+        document.getElementById('headerExamDate').textContent = schedule.date ? new Date(schedule.date).toLocaleDateString('en-IN') : 'TBD';
+        document.getElementById('headerExamTime').textContent = schedule.time || 'TBD';
+        document.getElementById('headerCountdown').textContent = '--:--:--';
+        document.getElementById('headerTimerLabel').textContent = 'Waiting for Schedule';
+      } else {
+        const start = new Date(`${config.examDate}T${config.startTime}`);
+        const end = new Date(start.getTime() + (config.durationMinutes * 60000));
+        
+        document.getElementById('headerExamDate').textContent = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+        document.getElementById('headerExamTime').textContent = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        
+        // Start live countdown
+        if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
+        
+        const updateTimer = () => {
+          const now = new Date();
+          if (now < start) {
+            const diff = start - now;
+            const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+            document.getElementById('headerCountdown').textContent = `${h}:${m}:${s}`;
+            document.getElementById('headerCountdown').style.color = 'var(--emerald-400)';
+            document.getElementById('headerTimerLabel').textContent = 'Starts In';
+          } else if (now >= start && now <= end) {
+            document.getElementById('headerCountdown').textContent = 'LIVE NOW';
+            document.getElementById('headerCountdown').style.color = 'var(--warning)';
+            document.getElementById('headerTimerLabel').textContent = 'Exam is Active';
+            checkExamEligibility(); // Trigger state change
+          } else {
+            document.getElementById('headerCountdown').textContent = 'ENDED';
+            document.getElementById('headerCountdown').style.color = 'var(--danger)';
+            document.getElementById('headerTimerLabel').textContent = 'Status';
+            if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
+            checkExamEligibility();
+          }
+        };
+        
+        updateTimer();
+        window.examCountdownInterval = setInterval(updateTimer, 1000);
+      }
+      
+      // 3. Admit Card Button visibility
+      if (student.status === 'approved' && config?.examDate) {
+        document.getElementById('premiumAdmitCardBtn').style.display = 'block';
+      }
     }
 
     function renderStatus() {
@@ -557,14 +623,19 @@
 
       const start = new Date(`${config.examDate}T${config.startTime}`);
       const end = new Date(start.getTime() + (config.durationMinutes * 60000));
+      const reportingTime = new Date(start.getTime() - 15 * 60000);
       const now = new Date();
       
       let countdown = '';
-      if (now < start) {
+      if (student.examStatus === 'COMPLETED' || student.examStatus === 'Submitted') {
+        countdown = '<span style="color:var(--success);">COMPLETED</span>';
+      } else if (student.examStatus === 'LOCKED') {
+        countdown = '<span style="color:var(--warning);">LOCKED</span><br><span style="font-size:11px;color:var(--mid);">Waiting for admin unlock</span>';
+      } else if (now < start) {
         const diff = start - now;
-        countdown = `${Math.floor(diff/86400000)}d ${Math.floor((diff%86400000)/3600000)}h ${Math.floor((diff%3600000)/60000)}m left`;
+        countdown = `<span style="color:var(--primary-light);">UPCOMING</span>`;
       } else if (now >= start && now <= end) {
-        countdown = '<span style="color:var(--success);">LIVE NOW!</span>';
+        countdown = '<span style="color:var(--success);">LIVE NOW</span>';
       } else {
         countdown = '<span style="color:var(--danger);">ENDED</span>';
       }
@@ -574,12 +645,13 @@
           <div style="text-align:center; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">📅</div>
             <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Exam Date</p>
-            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${start.toLocaleDateString()}</p>
+            <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${start.toLocaleDateString('en-IN')}</p>
           </div>
           <div style="text-align:center; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">⏰</div>
-            <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Exam Time</p>
+            <p style="font-size:13px; color:var(--mid); margin-bottom:4px;">Start Time</p>
             <p style="font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif;">${start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</p>
+            <p style="font-size:11px; color:var(--warning); margin-top:4px;">Reporting: ${reportingTime.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</p>
           </div>
           <div style="text-align:center; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:24px;">
             <div style="font-size:36px; margin-bottom:8px;">⏱</div>
@@ -601,18 +673,69 @@
     }
 
     function renderRules() {
-      const schedule = DB.getSchedule();
-      document.getElementById('instructionsList').innerHTML = (schedule.instructions || []).map(i => `
-        <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:14px;">
-          <span style="color:var(--success); margin-top:2px;">✓</span>
-          <span style="font-size:14px; color:var(--light);">${i}</span>
-        </div>`).join('');
+      document.getElementById('instructionsList').innerHTML = `
+        <div style="display:grid; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(99,102,241,0.05); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.1);">
+            <div style="font-size:20px; color:var(--primary-light);">📷</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">Camera Must Be ON</p>
+              <p style="font-size:12px; color:var(--mid);">Your face must be clearly visible throughout the exam.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(99,102,241,0.05); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.1);">
+            <div style="font-size:20px; color:var(--primary-light);">👤</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">Only One Face Allowed</p>
+              <p style="font-size:12px; color:var(--mid);">Multiple faces detected by AI will trigger a violation.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(99,102,241,0.05); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.1);">
+            <div style="font-size:20px; color:var(--primary-light);">🖥</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">Fullscreen Required</p>
+              <p style="font-size:12px; color:var(--mid);">Exiting fullscreen mode is strictly prohibited.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(99,102,241,0.05); padding:12px; border-radius:8px; border:1px solid rgba(99,102,241,0.1);">
+            <div style="font-size:20px; color:var(--primary-light);">🌐</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">Stable Internet</p>
+              <p style="font-size:12px; color:var(--mid);">Ensure continuous connectivity before starting.</p>
+            </div>
+          </div>
+        </div>`;
 
-      document.getElementById('rulesList').innerHTML = (schedule.rules || []).map(r => `
-        <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:14px;">
-          <span style="color:var(--danger); margin-top:2px;">✗</span>
-          <span style="font-size:14px; color:var(--light);">${r}</span>
-        </div>`).join('');
+      document.getElementById('rulesList').innerHTML = `
+        <div style="display:grid; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(239,68,68,0.05); padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.2);">
+            <div style="font-size:20px; color:var(--danger);">🚫</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">No Tab Switching</p>
+              <p style="font-size:12px; color:var(--mid);">Leaving the exam tab will be recorded as a violation.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(239,68,68,0.05); padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.2);">
+            <div style="font-size:20px; color:var(--danger);">🚫</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">No Copy/Paste</p>
+              <p style="font-size:12px; color:var(--mid);">Clipboard actions are disabled and monitored.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(239,68,68,0.05); padding:12px; border-radius:8px; border:1px solid rgba(239,68,68,0.2);">
+            <div style="font-size:20px; color:var(--danger);">📸</div>
+            <div>
+              <p style="font-size:14px; font-weight:600; color:var(--white);">No Screenshots</p>
+              <p style="font-size:12px; color:var(--mid);">Attempting to capture the screen is prohibited.</p>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; background:rgba(245,158,11,0.1); padding:12px; border-radius:8px; border:1px solid rgba(245,158,11,0.3);">
+            <div style="font-size:24px; color:var(--warning);">⚠</div>
+            <div>
+              <p style="font-size:14px; font-weight:800; color:var(--warning);">3 WARNINGS = EXAM LOCK</p>
+              <p style="font-size:12px; color:var(--mid);">If locked, only an admin can unlock after review.</p>
+            </div>
+          </div>
+        </div>`;
     }
 
     function renderResult() {
@@ -639,19 +762,62 @@
          return;
       }
 
+      if (result.result_published === false) {
+        document.getElementById('resultContent').innerHTML = `
+          <div class="alert alert-success" style="flex-direction:column; align-items:center; text-align:center; padding:40px; border-radius:16px;">
+            <div style="font-size:56px; margin-bottom:20px;">✅</div>
+            <h3 style="font-size:26px; font-weight:800; margin-bottom:12px; color:var(--success);">Exam Submitted Successfully</h3>
+            <p style="font-size:16px; color:var(--white); margin-bottom:8px;">Your exam has been submitted and is under review.</p>
+            <p style="font-size:14px; color:var(--light); bg:rgba(255,255,255,0.1); padding:12px 24px; border-radius:8px;">Result will be published by the admin soon.</p>
+          </div>
+        `;
+        return;
+      }
+
       const pct = Math.round((result.score / result.total) * 100);
       const grade = pct >= 80 ? { label:'Excellent', color:'var(--success)' } : pct >= 60 ? { label:'Good', color:'var(--primary-light)' } : pct >= 40 ? { label:'Average', color:'var(--warning)' } : { label:'Below Average', color:'var(--danger)' };
+      const passFail = pct >= 40 ? { text:'PASS', color:'var(--success)' } : { text:'FAIL', color:'var(--danger)' };
+      
+      let rank = 'N/A';
+      let catRank = 'N/A';
+      let myCategory = student.category || student.academicDetails?.category || 'OPEN';
+      try {
+         const allResults = JSON.parse(localStorage.getItem('cetExamResults')) || JSON.parse(localStorage.getItem('cet_results')) || [];
+         if (allResults.length > 0) {
+            allResults.sort((a,b) => (b.score||0) - (a.score||0));
+            const myRankIdx = allResults.findIndex(r => r.studentId === student.studentId || r.studentId === student.id);
+            if (myRankIdx !== -1) rank = myRankIdx + 1;
+            
+            // Category Rank
+            const students = JSON.parse(localStorage.getItem('cet_students')) || [];
+            const catResults = allResults.filter(r => {
+               const s = students.find(st => st.studentId === r.studentId || st.id === r.studentId);
+               const sCat = s?.category || s?.academicDetails?.category || 'OPEN';
+               return sCat === myCategory;
+            });
+            catResults.sort((a,b) => (b.score||0) - (a.score||0));
+            const myCatIdx = catResults.findIndex(r => r.studentId === student.studentId || r.studentId === student.id);
+            if (myCatIdx !== -1) catRank = myCatIdx + 1;
+         }
+      } catch(e){}
 
       document.getElementById('resultContent').innerHTML = `
         <div class="card-header"><div><p class="card-title">🏆 Exam Result</p><p class="card-subtitle">Submitted on ${new Date(result.submittedAt).toLocaleString('en-IN')}</p></div></div>
         <div style="text-align:center; padding:32px 0;">
-          <div style="width:140px; height:140px; border-radius:50%; border:6px solid ${grade.color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; background:rgba(99,102,241,0.05);">
+          <div style="width:140px; height:140px; border-radius:50%; border:6px solid ${grade.color}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; background:rgba(99,102,241,0.05); position:relative;">
             <span style="font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:${grade.color};">${pct}%</span>
             <span style="font-size:12px; color:var(--mid);">Score</span>
+            <div style="position:absolute; bottom:-15px; background:${passFail.color}; color:#fff; padding:4px 16px; border-radius:20px; font-weight:800; font-size:14px; letter-spacing:1px;">${passFail.text}</div>
           </div>
           <h2 style="font-size:28px; font-weight:700; font-family:'Space Grotesk',sans-serif; margin-bottom:4px;">${result.score} / ${result.total}</h2>
           <p style="font-size:16px; font-weight:600; color:${grade.color};">${grade.label}</p>
-          <p style="font-size:14px; color:var(--mid); margin-top:4px;">Student ID: ${student.studentId}</p>
+          <div style="display:flex; justify-content:center; gap:16px; margin-top:12px; flex-wrap:wrap;">
+            <p style="font-size:14px; color:var(--mid);"><span style="font-weight:600; color:var(--light);">ID:</span> ${student.studentId}</p>
+            <p style="font-size:14px; color:var(--mid);">•</p>
+            <p style="font-size:14px; color:var(--mid);"><span style="font-weight:600; color:var(--light);">Overall Rank:</span> #${rank}</p>
+            <p style="font-size:14px; color:var(--mid);">•</p>
+            <p style="font-size:14px; color:var(--mid);"><span style="font-weight:600; color:var(--light);">Category Rank (${myCategory}):</span> #${catRank}</p>
+          </div>
         </div>
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px;">
           <div style="text-align:center; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:16px;">
@@ -668,7 +834,75 @@
           </div>
         </div>
         ${result.violations > 0 ? `<div class="alert alert-warning" style="margin-top:20px;">⚠ Violations recorded during exam: ${result.violations}</div>` : ''}
+        <div style="margin-top: 24px; text-align: center;">
+          <button onclick="downloadResultPDF()" class="btn btn-solid" style="background-color: var(--primary); padding:12px 32px; font-weight:700;">📄 Download Scorecard PDF</button>
+        </div>
       `;
+    }
+
+    function downloadResultPDF() {
+      const result = DB.getResultByStudentId(student.id);
+      if (!result) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      doc.setFontSize(22);
+      doc.setTextColor(30, 58, 138); // blue
+      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("OFFICIAL SCORECARD", 105, 30, { align: "center" });
+      
+      // Calculate Rank
+      let rank = 'N/A';
+      try {
+         // Student side DB is 'cet_results'. But wait, the admin side uses 'cetExamResults'. 
+         // Let's check both or whatever is available in localStorage.
+         const allResults = JSON.parse(localStorage.getItem('cetExamResults')) || JSON.parse(localStorage.getItem('cet_results')) || [];
+         if (allResults.length > 0) {
+            allResults.sort((a,b) => (b.score||0) - (a.score||0));
+            // In cetExamResults, the key is usually studentId which equals cet_student_id.
+            const myRankIdx = allResults.findIndex(r => r.studentId === student.studentId || r.studentId === student.id);
+            if (myRankIdx !== -1) rank = myRankIdx + 1;
+         }
+      } catch(e){}
+      
+      // Box
+      doc.rect(15, 35, 180, 100);
+      
+      // Details
+      doc.setFontSize(11);
+      doc.text(`Student Name: ${student.fullName}`, 20, 45);
+      doc.text(`CET ID: ${student.studentId}`, 20, 55);
+      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 65);
+      doc.text(`Exam Date: ${new Date(result.submittedAt).toLocaleDateString()}`, 20, 75);
+      
+      const pct = Math.round((result.score / result.total) * 100);
+      const grade = pct >= 40 ? 'PASS' : 'FAIL';
+      doc.setFont("helvetica", "bold");
+      doc.text(`Total Marks: ${result.score} / ${result.total}`, 20, 95);
+      doc.text(`Percentage: ${pct}%`, 20, 105);
+      doc.text(`Result Status: ${grade}`, 20, 115);
+      doc.text(`Overall Rank: ${rank}`, 20, 125);
+      doc.setFont("helvetica", "normal");
+      
+      let photoData = student.photoData || (student.uploadedFiles ? student.uploadedFiles.photoFile : null);
+      if (photoData) {
+         try { doc.addImage(photoData, 'JPEG', 150, 40, 35, 45); } catch(e){}
+      }
+      
+      // QR Code
+      const qrContainer = document.createElement('div');
+      new QRCode(qrContainer, {
+         text: `CET ID: ${student.studentId} | Score: ${result.score}/${result.total} | Status: ${grade} | Rank: ${rank}`,
+         width: 128, height: 128
+      });
+      setTimeout(() => {
+        const qrCanvas = qrContainer.querySelector('canvas');
+        if (qrCanvas) doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 95, 30, 30);
+        doc.save(`CET_Scorecard_${student.studentId}.pdf`);
+      }, 100);
     }
 
     function checkExamEligibility() {
@@ -680,17 +914,13 @@
       let config = null;
       try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
       
-      const startBtn   = document.getElementById('startExamBtn');
-      const headerBtn  = document.getElementById('startExamHeaderBtn');
-      const schedBtn   = document.getElementById('scheduleStartBtn');
-      const waitMsg    = document.getElementById('scheduleWaitMsg');
-      const headStat   = document.getElementById('headerStatus');
+      const pBtn = document.getElementById('premiumStartExamBtn');
       
       if (!config || !config.examDate || !config.startTime) {
-        // Allow start in dev/demo mode even without config
-        if(startBtn)  { startBtn.style.display = 'flex'; startBtn.textContent = '🚀 Start Exam (Demo)'; }
-        if(headerBtn) { headerBtn.style.display = 'flex'; headerBtn.textContent = '🚀 Start Exam (Demo)'; }
-        if(headStat)  headStat.innerHTML = '<span style="color:var(--success);">Approved — Exam Ready</span>';
+        if(pBtn) {
+          pBtn.style.opacity = '1'; pBtn.style.cursor = 'pointer'; pBtn.classList.add('pulse-active');
+          pBtn.innerHTML = '<span style="margin-right: 8px;">🚀</span> START EXAM (DEMO)';
+        }
         return;
       }
       
@@ -699,23 +929,11 @@
       const now   = new Date();
       
       if (now < start) {
-        if(headStat) headStat.innerHTML = `<span style="color:var(--warning);">Exam starts at ${start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
-        if(waitMsg)  { waitMsg.style.display = 'block'; waitMsg.innerHTML = 'Please wait for the exam time to start.'; }
-        if(startBtn)  startBtn.style.display = 'none';
-        if(headerBtn) headerBtn.style.display = 'none';
-        if(schedBtn)  schedBtn.style.display = 'none';
+        if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); }
       } else if (now >= start && now <= end) {
-        if(headStat) headStat.innerHTML = '<span style="color:var(--success); font-weight:bold;">● LIVE NOW</span>';
-        if(waitMsg)  waitMsg.style.display = 'none';
-        if(startBtn)  { startBtn.style.display = 'flex';  startBtn.classList.add('pulse-active'); }
-        if(headerBtn) { headerBtn.style.display = 'flex'; headerBtn.classList.add('pulse-active'); }
-        if(schedBtn)  { schedBtn.style.display = 'flex';  schedBtn.classList.add('pulse-active'); }
+        if(pBtn) { pBtn.style.opacity = '1'; pBtn.style.cursor = 'pointer'; pBtn.classList.add('pulse-active'); }
       } else {
-        if(headStat) headStat.innerHTML = '<span style="color:var(--danger);">Exam time is over</span>';
-        if(waitMsg)  { waitMsg.style.display = 'block'; waitMsg.innerHTML = 'The exam time has ended.'; }
-        if(startBtn)  startBtn.style.display = 'none';
-        if(headerBtn) headerBtn.style.display = 'none';
-        if(schedBtn)  schedBtn.style.display = 'none';
+        if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); pBtn.innerHTML = 'EXAM ENDED'; }
       }
     }
 
@@ -795,11 +1013,94 @@
       window.location.href = 'login.html';
     }
 
-
+    async function downloadAdmitCard() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      const config = DB.getSchedule();
+      if (!config || !config.examDate) {
+        alert('Exam schedule not set by admin yet.');
+        return;
+      }
+      
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(30, 58, 138); // blue
+      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("ADMIT CARD (HALL TICKET)", 105, 30, { align: "center" });
+      
+      // Box
+      doc.rect(15, 35, 180, 100);
+      
+      // Details
+      doc.setFontSize(11);
+      doc.text(`Student Name: ${student.fullName || ''}`, 20, 45);
+      doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 55);
+      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 65);
+      
+      const start = new Date(`${config.examDate}T${config.startTime}`);
+      doc.text(`Exam Date: ${start.toLocaleDateString()}`, 20, 75);
+      doc.text(`Exam Time: ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 20, 85);
+      doc.text(`Duration: ${config.durationMinutes} Minutes`, 20, 95);
+      doc.text(`College: New Arts, Commerce and Science College`, 20, 105);
+      
+      // Photo
+      let photoData = student.photoData;
+      if (!photoData && student.uploadedFiles?.photoFile) {
+         photoData = student.uploadedFiles.photoFile;
+      }
+      if (photoData) {
+         try {
+           doc.addImage(photoData, 'JPEG', 150, 40, 35, 45);
+         } catch(e) { console.warn("Could not add photo to PDF", e); }
+      }
+      
+      // QR Code
+      const qrContainer = document.createElement('div');
+      new QRCode(qrContainer, {
+         text: `CET ID: ${student.studentId} | Name: ${student.fullName} | Status: Approved`,
+         width: 128, height: 128
+      });
+      
+      await new Promise(r => setTimeout(r, 100)); // wait for QR render
+      const qrCanvas = qrContainer.querySelector('canvas');
+      if (qrCanvas) {
+         doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 90, 35, 35);
+      }
+      
+      // Instructions
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Important Instructions:", 15, 145);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const instructions = config.instructions || [
+        "Please keep this admit card ready for verification.",
+        "Webcam is mandatory throughout the exam.",
+        "Tab switching is strictly prohibited."
+      ];
+      let y = 155;
+      instructions.forEach((ins, idx) => {
+         doc.text(`${idx + 1}. ${ins}`, 15, y);
+         y += 7;
+      });
+      
+      doc.save(`CET_AdmitCard_${student.studentId || 'Pending'}.pdf`);
+      console.log('[Student] Admit Card PDF Generated');
+    }
 
     init();
     // Refresh eligibility every minute
     setInterval(checkExamEligibility, 60000);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('submitted') === 'true') {
+       showTab('result');
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
   </script>
 </body>
 </html>

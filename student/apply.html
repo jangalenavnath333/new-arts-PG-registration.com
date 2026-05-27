@@ -510,6 +510,7 @@
 
   <script type="module">
     import DB from '../js/db.js';
+    import { saveStudentApplication, isReady as isSupabaseReady } from '../js/supabase-db.js';
 
     window.currentStep = 1; 
     let fileDataMap = {}; 
@@ -791,7 +792,7 @@
       }, 2000);
     });
 
-    function proceedWithSubmission() {
+    async function proceedWithSubmission() {
       const btn = document.getElementById('submitBtn');
       try {
         // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
@@ -915,6 +916,43 @@
         let receiptApp = { ...lightApp };
         receiptApp.uploadedFiles = { photoFile: fileDataMap['photoFile'] };
         localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
+
+        // ── SUPABASE DUAL-WRITE (Phase 2) ──
+        // Await Supabase save before navigating. If it fails/times out, still navigate.
+        if (isSupabaseReady()) {
+          btn.innerHTML = '☁️ Syncing to cloud...';
+          console.log('[Supabase] Starting cloud sync...');
+          try {
+            const supabasePromise = saveStudentApplication(applicationData, fileDataMap);
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 15000));
+            const result = await Promise.race([supabasePromise, timeoutPromise]);
+            if (result) {
+              console.log('[Supabase] ✅ Synced! ID:', result.supabaseId);
+            } else {
+              console.warn('[Supabase] ⚠️ Cloud sync timed out or failed. localStorage backup is safe.');
+            }
+          } catch (supaErr) {
+            console.error('[Supabase] ❌ Cloud sync error:', supaErr);
+          }
+        } else {
+          console.log('[Supabase] Client not ready, skipping cloud sync.');
+        }
+
+        // Send Email Notification with Login Credentials
+        try {
+          const { default: EmailSvc } = await import('../js/email-service.js');
+          const loginUrl = window.location.origin + '/student/login.html';
+          const tmpl = EmailSvc.EmailTemplates.pendingApproval(
+            applicationData.fullName,
+            applicationData.studentId,
+            applicationData.email,
+            applicationData.mobile,
+            loginUrl
+          );
+          await EmailSvc.sendEmail(applicationData.email, tmpl.subject, tmpl.html);
+        } catch (emailErr) {
+          console.error('[EmailService] ❌ Failed to send application email:', emailErr);
+        }
 
         window.location.href = 'receipt.html';
 
