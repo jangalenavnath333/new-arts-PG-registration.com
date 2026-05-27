@@ -55,7 +55,8 @@ export default defineConfig({
         studentApply: resolve(__dirname, 'student/apply.html'),
         studentDashboard: resolve(__dirname, 'student/dashboard.html'),
         studentExam: resolve(__dirname, 'student/exam.html'),
-        studentResult: resolve(__dirname, 'student/result.html')
+        studentResult: resolve(__dirname, 'student/result.html'),
+        studentReceipt: resolve(__dirname, 'student/receipt.html')
       }
     }
   }

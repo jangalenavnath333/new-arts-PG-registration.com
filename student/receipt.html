@@ -146,14 +146,15 @@
       }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
   <!-- VISIBLE BY DEFAULT (Fallback if JS fails) -->
   <div class="receipt-box" id="missingDataContent">
     <div class="missing-data-msg">
-      <h3 style="color: #fca5a5;">No application data found. Please submit application first.</h3>
-      <a href="apply.html" class="btn btn-solid" style="margin-top:20px;">Back to Application</a>
+      <h3 style="color: #6ee7b7;">Application submitted successfully. Please login to view receipt.</h3>
+      <a href="./login.html" class="btn btn-solid" style="margin-top:20px;">Student Login</a>
     </div>
   </div>
 
@@ -219,9 +220,9 @@
     </div>
 
     <div class="action-buttons no-print">
-      <button onclick="window.print()" class="btn btn-solid" style="background: #6366f1;">🖨️ Print Application</button>
-      <button onclick="window.print()" class="btn btn-solid" style="background: #0ea5e9;">📄 Save as PDF</button>
-      <a href="apply.html" class="btn btn-outline">Back to Application</a>
+      <button onclick="window.print()" class="btn btn-solid" style="background: #6366f1;">🖨️ Print Receipt</button>
+      <button onclick="generatePDF()" class="btn btn-solid" style="background: #0ea5e9;">📄 Download Application PDF</button>
+      <a href="../index.html" class="btn btn-outline">Back to Home</a>
     </div>
   </div>
 
@@ -287,6 +288,26 @@
         console.error("Error reading receipt data:", err);
       }
     })();
+
+    function generatePDF() {
+      const element = document.getElementById('receiptContent');
+      // Hide buttons temporarily during PDF generation just in case
+      const buttons = element.querySelector('.action-buttons');
+      if(buttons) buttons.style.display = 'none';
+      
+      const opt = {
+        margin:       0.5,
+        filename:     'CET_Application_Receipt.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        // Restore buttons
+        if(buttons) buttons.style.display = 'flex';
+      });
+    }
   </script>
 </body>
 </html>

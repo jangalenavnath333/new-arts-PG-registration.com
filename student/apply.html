@@ -340,81 +340,43 @@
           </div>
 
           <!-- Payment Section -->
-          <div style="background:rgba(99,102,241,0.05); border:1px solid var(--card-border); border-radius:16px; padding:28px; margin:20px 0;">
-            <!-- Payment Header -->
-            <div style="text-align:center; margin-bottom:24px;">
-              <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:24px;padding:6px 16px;margin-bottom:12px;">
-                <span style="font-size:12px;font-weight:700;color:#34d399;letter-spacing:1px;">DEMO PAYMENT</span>
+          <div style="background:rgba(107,33,168,0.05); border:1px solid rgba(168,85,247,0.3); border-radius:16px; padding:28px; margin:20px auto; max-width: 440px; text-align: center;">
+            <div style="margin-bottom:24px;">
+              <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:24px;padding:6px 16px;margin-bottom:12px;">
+                <span style="font-size:12px;font-weight:700;color:#c084fc;letter-spacing:1px;">PHONEPE DEMO PAYMENT</span>
               </div>
-              <p style="font-size:22px; font-weight:800; color:#fff; margin:0 0 4px;">Application Fee: <span style="color:#34d399;">₹1</span></p>
-              <p style="font-size:13px; color:var(--mid); margin:0;">Scan QR with any UPI app — PhonePe, GPay, Paytm</p>
+              <p style="font-size:22px; font-weight:800; color:#fff; margin:0 0 4px;">Application Fee: <span style="color:#c084fc;">₹1</span></p>
+              <p style="font-size:13px; color:var(--mid); margin:0;">Scan & Pay ₹1 via PhonePe / Any UPI App</p>
             </div>
 
-            <div style="display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; justify-content:center;">
-              <!-- QR + UPI Info -->
-              <div style="text-align:center; min-width:200px;">
-                <div style="background:#fff; padding:12px; border-radius:12px; display:inline-block; margin-bottom:12px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-                  <!-- Using existing QR image; replace with college QR later -->
-                  <img src="../images/upi_qr.png" alt="UPI Payment QR" id="paymentQrImg"
-                    style="width:180px; height:180px; object-fit:contain; display:block;"
-                    onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=9730011724@pthdfc&pn=Master+Navnath+Babasaheb+Jangale&am=1&cu=INR'" />
-                </div>
-                <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 16px;text-align:left;">
-                  <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 2px;">UPI ID</p>
-                  <p style="font-size:14px;font-weight:700;color:#e2e8f0;margin:0 0 8px;font-family:monospace;">9730011724@pthdfc</p>
-                  <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 2px;">Payee Name</p>
-                  <p style="font-size:13px;font-weight:600;color:#c4b5fd;margin:0 0 8px;">Master Navnath Babasaheb Jangale</p>
-                  <p style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 2px;">Amount</p>
-                  <p style="font-size:16px;font-weight:800;color:#34d399;margin:0;">₹1.00</p>
-                </div>
-                <!-- Countdown Timer -->
-                <div style="margin-top:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px;text-align:center;">
-                  <p style="font-size:10px;color:#fcd34d;margin:0 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Session expires in</p>
-                  <p id="paymentCountdown" style="font-size:24px;font-weight:800;color:#f59e0b;margin:0;font-family:monospace;">10:00</p>
-                </div>
-              </div>
-
-              <!-- Payment Form -->
-              <div style="flex:1; min-width:280px; max-width:380px;">
-                <div style="margin-bottom:16px;">
-                  <label class="form-label" for="transactionId">Transaction ID / UTR Number <span>*</span></label>
-                  <input type="text" id="transactionId" class="form-input"
-                    placeholder="Enter UTR / Transaction ID (min 8 chars)"
-                    minlength="8" required
-                    style="font-family:monospace; letter-spacing:1px;" />
-                  <p style="font-size:11px;color:#64748b;margin:4px 0 0;">Find UTR in your UPI app under payment history</p>
-                </div>
-
-                <div style="margin-bottom:16px;">
-                  <label class="form-label">Payment Screenshot <span>*</span></label>
-                  <input type="file" id="paymentScreenshot" class="form-input" accept="image/*"
-                    onchange="handleFileUpload('paymentScreenshot','paymentPreview','paymentName')" required />
-                  <p id="paymentName" style="font-size:11px; color:var(--success); margin-top:4px;"></p>
-                  <div id="paymentPreview" class="upload-preview" style="display:none; height:80px; margin-top:5px;"></div>
-                </div>
-
-                <div style="margin-bottom:20px;">
-                  <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
-                    <input type="checkbox" id="finalTermsCheck" style="margin-top:3px; accent-color:var(--primary);" />
-                    <span style="font-size:13px; color:var(--light);">I confirm payment of ₹1 is successful and the UTR entered is correct.</span>
-                  </label>
-                </div>
-
-                <!-- Payment Status Banner (hidden initially) -->
-                <div id="paymentStatusBanner" style="display:none; padding:16px; border-radius:12px; text-align:center; margin-bottom:16px;"></div>
-              </div>
+            <div style="background:#fff; padding:16px; border-radius:16px; display:inline-block; margin-bottom:24px; box-shadow:0 8px 30px rgba(107,33,168,0.2);">
+               <img src="../images/upi_qr.jpeg" alt="PhonePe QR" id="paymentQrImg" style="width:180px; height:180px; object-fit:contain; display:block; margin: 0 auto;" />
             </div>
 
-            <div style="margin-top:8px; padding:12px 16px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:10px;">
-              <p style="font-size:11px;color:#fcd34d;margin:0;">⚠ <strong>Demo Mode:</strong> Payment is auto-verified instantly. No real money is deducted beyond ₹1 test amount.</p>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center; margin-bottom: 24px;">
+              <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">UPI ID</p>
+              <p style="font-size:16px;font-weight:800;color:#e2e8f0;margin:0 0 12px;font-family:monospace;letter-spacing: 0.5px;">9730011724@ybl</p>
+              <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Payee Name</p>
+              <p style="font-size:14px;font-weight:700;color:#c084fc;margin:0;">JANGALE BABASAHEB DHONDIRAM</p>
             </div>
-          </div>
 
-          <div class="form-actions">
-            <button type="button" class="btn btn-outline-sm btn-lg" onclick="prevStep(2)">&larr; Back</button>
-            <button type="submit" class="btn btn-solid btn-lg" id="submitBtn">
-              💳 Submit Payment & Apply
-            </button>
+            <div style="margin-bottom:24px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center;">
+              <p style="font-size:11px;color:#fcd34d;margin:0 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Session expires in</p>
+              <p id="paymentCountdown" style="font-size:28px;font-weight:800;color:#f59e0b;margin:0;font-family:monospace;">10:00</p>
+            </div>
+
+            <div id="paymentStatusBanner" style="display:none; padding:16px; border-radius:12px; text-align:center; margin-bottom:16px;"></div>
+
+            <div style="margin-bottom:16px; padding:12px; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.2); border-radius:10px;">
+              <p style="font-size:11px;color:#e879f9;margin:0;line-height:1.4;">⚠ <strong>Demo Mode:</strong> Auto-verification enabled. Real implementations require server-side UPI webhook verification.</p>
+            </div>
+
+            <div class="form-actions" style="justify-content: center; flex-direction: column; align-items: center; gap: 16px;">
+              <button type="submit" class="btn btn-solid btn-lg" id="submitBtn" style="background: linear-gradient(135deg, #7e22ce, #9333ea); width: 100%; max-width: 320px; box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); border:none; color: white;">
+                ✅ I Have Completed Payment
+              </button>
+              <button type="button" class="btn btn-outline-sm" onclick="prevStep(2)" style="border: none; opacity: 0.8; font-size:14px;">&larr; Back to Application</button>
+            </div>
           </div>
         </div>
       </form>
@@ -442,10 +404,10 @@
 
         <!-- Track ID Banner -->
         <div class="receipt-track">
-          <p style="font-size:11px;color:#6ee7b7;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">✅ Application Submitted Successfully</p>
+          <p style="font-size:12px;color:#fcd34d;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">⌛ Payment Under Verification</p>
           <p style="font-size:11px;color:#9ca3af;margin-bottom:10px;">Your Application / Track ID</p>
-          <p id="appIdDisplay" style="font-size:28px;font-weight:800;font-family:'Space Grotesk',sans-serif;color:#34d399;letter-spacing:3px;"></p>
-          <p style="font-size:11px;color:#9ca3af;margin-top:8px;">Save this ID to track your application status</p>
+          <p id="appIdDisplay" style="font-size:28px;font-weight:800;font-family:'Space Grotesk',sans-serif;color:#f59e0b;letter-spacing:3px;"></p>
+          <p style="font-size:11px;color:#d1d5db;margin-top:8px;">Your payment is under verification. Admin will approve after confirmation.</p>
         </div>
 
         <!-- Personal Information -->
@@ -793,40 +755,22 @@
       if (!validateStep(2)) { fail(2, '⚠ Please complete Academic Details.'); return; }
       if (!validateStep(3)) { fail(3, '⚠ Please complete Documents step.'); return; }
 
-      // Payment validation
-      const txnId = document.getElementById('transactionId').value.trim();
-      if (!txnId || txnId.length < 8) {
-        fail(3, '⚠ Please enter a valid UTR / Transaction ID (minimum 8 characters).');
-        return;
-      }
-      if (!fileDataMap['paymentScreenshot']) {
-        fail(3, '⚠ Please upload your payment screenshot.');
-        return;
-      }
-      if (!document.getElementById('finalTermsCheck').checked) {
-        fail(3, '⚠ Please check the confirmation box before submitting.');
-        return;
-      }
+      // Payment validation (Removed for Demo Flow)
 
-      // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
-      // Show "Verifying payment..." state
+      // Show "Verifying payment..." state for brief moment before redirecting
       btn.disabled = true;
-      btn.innerHTML = '⌛ Verifying payment...';
+      btn.innerHTML = '⌛ Processing...';
       if (banner) {
         banner.style.display = 'block';
         banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);';
-        banner.innerHTML = '<p style="color:#fcd34d;font-weight:700;font-size:14px;margin:0;">⌛ Verifying payment...</p><p style="color:#94a3b8;font-size:12px;margin:4px 0 0;">Please wait while we confirm your payment.</p>';
+        banner.innerHTML = '<p style="color:#fcd34d;font-weight:700;font-size:14px;margin:0;">⌛ Payment submitted for verification</p><p style="color:#94a3b8;font-size:12px;margin:4px 0 0;">Please wait while we generate your receipt.</p>';
       }
 
-      // Simulate 2s payment gateway delay
+      // Short delay for UI
       setTimeout(() => {
-        if (banner) {
-          banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
-          banner.innerHTML = '<p style="color:#34d399;font-weight:800;font-size:16px;margin:0;">✅ Payment Successful!</p><p style="color:#6ee7b7;font-size:13px;margin:4px 0 0;">Application Submitted Successfully</p>';
-        }
         btn.innerHTML = '✅ Finalizing Application...';
-        setTimeout(() => { proceedWithSubmission(); }, 800);
-      }, 2000);
+        proceedWithSubmission();
+      }, 1500);
     });
 
     async function proceedWithSubmission() {
@@ -840,8 +784,8 @@
         const caste = document.getElementById('casteCategory').value;
         const course = document.getElementById('courseApplied').value;
 
-        const utrNumber = document.getElementById('transactionId').value.trim();
-        const paymentProofName = (document.getElementById('paymentName').textContent || '').replace('✅ ', '') || 'Payment_Screenshot.jpg';
+        const utrNumber = 'DEMO-UPI-' + Date.now();
+        const paymentProofName = 'PhonePe_Auto_Verify.jpg';
 
         // Collect uploaded doc names
         const uploadedDocs = [];
@@ -892,10 +836,10 @@
           transactionId:  utrNumber,
           paymentUtr:     utrNumber,
           paymentProof:   paymentProofName,
-          paymentStatus:  'PAID_DEMO',
+          paymentStatus:  'PENDING_VERIFICATION',
           paymentAmount:  'Rs.1',
           paymentDate:    paymentDate,
-          applicationStatus: 'PENDING_APPROVAL',  // Admin must approve manually
+          applicationStatus: 'PAYMENT_PENDING',
           status:            'pending',
           examStatus:        'NOT_SCHEDULED',
           hasAttempted:      false,
@@ -914,10 +858,10 @@
         DB.updateStudent(student.id, {
           status:            'pending',
           studentId:         generatedStudentId,
-          paymentStatus:     'PAID_DEMO',
+          paymentStatus:     'PENDING_VERIFICATION',
           paymentUtr:        utrNumber,
           paymentDate:       paymentDate,
-          applicationStatus: 'PENDING_APPROVAL',
+          applicationStatus: 'PAYMENT_PENDING',
           courseApplied:     course,
           category:          caste,
         });
@@ -938,7 +882,7 @@
         payments.push({
           applicationId: appId, studentId: generatedStudentId,
           fullName: applicationData.fullName, email: applicationData.email,
-          courseApplied: course, paymentStatus: 'PAID_DEMO', paymentAmount: 'Rs.1',
+          courseApplied: course, paymentStatus: 'PENDING_VERIFICATION', paymentAmount: 'Rs.1',
           paymentUtr: utrNumber, paymentDate: paymentDate,
           // Omitting heavy screenshot here to save space; admin will fetch from DB
           submittedAt: now,
@@ -988,7 +932,7 @@
           console.error('[EmailService] ❌ Failed to send application email:', emailErr);
         }
 
-        window.location.href = 'receipt.html';
+        window.location.href = './receipt.html';
 
       } catch (e) {
         btn.disabled = false;
@@ -1107,6 +1051,12 @@
           clearInterval(countdownInterval);
           if (el) el.textContent = 'EXPIRED';
           if (el) el.style.color = '#ef4444';
+          const btn = document.getElementById('submitBtn');
+          if (btn) {
+              btn.disabled = true;
+              btn.innerHTML = '❌ Payment Session Expired';
+              btn.style.background = '#334155';
+          }
           return;
         }
         seconds--;

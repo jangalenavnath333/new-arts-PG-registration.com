@@ -1239,15 +1239,15 @@
       }));
 
       // Stats
-      const paidDemo = paid.filter(s => s.paymentStatus === 'PAID_DEMO').length;
-      const pending  = paid.filter(s => s.paymentStatus !== 'PAID_DEMO').length;
-      document.getElementById('pay-total').textContent   = paidDemo;
-      document.getElementById('pay-amount').textContent  = 'Rs.' + paidDemo;
-      document.getElementById('pay-demo').textContent    = paidDemo;
+      const paidVerified = paid.filter(s => s.paymentStatus === 'PAID' || s.paymentStatus === 'PAID_DEMO').length;
+      const pending  = paid.filter(s => s.paymentStatus === 'PENDING_VERIFICATION').length;
+      document.getElementById('pay-total').textContent   = paidVerified;
+      document.getElementById('pay-amount').textContent  = 'Rs.' + paidVerified;
+      document.getElementById('pay-demo').textContent    = paidVerified;
       document.getElementById('pay-pending').textContent = pending;
 
       const badge = document.getElementById('paymentBadge');
-      if (badge) badge.textContent = paidDemo > 0 ? paidDemo : '';
+      if (badge) badge.textContent = pending > 0 ? pending : '';
 
       const tbody = document.getElementById('paymentsTableBody');
       if (!tbody) return;
@@ -1258,17 +1258,18 @@
       }
 
       tbody.innerHTML = paid.slice().reverse().map(s => {
-        const isPaidDemo = s.paymentStatus === 'PAID_DEMO';
-        const statusBadge = isPaidDemo
-          ? '<span style="background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #6ee7b7;">PAID_DEMO</span>'
-          : '<span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fde68a;">PENDING</span>';
+        const isPending = s.paymentStatus === 'PENDING_VERIFICATION';
+        const statusBadge = isPending
+          ? '<span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fde68a;">PENDING</span>'
+          : (s.paymentStatus === 'REJECTED' ? '<span style="background:#fee2e2;color:#991b1b;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fca5a5;">REJECTED</span>' : '<span style="background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #6ee7b7;">VERIFIED</span>');
 
         const screenshotBtn = s.paymentScreenshotData
           ? `<button type="button" onclick="previewPaymentScreenshot('${s.applicationId}')" style="cursor:pointer;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-right:4px;">View</button>`
-          : '<span style="color:#94a3b8;font-size:11px;">--</span>';
+          : '<span style="color:#94a3b8;font-size:11px;margin-right:4px;">No Image</span>';
 
-        const verifyBtn = (!isPaidDemo && s.paymentStatus !== 'PAID')
-          ? `<button type="button" onclick="verifyPayment('${s.applicationId}')" style="cursor:pointer;background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;">Verify</button>`
+        const verifyBtn = (isPending)
+          ? `<button type="button" onclick="verifyPayment('${s.applicationId}')" style="cursor:pointer;background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-right:4px;">Approve</button>
+             <button type="button" onclick="rejectPayment('${s.applicationId}')" style="cursor:pointer;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;">Reject</button>`
           : '';
 
         const date = s.paymentDate
@@ -1321,12 +1322,13 @@
     };
 
     window.verifyPayment = async function(id) {
-      if(!confirm('Mark this payment as verified?')) return;
+      if(!confirm('Mark this payment as verified and submit application?')) return;
       console.log('[Admin Action] Start: Verify payment', id);
       const dbStudents = DB.getStudents();
       const st = dbStudents.find(s => s.applicationId === id || s.studentId === id);
       if (st) {
         st.paymentStatus = 'PAID';
+        st.applicationStatus = 'SUBMITTED';
         localStorage.setItem('cet_students', JSON.stringify(dbStudents));
 
         // Also sync cetPayments
@@ -1340,12 +1342,12 @@
         try {
           let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
           const ai = apps.findIndex(a => a.email === st.email);
-          if (ai !== -1) { apps[ai].paymentStatus = 'PAID'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
+          if (ai !== -1) { apps[ai].paymentStatus = 'PAID'; apps[ai].applicationStatus = 'SUBMITTED'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
         } catch(e) {}
         
         // Supabase dual-write
         if (supabase) {
-          await supabase.from('students').update({ payment_status: 'PAID' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email)
+          await supabase.from('students').update({ payment_status: 'PAID', application_status: 'SUBMITTED' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email)
             .then(({error}) => { if(!error) console.log('[Admin Action] Success: Payment verified in cloud'); else console.warn('[Admin Action] Failed: Payment verify error:', error.message); });
         }
         
@@ -1361,8 +1363,41 @@
         invalidateCache();
         renderOverview();
         renderPayments();
-        showToast('Payment verified and email sent', 'success');
+        renderApplications();
+        showToast('Payment verified and application submitted.', 'success');
         console.log('[Admin Action] Success: Payment verified', id);
+      }
+    };
+
+    window.rejectPayment = async function(id) {
+      if(!confirm('Are you sure you want to REJECT this payment?')) return;
+      const dbStudents = DB.getStudents();
+      const st = dbStudents.find(s => s.applicationId === id || s.studentId === id);
+      if (st) {
+        st.paymentStatus = 'REJECTED';
+        localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+
+        try {
+          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
+          const pi = payments.findIndex(p => p.applicationId === id || p.studentId === id || p.email === st.email);
+          if (pi !== -1) { payments[pi].paymentStatus = 'REJECTED'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
+        } catch(e) {}
+
+        try {
+          let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+          const ai = apps.findIndex(a => a.email === st.email);
+          if (ai !== -1) { apps[ai].paymentStatus = 'REJECTED'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
+        } catch(e) {}
+        
+        if (supabase) {
+          await supabase.from('students').update({ payment_status: 'REJECTED' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email);
+        }
+        
+        invalidateCache();
+        renderOverview();
+        renderPayments();
+        renderApplications();
+        showToast('Payment rejected.', 'danger');
       }
     };
 
