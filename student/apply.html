@@ -169,46 +169,6 @@
               <label class="form-label" for="pinCode">PIN Code <span>*</span></label>
               <input type="text" id="pinCode" class="form-input" placeholder="6-digit PIN code" maxlength="6" required />
             </div>
-          </div>
-          <div class="form-actions" style="justify-content: flex-end;">
-            <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(1)">Continue &rarr;</button>
-          </div>
-        </div>
-
-        <!-- Step 2: Academic Details -->
-        <div class="form-step" id="step2">
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" for="twelfthPercent">12th Percentage <span>*</span></label>
-              <input type="number" id="twelfthPercent" class="form-input" placeholder="e.g. 85.5" min="0" max="100" step="0.1" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="board">Board / University <span>*</span></label>
-              <input type="text" id="board" class="form-input" placeholder="e.g. CBSE, ICSE, State Board" required />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="yearOfPassing">Year of Passing <span>*</span></label>
-              <select id="yearOfPassing" class="form-select" required>
-                <option value="">Select Year</option>
-                <option>2026</option><option>2025</option><option>2024</option>
-                <option>2023</option><option>2022</option><option>2021</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="stream">Stream <span>*</span></label>
-              <select id="stream" class="form-select" required onchange="updateCoursesForStream()">
-                <option value="">Select Stream</option>
-                <option>Science (PCM)</option>
-                <option>Science (PCB)</option>
-                <option>Commerce</option>
-                <option>Arts / Humanities</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="tenthPercent">10th Percentage <span>*</span></label>
-              <input type="number" id="tenthPercent" class="form-input" placeholder="e.g. 78.2" min="0" max="100" step="0.1" required />
-            </div>
-            
             <div class="form-group">
               <label class="form-label" for="casteCategory">Caste Category <span>*</span></label>
               <select id="casteCategory" class="form-select" onchange="handleCasteChange()" required>
@@ -228,19 +188,75 @@
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="mathsMarks">12th Maths Marks <span>*</span></label>
-                <input type="number" id="mathsMarks" class="form-input" placeholder="Enter Maths marks" min="0" max="100" required />
-            </div>
+          </div>
+          <div class="form-actions" style="justify-content: flex-end;">
+            <button type="button" class="btn btn-solid btn-lg" onclick="nextStep(1)">Continue &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Academic Details -->
+        <div class="form-step" id="step2">
+          <div class="form-grid">
             <div class="form-group full-width">
                 <label class="form-label" for="courseApplied">Course Applied For <span>*</span></label>
                 <select id="courseApplied" class="form-select" required>
-                  <option value="">-- Select Stream First --</option>
+                  <option value="">Select Course</option>
+                  <option value="M.Sc. Computer Science">M.Sc. Computer Science</option>
+                  <option value="M.Sc. Computer Application">M.Sc. Computer Application</option>
                 </select>
-                <div id="artsWarning" style="display:none; margin-top:10px; padding:12px 16px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.4); border-radius:10px;">
-                  <p style="color:#f87171; font-weight:700; font-size:13px; margin:0;">🚫 Arts students are not eligible to apply for this CET.</p>
-                  <p style="color:#fca5a5; font-size:12px; margin:4px 0 0;">Please contact the college office for further information.</p>
-                </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="twelfthPercent">12th Percentage <span>*</span></label>
+              <input type="number" id="twelfthPercent" class="form-input" placeholder="e.g. 85.5" min="0" max="100" step="0.1" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="mathsMarks">12th Maths Marks <span>*</span></label>
+              <input type="number" id="mathsMarks" class="form-input" placeholder="e.g. 80.0" min="0" max="100" step="0.1" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="syMarks">SY Marks / Percentage <span>*</span></label>
+              <input type="number" id="syMarks" class="form-input" placeholder="e.g. 75.5" min="0" max="100" step="0.1" required />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="syBackground">SY Course / Subject Background <span>*</span></label>
+              <select id="syBackground" class="form-select" required>
+                <option value="">Select Background</option>
+                <option value="B.Sc. Computer Science">B.Sc. Computer Science</option>
+                <option value="B.Sc. Computer Application">B.Sc. Computer Application</option>
+                <option value="B.Sc. IT">B.Sc. IT</option>
+                <option value="BCA">BCA</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label" for="tyResultStatus">TY Result Status <span>*</span></label>
+              <select id="tyResultStatus" class="form-select" onchange="window.handleTyStatusChange()" required>
+                <option value="">Select Status</option>
+                <option value="Result Declared">Result Declared</option>
+                <option value="Appearing / Result Not Declared">Appearing / Result Not Declared</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="tyMarksContainer" style="display:none;">
+              <label class="form-label" for="tyMarks">TY Marks / Percentage <span>*</span></label>
+              <input type="number" id="tyMarks" class="form-input" placeholder="e.g. 80.0" min="0" max="100" step="0.1" />
+            </div>
+
+            <div class="form-group" id="tyBackgroundContainer">
+              <label class="form-label" for="tyBackground">TY Course / Subject Background <span>*</span></label>
+              <select id="tyBackground" class="form-select" required>
+                <option value="">Select Background</option>
+                <option value="B.Sc. Computer Science">B.Sc. Computer Science</option>
+                <option value="B.Sc. Computer Application">B.Sc. Computer Application</option>
+                <option value="B.Sc. IT">B.Sc. IT</option>
+                <option value="BCA">BCA</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
           <div class="form-actions">
@@ -253,25 +269,25 @@
           <!-- Marksheet Uploads -->
           <div class="form-grid" style="margin-bottom:20px;">
             <div class="form-group">
-              <label class="form-label">Upload 10th Marksheet <span>*</span></label>
-              <div class="upload-area" id="tenthUpload">
-                <input type="file" id="tenthFile" accept="image/*,.pdf" onchange="handleFileUpload('tenthFile','tenthPreview','tenthName')" />
+              <label class="form-label">Upload SY Marksheet <span>*</span></label>
+              <div class="upload-area" id="syUpload">
+                <input type="file" id="syFile" accept="image/*,.pdf" onchange="handleFileUpload('syFile','syPreview','syName')" />
                 <div class="upload-icon">📄</div>
-                <div class="upload-text">Upload 10th Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
-                <div id="tenthPreview" class="upload-preview"></div>
+                <div class="upload-text">Upload SY Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
+                <div id="syPreview" class="upload-preview"></div>
               </div>
-              <p id="tenthName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
+              <p id="syName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
             </div>
             
-            <div class="form-group">
-              <label class="form-label">Upload 12th Marksheet <span>*</span></label>
-              <div class="upload-area" id="twelfthUpload">
-                <input type="file" id="twelfthFile" accept="image/*,.pdf" onchange="handleFileUpload('twelfthFile','twelfthPreview','twelfthName')" />
+            <div class="form-group" id="tyUploadContainer" style="display:none;">
+              <label class="form-label">Upload TY Marksheet <span>*</span></label>
+              <div class="upload-area" id="tyUpload">
+                <input type="file" id="tyFile" accept="image/*,.pdf" onchange="handleFileUpload('tyFile','tyPreview','tyName')" />
                 <div class="upload-icon">📄</div>
-                <div class="upload-text">Upload 12th Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
-                <div id="twelfthPreview" class="upload-preview"></div>
+                <div class="upload-text">Upload TY Marksheet<br><strong>JPG, PNG, PDF</strong> • Max 5MB</div>
+                <div id="tyPreview" class="upload-preview"></div>
               </div>
-              <p id="twelfthName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
+              <p id="tyName" style="font-size:12px; color:var(--success); margin-top:4px;"></p>
             </div>
           </div>
 
@@ -458,14 +474,13 @@
         <div class="receipt-section">
           <p class="receipt-section-title">Academic Details</p>
           <div class="receipt-grid">
-            <div class="receipt-field"><div class="receipt-field-label">10th Percentage</div><div class="receipt-field-value" id="rc_tenth">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">12th Percentage</div><div class="receipt-field-value" id="rc_twelfth">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">12th Maths Marks</div><div class="receipt-field-value" id="rc_maths">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">Board / University</div><div class="receipt-field-value" id="rc_board">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">Year of Passing</div><div class="receipt-field-value" id="rc_year">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">Stream</div><div class="receipt-field-value" id="rc_stream">—</div></div>
-            <div class="receipt-field"><div class="receipt-field-label">Caste Category</div><div class="receipt-field-value" id="rc_caste">—</div></div>
             <div class="receipt-field" style="grid-column:1/-1;"><div class="receipt-field-label">Course Applied For</div><div class="receipt-field-value" id="rc_course">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">Caste Category</div><div class="receipt-field-value" id="rc_caste">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">SY Background</div><div class="receipt-field-value" id="rc_sybg">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">SY Marks</div><div class="receipt-field-value" id="rc_symarks">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">TY Status</div><div class="receipt-field-value" id="rc_tystatus">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">TY Background</div><div class="receipt-field-value" id="rc_tybg">—</div></div>
+            <div class="receipt-field"><div class="receipt-field-label">TY Marks</div><div class="receipt-field-value" id="rc_tymarks">—</div></div>
           </div>
         </div>
 
@@ -614,6 +629,20 @@
       showStep(step - 1);
     }
 
+    window.handleTyStatusChange = function() {
+      const status = document.getElementById('tyResultStatus').value;
+      const tyMarksContainer = document.getElementById('tyMarksContainer');
+      const tyUploadContainer = document.getElementById('tyUploadContainer');
+
+      if (status === 'Result Declared') {
+        if (tyMarksContainer) tyMarksContainer.style.display = 'block';
+        if (tyUploadContainer) tyUploadContainer.style.display = 'block';
+      } else {
+        if (tyMarksContainer) tyMarksContainer.style.display = 'none';
+        if (tyUploadContainer) tyUploadContainer.style.display = 'none';
+      }
+    };
+
     window.showStep = function(step) {
       document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
       const stepEl = document.getElementById('step' + step);
@@ -651,8 +680,9 @@
         const districtVal = document.getElementById('district').value.trim();
         const stateVal = document.getElementById('state').value.trim();
         const pinVal = document.getElementById('pinCode').value.trim();
+        const caste = document.getElementById('casteCategory').value;
 
-        if (!name || !email || !mobile || !dob || !addr1 || !villageCity || !talukaVal || !districtVal || !stateVal || !pinVal) { 
+        if (!name || !email || !mobile || !dob || !addr1 || !villageCity || !talukaVal || !districtVal || !stateVal || !pinVal || !caste) { 
           showAlert('⚠ Please fill all required fields.', 'warning'); 
           return false; 
         }
@@ -670,44 +700,51 @@
         }
       }
       if (step === 2) {
-        const tenthPct = document.getElementById('tenthPercent').value;
-        const twelfthPct = document.getElementById('twelfthPercent').value;
-        const board = document.getElementById('board').value.trim();
-        const year = document.getElementById('yearOfPassing').value;
-        const stream = document.getElementById('stream').value;
         const course = document.getElementById('courseApplied').value;
-        const caste = document.getElementById('casteCategory').value;
-        const mathsEl = document.getElementById('mathsMarks');
-        const maths = mathsEl ? mathsEl.value : '';
+        const twelfthPct = document.getElementById('twelfthPercent').value;
+        const mathsMarks = document.getElementById('mathsMarks').value;
+        const syMarks = document.getElementById('syMarks').value;
+        const syBackground = document.getElementById('syBackground').value;
+        const tyResultStatus = document.getElementById('tyResultStatus').value;
+        const tyBackground = document.getElementById('tyBackground').value;
 
-        if (!tenthPct) { 
-          showAlert('⚠ Please provide 10th percentage.', 'warning'); 
-          return false; 
-        }
-        if (stream === 'Arts / Humanities') {
-          showAlert('🚫 Arts / Humanities students are not eligible to apply for this CET.', 'warning');
-          return false;
-        }
         if (!course) {
           showAlert('⚠ Please select a Course Applied For.', 'warning');
           return false;
         }
-        if (!twelfthPct || !board || !year || !stream || !caste || !maths) { 
+        if (!twelfthPct || !mathsMarks || !syMarks || !syBackground || !tyResultStatus || !tyBackground) { 
           showAlert('⚠ Please fill all required fields.', 'warning'); 
           return false; 
         }
-        
-        if (parseFloat(tenthPct) < 0 || parseFloat(tenthPct) > 100) { showAlert('⚠ Please enter valid 10th percentage.', 'warning'); return false; }
         if (parseFloat(twelfthPct) < 0 || parseFloat(twelfthPct) > 100) { showAlert('⚠ Please enter valid 12th percentage.', 'warning'); return false; }
-        if (parseFloat(maths) < 0 || parseFloat(maths) > 100) { showAlert('⚠ Please enter valid Maths marks.', 'warning'); return false; }
+        if (parseFloat(mathsMarks) < 0 || parseFloat(mathsMarks) > 100) { showAlert('⚠ Please enter valid Maths marks.', 'warning'); return false; }
+        if (parseFloat(syMarks) < 0 || parseFloat(syMarks) > 100) { showAlert('⚠ Please enter valid SY marks.', 'warning'); return false; }
+        
+        if (tyResultStatus === 'Result Declared') {
+           const tyMarks = document.getElementById('tyMarks').value;
+           if (!tyMarks) {
+             showAlert('⚠ Please provide TY marks.', 'warning'); 
+             return false; 
+           }
+           if (parseFloat(tyMarks) < 0 || parseFloat(tyMarks) > 100) { showAlert('⚠ Please enter valid TY marks.', 'warning'); return false; }
+        }
+
+        if (course === 'M.Sc. Computer Science') {
+           const tyBg = document.getElementById('tyBackground')?.value || '';
+           if (syBackground !== 'B.Sc. Computer Science' && tyBg !== 'B.Sc. Computer Science') {
+             showAlert('🚫 For M.Sc. Computer Science admission, B.Sc. Computer Science background is required.', 'danger');
+             return false;
+           }
+        }
       }
       if (step === 3) {
-        if (!fileDataMap['tenthFile']) { 
-          showAlert('⚠ Please upload your 10th Marksheet.', 'warning'); 
+        if (!fileDataMap['syFile']) { 
+          showAlert('⚠ Please upload your SY Marksheet.', 'warning'); 
           return false; 
         }
-        if (!fileDataMap['twelfthFile']) { 
-          showAlert('⚠ Please upload your 12th Marksheet.', 'warning'); 
+        const tyResultStatus = document.getElementById('tyResultStatus').value;
+        if (tyResultStatus === 'Result Declared' && !fileDataMap['tyFile']) { 
+          showAlert('⚠ Please upload your TY Marksheet.', 'warning'); 
           return false; 
         }
         if (!fileDataMap['signatureFile']) { 
@@ -795,7 +832,6 @@
     async function proceedWithSubmission() {
       const btn = document.getElementById('submitBtn');
       try {
-        // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
         const generatedStudentId = 'CET2026' + String(Math.floor(Math.random() * 9000) + 1000);
         const appId = 'APP' + Date.now();
         const paymentDate = new Date().toISOString();
@@ -803,17 +839,15 @@
 
         const caste = document.getElementById('casteCategory').value;
         const course = document.getElementById('courseApplied').value;
-        const stream = document.getElementById('stream').value;
+
         const utrNumber = document.getElementById('transactionId').value.trim();
-        const paymentProofName = (document.getElementById('paymentName').textContent || '').replace('\u2705 ', '') || 'Payment_Screenshot.jpg';
+        const paymentProofName = (document.getElementById('paymentName').textContent || '').replace('✅ ', '') || 'Payment_Screenshot.jpg';
 
         // Collect uploaded doc names
         const uploadedDocs = [];
         if (fileDataMap['photoFile'])  uploadedDocs.push('Passport Photo');
-        if (fileDataMap['tenthFile'])  uploadedDocs.push('10th Marksheet');
-        if (fileDataMap['twelfthFile'])  uploadedDocs.push('12th Marksheet');
-        if (fileDataMap['signatureFile'])  uploadedDocs.push('Signature');
-        if (fileDataMap['twelfthFile'])  uploadedDocs.push('12th Marksheet');
+        if (fileDataMap['syFile'])  uploadedDocs.push('SY Marksheet');
+        if (fileDataMap['tyFile'])  uploadedDocs.push('TY Marksheet');
         if (fileDataMap['signatureFile'])  uploadedDocs.push('Signature');
         const requiredDocs = casteDocumentMap[caste] || [];
         for (const docName of requiredDocs) {
@@ -840,15 +874,15 @@
             'PIN: ' + document.getElementById('pinCode').value.trim()
           ].filter(Boolean).join(', '),
           courseApplied: course,
-          stream:        stream,
           category:      caste,
           academicDetails: {
-            tenthPercent:   document.getElementById('tenthPercent').value,
             twelfthPercent: document.getElementById('twelfthPercent').value,
-            board:          document.getElementById('board').value.trim(),
-            yearOfPassing:  document.getElementById('yearOfPassing').value,
-            stream:         stream,
             mathsMarks:     document.getElementById('mathsMarks').value,
+            syMarks:        document.getElementById('syMarks').value,
+            syBackground:   document.getElementById('syBackground').value,
+            tyResultStatus: document.getElementById('tyResultStatus').value,
+            tyMarks:        document.getElementById('tyMarks')?.value || '',
+            tyBackground:   document.getElementById('tyBackground')?.value || '',
             courseApplied:  course,
             casteCategory:  caste
           },
@@ -1016,7 +1050,12 @@
       courseEl.disabled = false;
 
       if (!selectedStream) {
-        courseEl.innerHTML = '<option value="">-- Select Stream First --</option>';
+        // If there's a prefilled course but no stream, show the prefilled course
+        if (window.prefilledCourse) {
+          courseEl.innerHTML = `<option value="${window.prefilledCourse}" selected>${window.prefilledCourse}</option>`;
+        } else {
+          courseEl.innerHTML = '<option value="">-- Select Stream First --</option>';
+        }
         artsWarn.style.display = 'none';
         if (continueBtn) { continueBtn.disabled = false; continueBtn.style.opacity = '1'; }
         return;
@@ -1035,6 +1074,12 @@
       if (continueBtn) { continueBtn.disabled = false; continueBtn.style.opacity = '1'; }
 
       const filteredCourses = STREAM_COURSES[selectedStream] || [];
+      
+      // Ensure the prefilled course is available in the options
+      if (window.prefilledCourse && !filteredCourses.includes(window.prefilledCourse)) {
+         filteredCourses.push(window.prefilledCourse);
+      }
+      
       console.log('Available courses:', filteredCourses);
 
       courseEl.innerHTML = '<option value="">Select Course</option>';
@@ -1044,6 +1089,10 @@
         opt.value = course;
         courseEl.appendChild(opt);
       });
+      
+      if (window.prefilledCourse && filteredCourses.includes(window.prefilledCourse)) {
+         courseEl.value = window.prefilledCourse;
+      }
     };
 
     // ── 10-Minute Payment Countdown Timer ───────────────────
@@ -1075,6 +1124,20 @@
       if (stepParam && stepParam >= 1 && stepParam <= 3) {
         window.showStep(stepParam);
         if (stepParam === 3) startPaymentCountdown();
+      }
+
+      const courseParam = params.get('course');
+      if (courseParam) {
+        let courseName = '';
+        if (courseParam === 'MSc_CS') courseName = 'M.Sc. Computer Science';
+        else if (courseParam === 'MSc_CA') courseName = 'M.Sc. Computer Application';
+        
+        if (courseName) {
+           window.prefilledCourse = courseName;
+           const courseEl = document.getElementById('courseApplied');
+           courseEl.innerHTML = `<option value="${courseName}" selected>${courseName}</option>`;
+           courseEl.disabled = false;
+        }
       }
     });
 

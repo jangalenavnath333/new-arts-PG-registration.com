@@ -1681,10 +1681,12 @@
       let docsHtml = '';
       
       const keyMap = {
+        photoFile: 'Passport Photo', signatureFile: 'Signature',
+        syFile: 'SY Marksheet', tyFile: 'TY Marksheet',
         tenthFile: '10th Marksheet', marksheet10: '10th Marksheet',
         twelfthFile: '12th Marksheet', marksheet12: '12th Marksheet',
-        photoFile: 'Passport Photo', photo: 'Passport Photo',
-        signatureFile: 'Signature', signature: 'Signature',
+        photo: 'Passport Photo',
+        signature: 'Signature',
         paymentScreenshot: 'Payment Screenshot', paymentProof: 'Payment Screenshot',
         casteCertificateFile: 'Caste Certificate', casteCertificate: 'Caste Certificate'
       };
@@ -1728,12 +1730,13 @@
              <h4 class="text-lg font-bold text-slate-800">Academic Details</h4>
           </div>
           <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Course Applied</p><p class="font-bold text-indigo-700 text-base bg-indigo-50 px-2 py-1 inline-block rounded">${app.courseApplied || acad.courseApplied || '--'}</p></div>
-          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">12th Stream</p><p class="font-bold text-slate-900 text-base">${app.stream || acad.stream || '--'}</p></div>
-          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Board / University</p><p class="font-bold text-slate-900 text-base">${acad.board || '--'}</p></div>
-          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Passing Year</p><p class="font-bold text-slate-900 text-base">${acad.yearOfPassing || '--'}</p></div>
-          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">10th %</p><p class="font-bold text-slate-900 text-base">${acad.tenthPercent ? acad.tenthPercent + '%' : '--'}</p></div>
           <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">12th %</p><p class="font-bold text-slate-900 text-base">${acad.twelfthPercent ? acad.twelfthPercent + '%' : '--'}</p></div>
-          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Maths Marks</p><p class="font-bold text-slate-900 text-base">${acad.mathsMarks || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">12th Maths Marks</p><p class="font-bold text-slate-900 text-base">${acad.mathsMarks || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">SY Background</p><p class="font-bold text-slate-900 text-base">${acad.syBackground || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">SY Marks</p><p class="font-bold text-slate-900 text-base">${acad.syMarks ? acad.syMarks + '%' : '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">TY Status</p><p class="font-bold text-slate-900 text-base">${acad.tyResultStatus || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">TY Background</p><p class="font-bold text-slate-900 text-base">${acad.tyBackground || '--'}</p></div>
+          <div><p class="text-xs font-bold text-slate-500 uppercase tracking-wider">TY Marks</p><p class="font-bold text-slate-900 text-base">${acad.tyMarks ? acad.tyMarks + '%' : '--'}</p></div>
           
           <div class="col-span-1 md:col-span-3 pb-2 border-b border-slate-200 mt-2">
              <h4 class="text-lg font-bold text-slate-800">Payment Details</h4>
@@ -3206,7 +3209,7 @@
       const app = apps.find(a => a.email === s?.email);
       let content = '';
 
-      const docList = ['10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
+      const docList = ['SY Marksheet', 'TY Marksheet', '10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
       if (app && app.uploadedFiles && Object.keys(app.uploadedFiles).length > 0) {
         content = Object.entries(app.uploadedFiles).map(([key, data]) => {
           const isImage = data && data.startsWith('data:image');

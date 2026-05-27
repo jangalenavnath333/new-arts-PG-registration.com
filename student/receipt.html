@@ -186,14 +186,15 @@
 
       <p class="receipt-section-title">Academic Details</p>
       <div class="grid-info">
-        <div class="info-item"><div class="info-label">Course Applied</div><div class="info-value" id="r_course">—</div></div>
-        <div class="info-item"><div class="info-label">12th Stream</div><div class="info-value" id="r_stream">—</div></div>
-        <div class="info-item"><div class="info-label">10th Percentage</div><div class="info-value" id="r_10th">—</div></div>
+        <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">Course Applied</div><div class="info-value" id="r_course">—</div></div>
         <div class="info-item"><div class="info-label">12th Percentage</div><div class="info-value" id="r_12th">—</div></div>
-        <div class="info-item"><div class="info-label">Board / University</div><div class="info-value" id="r_board">—</div></div>
-        <div class="info-item"><div class="info-label">Passing Year</div><div class="info-value" id="r_year">—</div></div>
         <div class="info-item"><div class="info-label">12th Maths Marks</div><div class="info-value" id="r_maths">—</div></div>
         <div class="info-item"><div class="info-label">Caste Category</div><div class="info-value" id="r_caste">—</div></div>
+        <div class="info-item"><div class="info-label">SY Background</div><div class="info-value" id="r_sybg">—</div></div>
+        <div class="info-item"><div class="info-label">SY Marks</div><div class="info-value" id="r_symarks">—</div></div>
+        <div class="info-item"><div class="info-label">TY Status</div><div class="info-value" id="r_tystatus">—</div></div>
+        <div class="info-item"><div class="info-label">TY Background</div><div class="info-value" id="r_tybg">—</div></div>
+        <div class="info-item"><div class="info-label">TY Marks</div><div class="info-value" id="r_tymarks">—</div></div>
       </div>
 
       <p class="receipt-section-title">Documents Details</p>
@@ -249,13 +250,14 @@
           // Academic
           if (data.academicDetails) {
               document.getElementById('r_course').textContent = data.academicDetails.courseApplied || '—';
-              document.getElementById('r_stream').textContent = data.academicDetails.stream || '—';
-              document.getElementById('r_10th').textContent = data.academicDetails.tenthPercent ? data.academicDetails.tenthPercent + '%' : '—';
               document.getElementById('r_12th').textContent = data.academicDetails.twelfthPercent ? data.academicDetails.twelfthPercent + '%' : '—';
-              document.getElementById('r_board').textContent = data.academicDetails.board || '—';
-              document.getElementById('r_year').textContent = data.academicDetails.yearOfPassing || '—';
               document.getElementById('r_maths').textContent = data.academicDetails.mathsMarks || '—';
               document.getElementById('r_caste').textContent = data.academicDetails.casteCategory || '—';
+              document.getElementById('r_sybg').textContent = data.academicDetails.syBackground || '—';
+              document.getElementById('r_symarks').textContent = data.academicDetails.syMarks ? data.academicDetails.syMarks + '%' : '—';
+              document.getElementById('r_tystatus').textContent = data.academicDetails.tyResultStatus || '—';
+              document.getElementById('r_tybg').textContent = data.academicDetails.tyBackground || '—';
+              document.getElementById('r_tymarks').textContent = data.academicDetails.tyMarks ? data.academicDetails.tyMarks + '%' : '—';
           }
           
           // Documents
