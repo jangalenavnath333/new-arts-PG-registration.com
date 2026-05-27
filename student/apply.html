@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Apply for CET Exam | CET Portal</title>
   <meta name="description" content="Submit your application for the CET online entrance exam. Fill in your details and upload required documents." />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/main.css" />
 
@@ -340,40 +341,20 @@
           </div>
 
           <!-- Payment Section -->
-          <div style="background:rgba(107,33,168,0.05); border:1px solid rgba(168,85,247,0.3); border-radius:16px; padding:28px; margin:20px auto; max-width: 440px; text-align: center;">
+          <div style="background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.3); border-radius:16px; padding:28px; margin:20px auto; max-width: 440px; text-align: center;">
             <div style="margin-bottom:24px;">
-              <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:24px;padding:6px 16px;margin-bottom:12px;">
-                <span style="font-size:12px;font-weight:700;color:#c084fc;letter-spacing:1px;">PHONEPE DEMO PAYMENT</span>
+              <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:24px;padding:6px 16px;margin-bottom:12px;">
+                <span style="font-size:12px;font-weight:700;color:#818cf8;letter-spacing:1px;">RAZORPAY SECURE PAYMENT</span>
               </div>
-              <p style="font-size:22px; font-weight:800; color:#fff; margin:0 0 4px;">Application Fee: <span style="color:#c084fc;">₹1</span></p>
-              <p style="font-size:13px; color:var(--mid); margin:0;">Scan & Pay ₹1 via PhonePe / Any UPI App</p>
-            </div>
-
-            <div style="background:#fff; padding:16px; border-radius:16px; display:inline-block; margin-bottom:24px; box-shadow:0 8px 30px rgba(107,33,168,0.2);">
-               <img src="../images/upi_qr.jpeg" alt="PhonePe QR" id="paymentQrImg" style="width:180px; height:180px; object-fit:contain; display:block; margin: 0 auto;" />
-            </div>
-
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center; margin-bottom: 24px;">
-              <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">UPI ID</p>
-              <p style="font-size:16px;font-weight:800;color:#e2e8f0;margin:0 0 12px;font-family:monospace;letter-spacing: 0.5px;">9730011724@ybl</p>
-              <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Payee Name</p>
-              <p style="font-size:14px;font-weight:700;color:#c084fc;margin:0;">JANGALE BABASAHEB DHONDIRAM</p>
-            </div>
-
-            <div style="margin-bottom:24px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:12px;text-align:center;">
-              <p style="font-size:11px;color:#fcd34d;margin:0 0 6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Session expires in</p>
-              <p id="paymentCountdown" style="font-size:28px;font-weight:800;color:#f59e0b;margin:0;font-family:monospace;">10:00</p>
+              <p style="font-size:22px; font-weight:800; color:#fff; margin:0 0 4px;">Application Fee: <span style="color:#818cf8;" id="feeAmountDisplay">₹1</span></p>
+              <p style="font-size:13px; color:var(--mid); margin:0;">Pay via UPI, Card, Net Banking</p>
             </div>
 
             <div id="paymentStatusBanner" style="display:none; padding:16px; border-radius:12px; text-align:center; margin-bottom:16px;"></div>
 
-            <div style="margin-bottom:16px; padding:12px; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.2); border-radius:10px;">
-              <p style="font-size:11px;color:#e879f9;margin:0;line-height:1.4;">⚠ <strong>Demo Mode:</strong> Auto-verification enabled. Real implementations require server-side UPI webhook verification.</p>
-            </div>
-
             <div class="form-actions" style="justify-content: center; flex-direction: column; align-items: center; gap: 16px;">
-              <button type="submit" class="btn btn-solid btn-lg" id="submitBtn" style="background: linear-gradient(135deg, #7e22ce, #9333ea); width: 100%; max-width: 320px; box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); border:none; color: white;">
-                ✅ I Have Completed Payment
+              <button type="submit" class="btn btn-solid btn-lg" id="submitBtn" style="background: linear-gradient(135deg, #4f46e5, #6366f1); width: 100%; max-width: 320px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); border:none; color: white;">
+                Pay Now
               </button>
               <button type="button" class="btn btn-outline-sm" onclick="prevStep(2)" style="border: none; opacity: 0.8; font-size:14px;">&larr; Back to Application</button>
             </div>
@@ -489,7 +470,15 @@
     import DB from '../js/db.js';
     import { saveStudentApplication, isReady as isSupabaseReady } from '../js/supabase-db.js';
 
-    window.currentStep = 1; 
+    window.APPLICATION_FEE = 1; // Change to 500 for production
+    
+    // Update UI on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const feeDisplay = document.getElementById('feeAmountDisplay');
+      if (feeDisplay) feeDisplay.textContent = '₹' + window.APPLICATION_FEE;
+    });
+
+    let currentStep = 1; 
     let fileDataMap = {}; 
 
     const casteDocumentMap = {
@@ -737,7 +726,7 @@
       return true;
     }
 
-    document.getElementById('applyForm').addEventListener('submit', function(e) {
+    document.getElementById('applyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       const banner = document.getElementById('paymentStatusBanner');
@@ -755,25 +744,104 @@
       if (!validateStep(2)) { fail(2, '⚠ Please complete Academic Details.'); return; }
       if (!validateStep(3)) { fail(3, '⚠ Please complete Documents step.'); return; }
 
-      // Payment validation (Removed for Demo Flow)
-
-      // Show "Verifying payment..." state for brief moment before redirecting
       btn.disabled = true;
-      btn.innerHTML = '⌛ Processing...';
-      if (banner) {
-        banner.style.display = 'block';
-        banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);';
-        banner.innerHTML = '<p style="color:#fcd34d;font-weight:700;font-size:14px;margin:0;">⌛ Payment submitted for verification</p><p style="color:#94a3b8;font-size:12px;margin:4px 0 0;">Please wait while we generate your receipt.</p>';
-      }
+      btn.innerHTML = '⌛ Initializing Payment...';
+      if (banner) banner.style.display = 'none';
 
-      // Short delay for UI
-      setTimeout(() => {
-        btn.innerHTML = '✅ Finalizing Application...';
-        proceedWithSubmission();
-      }, 1500);
+      try {
+        const res = await fetch('/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: window.APPLICATION_FEE })
+        });
+        const orderData = await res.json();
+
+        if (!res.ok) throw new Error(orderData.error || 'Order creation failed');
+
+        const getFieldValue = (id) => {
+          const el = document.getElementById(id);
+          if (!el) {
+            console.warn(`[Razorpay Prefill] Missing field in DOM: ${id}`);
+            return '';
+          }
+          return el.value;
+        };
+
+        const options = {
+          // Fetch key_id securely from the backend response
+          key: orderData.key_id, 
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "CET Exam Portal",
+          description: "CET Application Fee",
+          order_id: orderData.id,
+          handler: async function (response) {
+            btn.innerHTML = '⌛ Verifying Payment...';
+            try {
+              const verifyRes = await fetch('/api/payment/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyRes.ok && verifyData.success) {
+                if (banner) {
+                  banner.style.display = 'block';
+                  banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
+                  banner.innerHTML = '<p style="color:#34d399;font-weight:800;font-size:16px;margin:0;">✅ Payment Successful!</p>';
+                }
+                btn.innerHTML = '✅ Finalizing Application...';
+                proceedWithSubmission({
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id
+                });
+              } else {
+                throw new Error(verifyData.error || 'Verification failed');
+              }
+            } catch (err) {
+               console.error(err);
+               btn.disabled = false;
+               btn.innerHTML = 'Retry Payment';
+               if (banner) {
+                 banner.style.display = 'block';
+                 banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);';
+                 banner.innerHTML = '<p style="color:#ef4444;font-weight:800;font-size:16px;margin:0;">❌ Payment Verification Failed</p>';
+               }
+            }
+          },
+          prefill: {
+            name: getFieldValue('fullName'),
+            email: getFieldValue('email'),
+            contact: getFieldValue('mobileNumber')
+          },
+          theme: { color: "#4f46e5" }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response){
+           btn.disabled = false;
+           btn.innerHTML = 'Retry Payment';
+           if (banner) {
+             banner.style.display = 'block';
+             banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);';
+             banner.innerHTML = '<p style="color:#ef4444;font-weight:800;font-size:16px;margin:0;">❌ Payment Failed</p>';
+           }
+        });
+        rzp.open();
+
+      } catch(err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.innerHTML = 'Pay Now';
+        showAlert('Error initiating payment: ' + err.message, 'danger');
+      }
     });
 
-    async function proceedWithSubmission() {
+    async function proceedWithSubmission(rzpData = {}) {
       const btn = document.getElementById('submitBtn');
       try {
         const generatedStudentId = 'CET2026' + String(Math.floor(Math.random() * 9000) + 1000);
@@ -784,8 +852,8 @@
         const caste = document.getElementById('casteCategory').value;
         const course = document.getElementById('courseApplied').value;
 
-        const utrNumber = 'DEMO-UPI-' + Date.now();
-        const paymentProofName = 'PhonePe_Auto_Verify.jpg';
+        const transactionId = rzpData.razorpayPaymentId || 'DEMO-UPI-' + Date.now();
+        const razorpayOrderId = rzpData.razorpayOrderId || '';
 
         // Collect uploaded doc names
         const uploadedDocs = [];
@@ -833,13 +901,15 @@
           uploadedDocuments:     uploadedDocs,
           uploadedFiles:         fileDataMap,
           paymentScreenshotData: fileDataMap['paymentScreenshot'] || null,
-          transactionId:  utrNumber,
-          paymentUtr:     utrNumber,
-          paymentProof:   paymentProofName,
-          paymentStatus:  'PENDING_VERIFICATION',
-          paymentAmount:  'Rs.1',
+          transactionId:  transactionId,
+          paymentUtr:     transactionId,
+          razorpayOrderId: razorpayOrderId,
+          razorpayPaymentId: transactionId,
+          paymentProof:   'Razorpay',
+          paymentStatus:  'SUCCESS',
+          paymentAmount:  'Rs.' + window.APPLICATION_FEE,
           paymentDate:    paymentDate,
-          applicationStatus: 'PAYMENT_PENDING',
+          applicationStatus: 'SUBMITTED',
           status:            'pending',
           examStatus:        'NOT_SCHEDULED',
           hasAttempted:      false,
@@ -858,10 +928,12 @@
         DB.updateStudent(student.id, {
           status:            'pending',
           studentId:         generatedStudentId,
-          paymentStatus:     'PENDING_VERIFICATION',
-          paymentUtr:        utrNumber,
+          paymentStatus:     'SUCCESS',
+          paymentUtr:        transactionId,
+          razorpayOrderId:   razorpayOrderId,
+          razorpayPaymentId: transactionId,
           paymentDate:       paymentDate,
-          applicationStatus: 'PAYMENT_PENDING',
+          applicationStatus: 'SUBMITTED',
           courseApplied:     course,
           category:          caste,
         });
@@ -882,8 +954,9 @@
         payments.push({
           applicationId: appId, studentId: generatedStudentId,
           fullName: applicationData.fullName, email: applicationData.email,
-          courseApplied: course, paymentStatus: 'PENDING_VERIFICATION', paymentAmount: 'Rs.1',
-          paymentUtr: utrNumber, paymentDate: paymentDate,
+          courseApplied: course, paymentStatus: 'SUCCESS', paymentAmount: 'Rs.' + window.APPLICATION_FEE,
+          paymentUtr: transactionId, paymentDate: paymentDate,
+          razorpayOrderId: razorpayOrderId, razorpayPaymentId: transactionId,
           // Omitting heavy screenshot here to save space; admin will fetch from DB
           submittedAt: now,
         });

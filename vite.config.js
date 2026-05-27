@@ -11,25 +11,34 @@ const apiPlugin = () => ({
   name: 'api-server-middleware',
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
-      if (req.url.startsWith('/api/send-email')) {
+      if (req.url.startsWith('/api/')) {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
           req.body = body;
           try {
-            // Clear require cache to ensure fresh code on every request during dev
-            const modulePath = resolve(__dirname, './api/send-email.js');
-            delete require.cache[require.resolve(modulePath)];
-            const handler = require(modulePath);
+            // Remove query params to find the file path
+            const cleanUrl = req.url.split('?')[0];
+            // Resolve the path assuming it's a .js file inside the api folder
+            const modulePath = resolve(__dirname, `.${cleanUrl}.js`);
             
-            // Mock Vercel res methods
-            res.status = (code) => { res.statusCode = code; return res; };
-            res.json = (data) => {
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(data));
-            };
-            
-            await handler(req, res);
+            if (fs.existsSync(modulePath)) {
+              // Clear require cache to ensure fresh code on every request during dev
+              delete require.cache[require.resolve(modulePath)];
+              const handler = require(modulePath);
+              
+              // Mock Vercel res methods
+              res.status = (code) => { res.statusCode = code; return res; };
+              res.json = (data) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify(data));
+              };
+              
+              await handler(req, res);
+            } else {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: 'API route not found' }));
+            }
           } catch (err) {
             console.error('API Error:', err);
             res.statusCode = 500;
