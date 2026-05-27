@@ -291,7 +291,6 @@
 
     function generatePDF() {
       const element = document.getElementById('receiptContent');
-      // Hide buttons temporarily during PDF generation just in case
       const buttons = element.querySelector('.action-buttons');
       if(buttons) buttons.style.display = 'none';
       
@@ -303,9 +302,27 @@
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        // Restore buttons
+      // Ensure mobile compatibility by explicitly generating a blob URL and forcing a download
+      html2pdf().set(opt).from(element).outputPdf('blob').then((blob) => {
         if(buttons) buttons.style.display = 'flex';
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = opt.filename;
+        
+        // Append, click, and cleanup
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }).catch(err => {
+        if(buttons) buttons.style.display = 'flex';
+        console.error("PDF Generation Error:", err);
+        alert("Could not generate PDF. Please use the Print Receipt button instead.");
       });
     }
   </script>

@@ -984,7 +984,8 @@
         delete lightApp.paymentScreenshotData;
 
         // 1. Save to DB (cet_students) for student login (needs full data for admin preview)
-        const student = DB.addStudent(applicationData);
+        // CRITICAL FIX: Save lightApp instead of applicationData to avoid Mobile QuotaExceededError
+        const student = DB.addStudent(lightApp);
         DB.updateStudent(student.id, {
           status:            'pending',
           studentId:         generatedStudentId,
@@ -1023,9 +1024,8 @@
         localStorage.setItem('cetPayments', JSON.stringify(payments));
 
         // 5. Keep cetApplication (singular) for receipt.html
-        // We only need the photo for the receipt
+        // We do NOT store photoFile to prevent Mobile Safari 5MB QuotaExceededError
         let receiptApp = { ...lightApp };
-        receiptApp.uploadedFiles = { photoFile: fileDataMap['photoFile'] };
         localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
 
         // ── SUPABASE DUAL-WRITE (Phase 2) ──
