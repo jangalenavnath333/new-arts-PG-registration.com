@@ -799,9 +799,10 @@
               });
               
               const verifyData = await verifyRes.json();
-              console.log('[Razorpay] verify-payment response:', verifyData);
+              console.log('[Razorpay] VERIFY RESPONSE:', verifyData);
 
               if (verifyRes.ok && verifyData.success) {
+                console.log('[Razorpay] PAYMENT SUCCESS');
                 if (banner) {
                   banner.style.display = 'block';
                   banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
@@ -809,7 +810,7 @@
                 }
                 btn.innerHTML = '✅ Finalizing Application...';
                 console.log('[Razorpay] Final application submit called.');
-                proceedWithSubmission({
+                await proceedWithSubmission({
                   razorpayOrderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id
                 });
@@ -817,7 +818,8 @@
                 throw new Error(verifyData.error || 'Verification failed');
               }
             } catch (err) {
-               console.error('[Razorpay] Verification Error:', err);
+               console.error('[Razorpay] VERIFY ERROR:', err);
+               alert("Payment verification failed");
                btn.disabled = false;
                btn.innerHTML = 'Retry Payment';
                if (banner) {
