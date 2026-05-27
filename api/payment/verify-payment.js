@@ -12,8 +12,11 @@ module.exports = async function handler(req, res) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const keySecret = process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) throw new Error('Webhook/Verify secret not configured');
+
     const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .createHmac("sha256", keySecret)
       .update(sign.toString())
       .digest("hex");
 
