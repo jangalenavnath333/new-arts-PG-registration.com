@@ -348,6 +348,9 @@
               </div>
               <p style="font-size:22px; font-weight:800; color:#fff; margin:0 0 4px;">Application Fee: <span style="color:#818cf8;" id="feeAmountDisplay">₹1</span></p>
               <p style="font-size:13px; color:var(--mid); margin:0;">Pay via UPI, Card, Net Banking</p>
+              <p id="mobileUpiWarning" style="display:none; font-size:12px; color:#fcd34d; margin-top:12px; background:rgba(245,158,11,0.1); padding:8px; border-radius:8px; border:1px solid rgba(245,158,11,0.3);">
+                📱 <strong>Mobile detected:</strong> Inside Razorpay, please select the <strong>"UPI"</strong> option to pay directly via your installed UPI apps rather than scanning a QR code.
+              </p>
             </div>
 
             <div id="paymentStatusBanner" style="display:none; padding:16px; border-radius:12px; text-align:center; margin-bottom:16px;"></div>
@@ -476,6 +479,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       const feeDisplay = document.getElementById('feeAmountDisplay');
       if (feeDisplay) feeDisplay.textContent = '₹' + window.APPLICATION_FEE;
+
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        const warn = document.getElementById('mobileUpiWarning');
+        if (warn) warn.style.display = 'block';
+      }
     });
 
     let currentStep = 1; 
@@ -776,8 +784,10 @@
           description: "CET Application Fee",
           order_id: orderData.id,
           handler: async function (response) {
+            console.log('[Razorpay] Payment success response received:', response);
             btn.innerHTML = '⌛ Verifying Payment...';
             try {
+              console.log('[Razorpay] Calling verify-payment API...');
               const verifyRes = await fetch('/api/payment/verify-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -787,7 +797,10 @@
                   razorpay_signature: response.razorpay_signature
                 })
               });
+              
               const verifyData = await verifyRes.json();
+              console.log('[Razorpay] verify-payment response:', verifyData);
+
               if (verifyRes.ok && verifyData.success) {
                 if (banner) {
                   banner.style.display = 'block';
@@ -795,6 +808,7 @@
                   banner.innerHTML = '<p style="color:#34d399;font-weight:800;font-size:16px;margin:0;">✅ Payment Successful!</p>';
                 }
                 btn.innerHTML = '✅ Finalizing Application...';
+                console.log('[Razorpay] Final application submit called.');
                 proceedWithSubmission({
                   razorpayOrderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id
@@ -803,13 +817,13 @@
                 throw new Error(verifyData.error || 'Verification failed');
               }
             } catch (err) {
-               console.error(err);
+               console.error('[Razorpay] Verification Error:', err);
                btn.disabled = false;
                btn.innerHTML = 'Retry Payment';
                if (banner) {
                  banner.style.display = 'block';
                  banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);';
-                 banner.innerHTML = '<p style="color:#ef4444;font-weight:800;font-size:16px;margin:0;">❌ Payment Verification Failed</p>';
+                 banner.innerHTML = `<p style="color:#ef4444;font-weight:800;font-size:16px;margin:0;">❌ Payment Verification Failed</p><p style="color:#ef4444;font-size:12px;margin:4px 0 0;">${err.message}</p>`;
                }
             }
           },
@@ -818,7 +832,19 @@
             email: getFieldValue('email'),
             contact: getFieldValue('mobileNumber')
           },
-          theme: { color: "#4f46e5" }
+          theme: { color: "#4f46e5" },
+          modal: {
+            ondismiss: function() {
+              console.log('[Razorpay] Checkout modal closed by user.');
+              btn.disabled = false;
+              btn.innerHTML = 'Pay Now';
+              if (banner) {
+                 banner.style.display = 'block';
+                 banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);';
+                 banner.innerHTML = '<p style="color:#f59e0b;font-weight:800;font-size:16px;margin:0;">⚠️ Payment Cancelled</p><p style="color:#d97706;font-size:12px;margin:4px 0 0;">You closed the payment window. Please click Pay Now to try again.</p>';
+              }
+            }
+          }
         };
 
         const rzp = new Razorpay(options);
