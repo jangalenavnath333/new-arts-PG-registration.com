@@ -16,8 +16,5 @@ export default defineConfig({
         studentReceipt: resolve(__dirname, 'student/receipt.html')
       }
     }
-  },
-  server: {
-    port: 5173
   }
 });
