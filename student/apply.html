@@ -484,6 +484,31 @@
         if (warn) warn.style.display = 'block';
       }
 
+      if (localStorage.getItem("payment_success") === "true") {
+        localStorage.removeItem("payment_success");
+        console.log("Resuming successful payment...");
+        
+        try {
+          const draft = JSON.parse(localStorage.getItem('draftForm') || '{}');
+          const inputs = document.querySelectorAll('input, select, textarea');
+          inputs.forEach(el => {
+            if (draft[el.id] !== undefined) {
+              if (el.type === 'checkbox') el.checked = draft[el.id];
+              else el.value = draft[el.id];
+            }
+          });
+        } catch(e) { console.error("Error restoring draft", e); }
+
+        setTimeout(async () => {
+          try {
+            if (window.proceedWithSubmission) {
+              await window.proceedWithSubmission();
+              window.location.replace('./receipt.html');
+            }
+          } catch(e) { console.error("Resume error", e); }
+        }, 1000);
+      }
+
       // Pre-fetch Razorpay order to prevent mobile intent blocking
       window.prefetchedOrderData = null;
       fetch('/api/payment/create-order', {
@@ -766,6 +791,16 @@
       btn.innerHTML = '⌛ Initializing Payment...';
       if (banner) banner.style.display = 'none';
 
+      // Save draft state for recovery
+      try {
+        const draftData = {};
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(el => {
+          if (el.id) draftData[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+        });
+        localStorage.setItem('draftForm', JSON.stringify(draftData));
+      } catch(e) { console.error("Failed to save draft", e); }
+
       try {
         let orderData = window.prefetchedOrderData;
         if (!orderData || orderData.error) {
@@ -796,53 +831,46 @@
           name: "CET Exam Portal",
           description: "CET Application Fee",
           order_id: orderData.id,
-          handler: function (response) {
-            console.log('PAYMENT SUCCESS', response);
-            btn.innerHTML = '⌛ Verifying Payment...';
+          handler: async function (response) {
+            console.log("PAYMENT SUCCESS", response);
+            localStorage.setItem("payment_success", "true");
             
-            (async function() {
-              try {
-                console.log('[Razorpay] Calling verify-payment API...');
-                const verifyRes = await fetch('/api/payment/verify-payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature
-                  })
-                });
-                
-                const verifyData = await verifyRes.json();
-                console.log('VERIFY RESPONSE', verifyData);
-
-                if (verifyRes.ok && verifyData.success) {
-                  if (banner) {
-                    banner.style.display = 'block';
-                    banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
-                    banner.innerHTML = '<p style="color:#34d399;font-weight:800;font-size:16px;margin:0;">✅ Payment Successful!</p>';
-                  }
-                  btn.innerHTML = '✅ Finalizing Application...';
-                  console.log('[Razorpay] Final application submit called.');
-                  await proceedWithSubmission({
-                    razorpayOrderId: response.razorpay_order_id,
-                    razorpayPaymentId: response.razorpay_payment_id
-                  });
-                } else {
-                  throw new Error(verifyData.error || 'Verification failed');
-                }
-              } catch (err) {
-                 console.error('VERIFY ERROR', err);
-                 alert("Payment verification failed");
-                 btn.disabled = false;
-                 btn.innerHTML = 'Retry Payment';
+            btn.innerHTML = '⌛ Verifying Payment...';
+            try {
+              const verifyResponse = await fetch('/api/payment/verify-payment', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(response)
+              });
+              
+              const data = await verifyResponse.json();
+              console.log("VERIFY RESPONSE", data);
+              
+              if (data.success) {
                  if (banner) {
                    banner.style.display = 'block';
-                   banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);';
-                   banner.innerHTML = `<p style="color:#ef4444;font-weight:800;font-size:16px;margin:0;">❌ Payment Verification Failed</p><p style="color:#ef4444;font-size:12px;margin:4px 0 0;">${err.message}</p>`;
+                   banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
+                   banner.innerHTML = '<p style="color:#34d399;font-weight:800;font-size:16px;margin:0;">✅ Payment Successful!</p>';
                  }
+                 btn.innerHTML = '✅ Finalizing Application...';
+                 
+                 await proceedWithSubmission({
+                   razorpayOrderId: response.razorpay_order_id,
+                   razorpayPaymentId: response.razorpay_payment_id
+                 });
+                 
+                 window.location.replace('./receipt.html');
+              } else {
+                 alert("Verification Failed");
+                 btn.disabled = false;
+                 btn.innerHTML = 'Retry Payment';
               }
-            })();
+            } catch (err) {
+              console.error("PAYMENT VERIFY ERROR", err);
+              alert("Payment verification error");
+              btn.disabled = false;
+              btn.innerHTML = 'Retry Payment';
+            }
           },
           prefill: {
             name: getFieldValue('fullName'),
@@ -893,15 +921,10 @@
             }
           },
           modal: {
-            ondismiss: function() {
-              console.log('[Razorpay] Checkout modal closed by user.');
+            ondismiss: function () {
+              console.log("Payment popup closed");
               btn.disabled = false;
               btn.innerHTML = 'Pay Now';
-              if (banner) {
-                 banner.style.display = 'block';
-                 banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);';
-                 banner.innerHTML = '<p style="color:#f59e0b;font-weight:800;font-size:16px;margin:0;">⚠️ Payment Cancelled</p><p style="color:#d97706;font-size:12px;margin:4px 0 0;">You closed the payment window. Please click Pay Now to try again.</p>';
-              }
             }
           }
         };
