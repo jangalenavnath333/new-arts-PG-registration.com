@@ -484,9 +484,65 @@
         if (warn) warn.style.display = 'block';
       }
 
-      if (localStorage.getItem("payment_success") === "true") {
+      // Payment Recovery Polling Logic
+      window.startPaymentPolling = (orderId) => {
+        let pollCount = 0;
+        const maxPolls = 10; // 30 seconds
+        const btn = document.getElementById('submitBtn');
+        if(btn) {
+           btn.innerHTML = '⌛ Checking Payment Status...';
+           btn.disabled = true;
+        }
+
+        const poll = async () => {
+          try {
+            console.log("PAYMENT POLLING START", orderId);
+            const res = await fetch('/api/payment/check-status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ order_id: orderId })
+            });
+            const data = await res.json();
+            
+            if (data.success && data.status === 'paid') {
+               console.log("PAYMENT STATUS SUCCESS");
+               localStorage.removeItem("pending_order_id");
+               if(btn) btn.innerHTML = '✅ Finalizing Application...';
+               console.log("AUTO SUBMIT TRIGGERED");
+               
+               setTimeout(async () => {
+                 if (window.proceedWithSubmission) {
+                   await window.proceedWithSubmission({ razorpayOrderId: orderId });
+                   window.location.replace('./receipt.html');
+                 }
+               }, 500);
+               return; // Stop polling
+            }
+          } catch(err) {
+            console.error("Polling error", err);
+          }
+          
+          pollCount++;
+          if (pollCount < maxPolls) {
+            setTimeout(poll, 3000);
+          } else {
+            console.log("Polling timeout reached. No successful payment found.");
+            if(btn) {
+               btn.innerHTML = 'Submit Payment & Apply';
+               btn.disabled = false;
+            }
+            localStorage.removeItem("pending_order_id");
+          }
+        };
+        poll();
+      };
+
+      const pendingOrderId = localStorage.getItem("pending_order_id");
+      const paymentSuccess = localStorage.getItem("payment_success");
+
+      if (paymentSuccess === "true" || pendingOrderId) {
+        console.log("Resuming payment flow...");
         localStorage.removeItem("payment_success");
-        console.log("Resuming successful payment...");
         
         try {
           const draft = JSON.parse(localStorage.getItem('draftForm') || '{}');
@@ -499,14 +555,18 @@
           });
         } catch(e) { console.error("Error restoring draft", e); }
 
-        setTimeout(async () => {
-          try {
+        if (paymentSuccess === "true" && pendingOrderId) {
+          setTimeout(async () => {
+            console.log("AUTO SUBMIT TRIGGERED (From Handler)");
+            localStorage.removeItem("pending_order_id");
             if (window.proceedWithSubmission) {
-              await window.proceedWithSubmission();
+              await window.proceedWithSubmission({ razorpayOrderId: pendingOrderId });
               window.location.replace('./receipt.html');
             }
-          } catch(e) { console.error("Resume error", e); }
-        }, 1000);
+          }, 1000);
+        } else if (pendingOrderId) {
+          window.startPaymentPolling(pendingOrderId);
+        }
       }
 
       // Pre-fetch Razorpay order to prevent mobile intent blocking
@@ -823,6 +883,8 @@
           return el.value;
         };
 
+        localStorage.setItem("pending_order_id", orderData.id);
+
         const options = {
           // Fetch key_id securely from the backend response
           key: orderData.key_id, 
@@ -923,8 +985,20 @@
           modal: {
             ondismiss: function () {
               console.log("Payment popup closed");
-              btn.disabled = false;
-              btn.innerHTML = 'Pay Now';
+              const btn = document.getElementById('submitBtn');
+              if (btn) btn.disabled = true;
+              
+              const pendingOrder = localStorage.getItem("pending_order_id");
+              if (pendingOrder) {
+                // If the user paid via UPI Intent, the modal might close but the payment was successful
+                // We poll the backend immediately to check the absolute truth
+                window.startPaymentPolling(pendingOrder);
+              } else {
+                if (btn) {
+                  btn.disabled = false;
+                  btn.innerHTML = 'Pay Now';
+                }
+              }
             }
           }
         };
