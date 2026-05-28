@@ -990,21 +990,10 @@
           },
           modal: {
             ondismiss: function () {
-              console.log("Payment popup closed");
-              const btn = document.getElementById('submitBtn');
-              if (btn) btn.disabled = true;
-              
-              const pendingOrder = localStorage.getItem("pending_order_id");
-              if (pendingOrder) {
-                // If the user paid via UPI Intent, the modal might close but the payment was successful
-                // We poll the backend immediately to check the absolute truth
-                window.startPaymentPolling(pendingOrder);
-              } else {
-                if (btn) {
-                  btn.disabled = false;
-                  btn.innerHTML = 'Pay Now';
-                }
-              }
+              console.log("RAZORPAY CLOSED");
+              setTimeout(() => {
+                window.location.href = "./receipt.html";
+              }, 1000);
             }
           }
         };
