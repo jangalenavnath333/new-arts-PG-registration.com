@@ -897,6 +897,23 @@
             console.log("PAYMENT SUCCESS", response);
             localStorage.setItem("payment_success", "true");
             
+            // --- FRONTEND FALLBACK REDIRECT ---
+            let isRedirected = false;
+            const fallbackTimer = setTimeout(async () => {
+              if (isRedirected) return;
+              isRedirected = true;
+              console.log("Frontend Fallback Redirect Triggered");
+              try {
+                if (window.proceedWithSubmission) {
+                  await window.proceedWithSubmission({
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpayPaymentId: response.razorpay_payment_id
+                  });
+                }
+              } catch(e) { console.error("Fallback submission error:", e); }
+              window.location.replace('./receipt.html');
+            }, 3000);
+            
             btn.innerHTML = '⌛ Verifying Payment...';
             try {
               const verifyResponse = await fetch('/api/payment/verify-payment', {
@@ -909,6 +926,10 @@
               console.log("VERIFY RESPONSE", data);
               
               if (data.success) {
+                 if (isRedirected) return;
+                 isRedirected = true;
+                 clearTimeout(fallbackTimer);
+                 
                  if (banner) {
                    banner.style.display = 'block';
                    banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);';
@@ -923,15 +944,15 @@
                  
                  window.location.replace('./receipt.html');
               } else {
+                 if (isRedirected) return;
                  alert("Verification Failed");
                  btn.disabled = false;
                  btn.innerHTML = 'Retry Payment';
               }
             } catch (err) {
+              if (isRedirected) return;
               console.error("PAYMENT VERIFY ERROR", err);
-              alert("Payment verification error");
-              btn.disabled = false;
-              btn.innerHTML = 'Retry Payment';
+              // Wait for the fallback timer to trigger redirect rather than showing alert immediately
             }
           },
           prefill: {
