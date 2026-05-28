@@ -475,7 +475,6 @@
 
     window.APPLICATION_FEE = 1; // Change to 500 for production
     
-    // Update UI on load
     document.addEventListener('DOMContentLoaded', () => {
       const feeDisplay = document.getElementById('feeAmountDisplay');
       if (feeDisplay) feeDisplay.textContent = '₹' + window.APPLICATION_FEE;
@@ -484,6 +483,17 @@
         const warn = document.getElementById('mobileUpiWarning');
         if (warn) warn.style.display = 'block';
       }
+
+      // Pre-fetch Razorpay order to prevent mobile intent blocking
+      window.prefetchedOrderData = null;
+      fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: window.APPLICATION_FEE })
+      }).then(res => res.json()).then(data => {
+        window.prefetchedOrderData = data;
+        console.log('[Razorpay] Order prefetched successfully.');
+      }).catch(err => console.error('[Razorpay] Pre-fetch failed:', err));
     });
 
     let currentStep = 1; 
@@ -757,14 +767,17 @@
       if (banner) banner.style.display = 'none';
 
       try {
-        const res = await fetch('/api/payment/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: window.APPLICATION_FEE })
-        });
-        const orderData = await res.json();
-
-        if (!res.ok) throw new Error(orderData.error || 'Order creation failed');
+        let orderData = window.prefetchedOrderData;
+        if (!orderData || orderData.error) {
+          // Fallback if pre-fetch failed
+          const res = await fetch('/api/payment/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: window.APPLICATION_FEE })
+          });
+          orderData = await res.json();
+          if (!res.ok) throw new Error(orderData.error || 'Order creation failed');
+        }
 
         const getFieldValue = (id) => {
           const el = document.getElementById(id);
@@ -1077,7 +1090,7 @@
           console.error('[EmailService] ❌ Failed to send application email:', emailErr);
         }
 
-        window.location.href = './receipt.html';
+        window.location.replace('./receipt.html');
 
       } catch (e) {
         btn.disabled = false;
