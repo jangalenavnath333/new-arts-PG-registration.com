@@ -512,8 +512,10 @@
                
                setTimeout(async () => {
                  if (window.proceedWithSubmission) {
-                   await window.proceedWithSubmission({ razorpayOrderId: orderId });
-                   window.location.replace('./receipt.html');
+                   const isSuccess = await window.proceedWithSubmission({ razorpayOrderId: orderId });
+                   if (isSuccess) {
+                     window.location.replace('./receipt.html');
+                   }
                  }
                }, 500);
                return; // Stop polling
@@ -560,8 +562,10 @@
             console.log("AUTO SUBMIT TRIGGERED (From Handler)");
             localStorage.removeItem("pending_order_id");
             if (window.proceedWithSubmission) {
-              await window.proceedWithSubmission({ razorpayOrderId: pendingOrderId });
-              window.location.replace('./receipt.html');
+              const isSuccess = await window.proceedWithSubmission({ razorpayOrderId: pendingOrderId });
+              if (isSuccess) {
+                window.location.replace('./receipt.html');
+              }
             }
           }, 1000);
         } else if (pendingOrderId) {
@@ -916,12 +920,17 @@
                  }
                  btn.innerHTML = '✅ Finalizing Application...';
                  
-                 await proceedWithSubmission({
+                 const isSuccess = await proceedWithSubmission({
                    razorpayOrderId: response.razorpay_order_id,
                    razorpayPaymentId: response.razorpay_payment_id
                  });
                  
-                 window.location.replace('./receipt.html');
+                 if (isSuccess) {
+                   window.location.replace('./receipt.html');
+                 } else {
+                   btn.disabled = false;
+                   btn.innerHTML = 'Submit Payment & Apply';
+                 }
               } else {
                  alert("Verification Failed");
                  btn.disabled = false;
@@ -929,16 +938,10 @@
               }
             } catch (err) {
               console.error("PAYMENT VERIFY ERROR", err);
-              alert("Payment verification error");
+              alert("Payment verification error. Please contact support.");
               btn.disabled = false;
               btn.innerHTML = 'Retry Payment';
             }
-
-            setTimeout(() => {
-              console.log("FORCE REDIRECT");
-              localStorage.setItem("paymentSuccess", "true");
-              window.location.href = "./receipt.html";
-            }, 3000);
           },
           prefill: {
             name: getFieldValue('fullName'),
@@ -1182,7 +1185,7 @@
           console.error('[EmailService] ❌ Failed to send application email:', emailErr);
         }
 
-        window.location.replace('./receipt.html');
+        return true;
 
       } catch (e) {
         btn.disabled = false;
@@ -1194,6 +1197,7 @@
         } else {
           showAlert('System Error: ' + (e.message || 'Unknown error'), 'danger');
         }
+        return false;
       } finally {
         setTimeout(() => {
           if (btn.disabled) { btn.disabled = false; btn.innerHTML = 'Submit Payment & Apply'; }
