@@ -19,6 +19,44 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    
+    /* Mobile Responsive Exam UI */
+    @media (max-width: 768px) {
+      header { height: auto !important; padding: 10px !important; flex-wrap: wrap; gap: 10px; }
+      header h1 { font-size: 12px !important; }
+      #headerProfilePhoto { width: 32px; height: 32px; }
+      
+      main { padding: 15px !important; }
+      h2.text-xl { font-size: 16px !important; line-height: 1.4 !important; }
+      .space-y-3 > div { padding: 10px !important; gap: 10px !important; }
+      .space-y-3 p { font-size: 13px !important; }
+      
+      /* Float webcam on mobile */
+      aside {
+        position: fixed;
+        bottom: 70px;
+        right: 15px;
+        width: 120px !important;
+        height: auto !important;
+        z-index: 40;
+        background: transparent !important;
+        border: none !important;
+        pointer-events: none;
+      }
+      aside .p-4 { padding: 0 !important; border: none !important; }
+      aside video { height: 120px !important; border-radius: 50% !important; border: 2px solid #6366f1 !important; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); object-fit: cover !important; }
+      aside .absolute.top-2.right-2 { top: auto; bottom: 0; left: 50%; transform: translateX(-50%); right: auto; padding: 2px 6px !important; font-size: 8px !important; border-radius: 10px !important; pointer-events: auto; }
+      aside p.text-center { display: none !important; }
+      aside .p-5 { display: none !important; /* Hide question map on small mobile to save space */ }
+      
+      /* Buttons */
+      .bg-slate-800.p-4 { padding: 10px !important; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .bg-slate-800.p-4 button { padding: 8px 12px !important; font-size: 12px !important; flex: 1; min-width: 30%; }
+      
+      /* Modals */
+      #setupOverlay .bg-slate-800 { padding: 20px !important; max-width: 90% !important; }
+      #setupOverlay h2 { font-size: 20px !important; }
+    }
   </style>
 </head>
 <body class="flex flex-col h-screen w-screen relative">

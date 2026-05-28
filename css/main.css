@@ -1367,8 +1367,47 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
 .timeline-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
 .timeline-item p { font-size: 12px; color: var(--mid); }
 
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  /* Dashboard layout */
+  .dashboard-layout { flex-direction: column; }
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .main-content { margin-left: 0; padding: 15px; }
+  .content-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .header-actions { width: 100%; justify-content: space-between; }
+  
+  /* Stats grid and cards */
+  .stats-grid { grid-template-columns: 1fr; gap: 12px; }
+  .stat-card { padding: 16px; }
+  
+  /* Feature Grid & Forms */
+  .features-grid, .form-row { grid-template-columns: 1fr; }
+  .form-card { padding: 24px; }
+  .hero { padding: 80px 20px 40px; flex-direction: column; text-align: center; gap: 40px; }
+  .hero-actions { justify-content: center; flex-wrap: wrap; }
+  
+  /* Exam UI generic reductions */
+  .exam-header { padding: 10px 15px; flex-wrap: wrap; gap: 10px; }
+  .exam-body { padding: 15px; }
+  .exam-question-card { padding: 20px; }
+  .mcq-option { padding: 10px 14px; gap: 10px; font-size: 13px; margin-bottom: 8px; }
+  .option-key { width: 24px; height: 24px; font-size: 11px; }
+  .big-timer { font-size: 24px; }
+  .exam-footer { padding: 15px; flex-direction: column; gap: 10px; }
+  .btn-submit { padding: 10px; font-size: 14px; }
+}
+
 /* Print */
 @media print {
   .sidebar, .content-header, .no-print { display: none !important; }
   .main-content { margin-left: 0; }
 }
+
