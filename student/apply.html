@@ -843,13 +843,25 @@
             netbanking: true,
             wallet: true
           },
+          retry: {
+            enabled: true,
+            max_count: 4
+          },
+          readonly: {
+            contact: true,
+            email: true,
+            name: true
+          },
           config: {
             display: {
               blocks: {
                 upi: {
                   name: "Pay via UPI",
                   instruments: [
-                    { method: "upi" }
+                    {
+                      method: "upi",
+                      flows: ["qr", "intent", "collect"]
+                    }
                   ]
                 },
                 other: {
