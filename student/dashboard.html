@@ -405,6 +405,32 @@
       // 2. Fetch latest truth from Supabase (to fix race conditions/stale caches)
       try {
         const { isReady, getClient } = await import('../js/supabase-db.js');
+        const ExamSupa = (await import('../js/supabase-exam.js')).default;
+        
+        // Sync Exam Config from Supabase
+        if (ExamSupa.isReady()) {
+           const dbConfig = await ExamSupa.fetchExamConfig();
+           if (dbConfig) {
+             window.examConfig = dbConfig;
+             localStorage.setItem('cetExamConfig', JSON.stringify(dbConfig));
+             console.log('[Dashboard] Synced exam config from Supabase');
+           }
+           window.getExamStatus = ExamSupa.getExamStatus;
+        }
+        
+        // Fallback status checker if Supabase fails
+        if (!window.getExamStatus) {
+           window.getExamStatus = function(examDate, startTime, durationMinutes) {
+               if (!examDate || !startTime) return 'NOT_STARTED';
+               const start = new Date(`${examDate}T${startTime}`);
+               const end = new Date(start.getTime() + (durationMinutes * 60000));
+               const now = new Date();
+               if (now < start) return 'NOT_STARTED';
+               if (now > end) return 'ENDED';
+               return 'LIVE';
+           };
+        }
+
         if (isReady()) {
           const supabase = getClient();
           const { data, error } = await supabase.from('students').select('*').eq('email', student.email).single();
@@ -423,6 +449,17 @@
         }
       } catch (e) {
         console.warn('[Dashboard] Real-time Supabase sync failed, using local cache:', e);
+        if (!window.getExamStatus) {
+           window.getExamStatus = function(examDate, startTime, durationMinutes) {
+               if (!examDate || !startTime) return 'NOT_STARTED';
+               const start = new Date(`${examDate}T${startTime}`);
+               const end = new Date(start.getTime() + (durationMinutes * 60000));
+               const now = new Date();
+               if (now < start) return 'NOT_STARTED';
+               if (now > end) return 'ENDED';
+               return 'LIVE';
+           };
+        }
       }
 
       // 3. Look up latest data from local DB if still needed
@@ -507,8 +544,8 @@
       
       // 2. Exam Schedule & Countdown Logic
       const schedule = DB.getSchedule();
-      let config = null;
-      try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+      let config = window.examConfig || null;
+      if (!config) { try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){} }
       
       if (!config || !config.examDate || !config.startTime) {
         document.getElementById('headerExamDate').textContent = schedule.date ? new Date(schedule.date).toLocaleDateString('en-IN') : 'TBD';
@@ -517,8 +554,6 @@
         document.getElementById('headerTimerLabel').textContent = 'Waiting for Schedule';
       } else {
         const start = new Date(`${config.examDate}T${config.startTime}`);
-        const end = new Date(start.getTime() + (config.durationMinutes * 60000));
-        
         document.getElementById('headerExamDate').textContent = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
         document.getElementById('headerExamTime').textContent = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
         
@@ -526,8 +561,10 @@
         if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
         
         const updateTimer = () => {
-          const now = new Date();
-          if (now < start) {
+          const status = window.getExamStatus ? window.getExamStatus(config.examDate, config.startTime, config.durationMinutes) : 'NOT_STARTED';
+          
+          if (status === 'NOT_STARTED') {
+            const now = new Date();
             const diff = start - now;
             const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
             const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
@@ -535,7 +572,7 @@
             document.getElementById('headerCountdown').textContent = `${h}:${m}:${s}`;
             document.getElementById('headerCountdown').style.color = 'var(--emerald-400)';
             document.getElementById('headerTimerLabel').textContent = 'Starts In';
-          } else if (now >= start && now <= end) {
+          } else if (status === 'LIVE') {
             document.getElementById('headerCountdown').textContent = 'LIVE NOW';
             document.getElementById('headerCountdown').style.color = 'var(--warning)';
             document.getElementById('headerTimerLabel').textContent = 'Exam is Active';
@@ -941,8 +978,8 @@
                          
       if (!isApproved || student.hasAttempted) return;
       
-      let config = null;
-      try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+      let config = window.examConfig || null;
+      if (!config) { try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){} }
       
       const pBtn = document.getElementById('premiumStartExamBtn');
       
@@ -954,13 +991,11 @@
         return;
       }
       
-      const start = new Date(`${config.examDate}T${config.startTime}`);
-      const end   = new Date(start.getTime() + (config.durationMinutes * 60000));
-      const now   = new Date();
+      const status = window.getExamStatus ? window.getExamStatus(config.examDate, config.startTime, config.durationMinutes) : 'NOT_STARTED';
       
-      if (now < start) {
+      if (status === 'NOT_STARTED') {
         if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); }
-      } else if (now >= start && now <= end) {
+      } else if (status === 'LIVE') {
         if(pBtn) { pBtn.style.opacity = '1'; pBtn.style.cursor = 'pointer'; pBtn.classList.add('pulse-active'); }
       } else {
         if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); pBtn.innerHTML = 'EXAM ENDED'; }
@@ -982,17 +1017,15 @@
           return;
         }
 
-        let config = null;
-        try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
+        let config = window.examConfig || null;
+        if (!config) { try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){} }
 
         // Check time constraints if config exists
         if (config && config.examDate && config.startTime) {
-           const start = new Date(`${config.examDate}T${config.startTime}`);
-           const end   = new Date(start.getTime() + (config.durationMinutes * 60000));
-           const now   = new Date();
-
-           if (now < start) { alert('The exam has not started yet. Please wait until ' + start.toLocaleString()); return; }
-           if (now > end)   { alert('The exam time is over.'); return; }
+           const status = window.getExamStatus ? window.getExamStatus(config.examDate, config.startTime, config.durationMinutes) : 'NOT_STARTED';
+           
+           if (status === 'NOT_STARTED') { alert('The exam has not started yet. Please wait.'); return; }
+           if (status === 'ENDED') { alert('The exam time is over.'); return; }
         }
 
         // Show Rules Modal instead of jumping straight to exam

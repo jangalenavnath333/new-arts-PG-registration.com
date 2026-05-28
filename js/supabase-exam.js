@@ -69,6 +69,48 @@ export async function fetchActiveQuestionSet() {
 }
 
 // =============================================
+// 2b. EXAM CONFIG: Fetch from Supabase
+// =============================================
+export async function fetchExamConfig() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('exam_config')
+      .select('*')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+    if (error) { console.warn('[ExamSupa] Exam config fetch error:', error.message); return null; }
+    console.log('[ExamSupa] ✅ Loaded exam config from cloud');
+    return {
+      examDate: data.exam_date,
+      startTime: data.start_time,
+      durationMinutes: data.duration_minutes,
+      isActive: data.is_active,
+      instructions: data.instructions,
+      rules: data.rules
+    };
+  } catch (e) {
+    console.warn('[ExamSupa] Exam config fetch error:', e);
+    return null;
+  }
+}
+
+export function getExamStatus(examDate, startTime, durationMinutes) {
+   if (!examDate || !startTime) return 'NOT_STARTED';
+   
+   // Parse safely using explicit local timezone handling if needed, 
+   // but standard Date parsing works for matching timezones.
+   const start = new Date(`${examDate}T${startTime}`);
+   const end = new Date(start.getTime() + (durationMinutes * 60000));
+   const now = new Date();
+   
+   if (now < start) return 'NOT_STARTED';
+   if (now > end) return 'ENDED';
+   return 'LIVE';
+}
+
+// =============================================
 // 3. EXAM ATTEMPT: Create/update attempt record
 // Returns attempt UUID or null
 // =============================================
@@ -296,7 +338,7 @@ export async function pollExamStatus(supabaseStudentUUID) {
 }
 
 export default {
-  isReady, getClient, checkEligibility, fetchActiveQuestionSet,
+  isReady, getClient, checkEligibility, fetchActiveQuestionSet, fetchExamConfig, getExamStatus,
   startExamAttempt, scheduleAutosave, forceAutosave, submitExamResult,
   logSecurityToSupabase, lockExamInSupabase, pollExamStatus,
 };

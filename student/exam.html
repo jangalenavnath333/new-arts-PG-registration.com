@@ -210,24 +210,36 @@
          return;
       }
       // 2. Fetch Exam Config & Strict Time Check
-      examConfig = LocalDB.get('cetExamConfig');
+      if (ExamSupa.isReady()) {
+         const dbConfig = await ExamSupa.fetchExamConfig();
+         if (dbConfig) {
+             examConfig = dbConfig;
+             LocalDB.set('cetExamConfig', dbConfig);
+         }
+      }
+      if (!examConfig) examConfig = LocalDB.get('cetExamConfig');
+
       if(!examConfig || !examConfig.examDate || !examConfig.startTime) {
         console.warn('Exam config missing. Using demo mode (60 minutes).');
         examTimeLeft = 60 * 60;
       } else {
-        const now = new Date();
-        const start = new Date(`${examConfig.examDate}T${examConfig.startTime}`);
-        const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
-        
-        if(now < start) {
+        const status = ExamSupa.isReady() 
+             ? ExamSupa.getExamStatus(examConfig.examDate, examConfig.startTime, examConfig.durationMinutes) 
+             : 'LIVE'; // fallback if no supabase
+             
+        if(status === 'NOT_STARTED') {
           alert('Exam has not started yet. Please wait.'); window.location.replace('dashboard.html'); return;
         }
+        
         if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
            examTimeLeft = currentStudent.examTimeLeft;
         } else {
-           if(now > end) {
+           if(status === 'ENDED') {
              alert('Exam time is over.'); window.location.replace('dashboard.html'); return;
            }
+           const start = new Date(`${examConfig.examDate}T${examConfig.startTime}`);
+           const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
+           const now = new Date();
            examTimeLeft = Math.floor((end - now) / 1000);
         }
       }
