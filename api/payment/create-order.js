@@ -49,8 +49,13 @@ module.exports = async function handler(req, res) {
     // Attach key_id securely so frontend can initialize SDK without exposing secret
     res.status(200).json({ ...order, key_id: keyId });
   } catch (error) {
-    const errorMsg = error.error?.description || error.message || 'Internal server error while creating order';
+    let errorMsg = 'Internal server error while creating order';
+    if (error.error?.description) errorMsg = error.error.description;
+    else if (error.message) errorMsg = error.message;
+    else if (typeof error === 'object') errorMsg = JSON.stringify(error);
+    else errorMsg = String(error);
+    
     console.error('[Razorpay Create Order] Error:', errorMsg, error);
-    res.status(500).json({ error: errorMsg });
+    res.status(500).json({ error: "RAZORPAY_REJECTED: " + errorMsg });
   }
 };
