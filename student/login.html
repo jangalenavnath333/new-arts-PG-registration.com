@@ -58,7 +58,7 @@
       else { p.type = 'password'; btn.textContent = '👁'; }
     }
 
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const email = document.getElementById('email').value.trim().toLowerCase();
       const pwd = document.getElementById('password').value.trim();
@@ -69,27 +69,58 @@
       btn.disabled = true;
       btn.textContent = '⏳ Logging in...';
 
-      setTimeout(() => {
-        try {
-          const student = DB.getStudentByEmail(email);
-          if (!student) {
-            showAlert('❌ No account found with this email. Please apply first.', 'danger');
-            btn.disabled = false; btn.textContent = 'Login to Portal'; return;
-          }
-          if (student.password !== pwd) {
-            showAlert('❌ Incorrect password. Use your registered mobile number.', 'danger');
-            btn.disabled = false; btn.textContent = 'Login to Portal'; return;
-          }
+      try {
+        let student = DB.getStudentByEmail(email);
 
-          DB.setCurrentStudent(student);
-          window.location.href = 'dashboard.html';
-        } catch (error) {
-          console.error('Login error:', error);
-          showAlert('❌ ' + (error.message || 'An error occurred during login.'), 'danger');
-          btn.disabled = false; 
-          btn.textContent = 'Login to Portal';
+        // Fallback: If not found in localStorage, try fetching from Supabase
+        if (!student) {
+          try {
+            const { isReady, getClient } = await import('../js/supabase-db.js');
+            if (isReady()) {
+              const supabase = getClient();
+              const { data, error } = await supabase.from('students').select('*').eq('email', email).single();
+              
+              if (data && !error) {
+                // Reconstruct basic student object for localStorage
+                student = {
+                  id: 'STU' + Date.now(),
+                  studentId: data.student_id,
+                  fullName: data.full_name,
+                  name: data.full_name,
+                  email: data.email,
+                  mobile: data.mobile,
+                  password: data.password_hash || data.mobile,
+                  status: data.status,
+                  hasAttempted: data.has_attempted,
+                  courseApplied: data.course_applied
+                };
+                DB.addStudent(student); // Save it locally for future logins
+                console.log('[Login] Restored student from Supabase:', student.email);
+              }
+            }
+          } catch (supaErr) {
+            console.warn('[Login] Supabase fallback failed:', supaErr);
+          }
         }
-      }, 800);
+
+        if (!student) {
+          showAlert('❌ No account found with this email. Please apply first.', 'danger');
+          btn.disabled = false; btn.textContent = 'Login to Portal'; return;
+        }
+        
+        if (student.password !== pwd && student.mobile !== pwd) {
+          showAlert('❌ Incorrect password. Use your registered mobile number.', 'danger');
+          btn.disabled = false; btn.textContent = 'Login to Portal'; return;
+        }
+
+        DB.setCurrentStudent(student);
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        console.error('Login error:', error);
+        showAlert('❌ ' + (error.message || 'An error occurred during login.'), 'danger');
+        btn.disabled = false; 
+        btn.textContent = 'Login to Portal';
+      }
     });
   </script>
 </body>
