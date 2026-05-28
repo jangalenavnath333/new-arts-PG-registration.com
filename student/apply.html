@@ -555,6 +555,8 @@
               else el.value = draft[el.id];
             }
           });
+          if (document.getElementById('casteCategory').value) window.handleCasteChange();
+          if (document.getElementById('tyResultStatus').value) window.handleTyStatusChange();
         } catch(e) { console.error("Error restoring draft", e); }
 
         if (paymentSuccess === "true" && pendingOrderId) {
@@ -838,18 +840,19 @@
       const btn = document.getElementById('submitBtn');
       const banner = document.getElementById('paymentStatusBanner');
 
-      const fail = (step, msg) => {
+      const fail = (step) => {
         showStep(step);
-        showAlert(msg, 'warning');
+        // validateStep already calls showAlert with the specific missing field
+
         const oldHtml = btn.innerHTML;
         btn.innerHTML = '⚠ Check missing fields above';
         btn.style.background = '#ef4444';
         setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = ''; }, 3000);
       };
 
-      if (!validateStep(1)) { fail(1, '⚠ Please complete Personal Information.'); return; }
-      if (!validateStep(2)) { fail(2, '⚠ Please complete Academic Details.'); return; }
-      if (!validateStep(3)) { fail(3, '⚠ Please complete Documents step.'); return; }
+      if (!validateStep(1)) { fail(1); return; }
+      if (!validateStep(2)) { fail(2); return; }
+      if (!validateStep(3)) { fail(3); return; }
 
       btn.disabled = true;
       btn.innerHTML = '⌛ Initializing Payment...';
