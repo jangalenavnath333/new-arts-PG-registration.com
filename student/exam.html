@@ -169,11 +169,14 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       // 1. Fetch Session
-      const session = LocalDB.get('cet_current_student');
+      let session = null;
+      try { session = JSON.parse(localStorage.getItem('studentData')); } catch(e) {}
+      if (!session) session = LocalDB.get('cet_current_student');
+      
       if(!session) { alert('No active session.'); window.location.replace('login.html'); return; }
       
       const allStudents = LocalDB.get('cet_students') || [];
-      currentStudent = allStudents.find(s => s.id === session.id || s.studentId === session.studentId);
+      currentStudent = allStudents.find(s => s.id === session.id || s.studentId === session.studentId) || session;
       
       if(!currentStudent) { window.location.replace('login.html'); return; }
 
@@ -251,7 +254,10 @@
       btn.textContent = 'Running Security Protocols...';
       errbox.textContent = '';
 
-      if(currentStudent.status !== 'approved') {
+      const isApproved = currentStudent.status?.toLowerCase() === 'approved' || 
+                         currentStudent.applicationStatus?.toLowerCase() === 'approved';
+
+      if(!isApproved) {
         setCheck('chk-status', false); return errbox.textContent = "Your application is not approved yet!";
       }
       if(currentStudent.hasAttempted) {

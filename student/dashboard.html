@@ -394,46 +394,74 @@
 
     let student = null;
 
-    function init() {
-      student = DB.getCurrentStudent();
+    async function init() {
+      // 1. Recover full student from studentData to survive mobile clears
+      let sessionData = null;
+      try { sessionData = JSON.parse(localStorage.getItem('studentData')); } catch(e) {}
+      
+      student = sessionData || DB.getCurrentStudent();
       if (!student) { window.location.href = 'login.html'; return; }
 
-      // DATA INTEGRITY: Look up latest data from cet_students
+      // 2. Fetch latest truth from Supabase (to fix race conditions/stale caches)
+      try {
+        const { isReady, getClient } = await import('../js/supabase-db.js');
+        if (isReady()) {
+          const supabase = getClient();
+          const { data, error } = await supabase.from('students').select('*').eq('email', student.email).single();
+          if (data && !error) {
+            console.log('[Dashboard] Synced real-time status from Supabase');
+            student.applicationStatus = data.application_status;
+            student.examStatus = data.exam_status;
+            student.status = data.status;
+            student.studentId = data.student_id || student.studentId;
+            student.hasAttempted = data.has_attempted;
+            
+            // Persist the freshest data
+            DB.addStudent(student);
+            localStorage.setItem('studentData', JSON.stringify(student));
+          }
+        }
+      } catch (e) {
+        console.warn('[Dashboard] Real-time Supabase sync failed, using local cache:', e);
+      }
+
+      // 3. Look up latest data from local DB if still needed
       let dbStudent = DB.getStudentById(student.id);
       if (!dbStudent) {
-        // Try to find by email in cet_students
-        dbStudent = DB.getStudents().find(s => s.email === student.email);
+        dbStudent = DB.getStudents().find(s => s.email?.toLowerCase() === student.email?.toLowerCase());
       }
-      if (!dbStudent) {
+      
+      if (!dbStudent && !sessionData && !student.applicationStatus) {
         console.error("Data Integrity Error: Student session invalid.");
         DB.clearCurrentStudent();
         window.location.replace('login.html');
         return;
       }
-      student = dbStudent;
+      student = dbStudent || sessionData || student;
 
-      // Also try to get latest data from cetApplications (admin approval updates this)
+      // 4. Sync latest from admin's applications (Fallback)
       try {
         const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-        const appRecord = apps.find(a => a.email === student.email);
+        const appRecord = apps.find(a => a.email?.toLowerCase() === student.email?.toLowerCase());
         if (appRecord) {
-          // Merge latest status fields from cetApplications
-          student.applicationStatus = appRecord.applicationStatus || student.applicationStatus;
-          student.examStatus        = appRecord.examStatus        || student.examStatus;
-          student.examDate          = appRecord.examDate          || student.examDate;
-          student.studentId         = appRecord.studentId         || student.studentId;
-          // Sync status: if admin approved via cetApplications
-          if (appRecord.applicationStatus === 'Approved') student.status = 'approved';
-          if (appRecord.applicationStatus === 'Rejected') student.status = 'rejected';
-          if (appRecord.applicationStatus === 'PENDING_APPROVAL') student.status = 'pending';
+          student.applicationStatus = student.applicationStatus || appRecord.applicationStatus;
+          student.examStatus        = student.examStatus || appRecord.examStatus;
+          student.examDate          = student.examDate || appRecord.examDate;
+          student.studentId         = student.studentId || appRecord.studentId;
+          
+          const appStatLower = student.applicationStatus?.toLowerCase();
+          if (appStatLower === 'approved') student.status = 'approved';
+          if (appStatLower === 'rejected') student.status = 'rejected';
+          if (appStatLower === 'pending_approval') student.status = 'pending';
         }
       } catch(e) {}
 
-      // Normalize status
+      // Normalize status robustly
       if (!student.status) student.status = 'pending';
       student.status = student.status.toLowerCase();
 
       DB.setCurrentStudent(student);
+      localStorage.setItem('studentData', JSON.stringify(student));
       
       if (student.status === 'approved' && DB.getSchedule()?.examDate) {
         const btn = document.getElementById('downloadAdmitCardBtn');
@@ -466,14 +494,15 @@
 
     function renderOverview() {
       // 1. Populate Premium Header Info
-      const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
+      const isApproved = student.status?.toLowerCase() === 'approved' || student.applicationStatus?.toLowerCase() === 'approved';
+      const appStatus = student.applicationStatus || (isApproved ? 'Approved' : 'PENDING_APPROVAL');
       
       document.getElementById('headerStudentName').textContent = student.fullName ? student.fullName.split(' ')[0] : 'Student';
       document.getElementById('headerCourse').textContent = student.courseApplied || student.academicDetails?.courseApplied || '--';
       document.getElementById('headerCetId').textContent = student.studentId || 'Pending ID';
       
       const badgeColors = { pending: 'bg-amber-500 text-white', approved: 'bg-emerald-500 text-white', rejected: 'bg-red-500 text-white' };
-      const displayStatus = appStatus === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
+      const displayStatus = appStatus.toUpperCase() === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
       document.getElementById('headerStatus').innerHTML = `<span class="px-3 py-1 text-xs font-bold uppercase rounded-full ${badgeColors[student.status] || badgeColors.pending}">${displayStatus}</span>`;
       
       // 2. Exam Schedule & Countdown Logic
@@ -525,16 +554,16 @@
       }
       
       // 3. Admit Card Button visibility
-      if (student.status === 'approved' && config?.examDate) {
+      if (isApproved && config?.examDate) {
         document.getElementById('premiumAdmitCardBtn').style.display = 'block';
       }
     }
 
     function renderStatus() {
       const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
-      const isPending  = appStatus === 'PENDING_APPROVAL' || student.status === 'pending';
-      const isApproved = appStatus === 'Approved' || student.status === 'approved';
-      const isRejected = appStatus === 'Rejected' || student.status === 'rejected';
+      const isPending  = appStatus.toUpperCase() === 'PENDING_APPROVAL' || student.status === 'pending';
+      const isApproved = appStatus.toLowerCase() === 'approved' || student.status === 'approved';
+      const isRejected = appStatus.toLowerCase() === 'rejected' || student.status === 'rejected';
 
       const steps = [
         { label: 'Application Submitted',  desc: student.appliedAt ? new Date(student.appliedAt).toLocaleString('en-IN') : 'Submitted', done: true },
@@ -906,9 +935,10 @@
     }
 
     function checkExamEligibility() {
-      // Require applicationStatus === 'Approved' (set by admin) AND not already attempted
-      const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
-      const isApproved = appStatus === 'Approved' || student.status === 'approved';
+      // Use safe lowercasing for robust approval check
+      const isApproved = student.status?.toLowerCase() === 'approved' || 
+                         student.applicationStatus?.toLowerCase() === 'approved';
+                         
       if (!isApproved || student.hasAttempted) return;
       
       let config = null;
@@ -943,8 +973,10 @@
           alert('You have already attempted this exam. Only one attempt is allowed.');
           return;
         }
-        const appStatus = student.applicationStatus || (student.status === 'approved' ? 'Approved' : 'PENDING_APPROVAL');
-        const isApproved = appStatus === 'Approved' || student.status === 'approved';
+        
+        const isApproved = student.status?.toLowerCase() === 'approved' || 
+                           student.applicationStatus?.toLowerCase() === 'approved';
+                           
         if (!isApproved) {
           alert('Your application must be approved by admin before taking the exam.');
           return;

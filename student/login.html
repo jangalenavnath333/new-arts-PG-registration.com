@@ -70,37 +70,49 @@
       btn.textContent = '⏳ Logging in...';
 
       try {
-        let student = DB.getStudentByEmail(email);
-
-        // Fallback: If not found in localStorage, try fetching from Supabase
-        if (!student) {
-          try {
-            const { isReady, getClient } = await import('../js/supabase-db.js');
-            if (isReady()) {
-              const supabase = getClient();
-              const { data, error } = await supabase.from('students').select('*').eq('email', email).single();
-              
-              if (data && !error) {
-                // Reconstruct basic student object for localStorage
-                student = {
-                  id: 'STU' + Date.now(),
-                  studentId: data.student_id,
-                  fullName: data.full_name,
-                  name: data.full_name,
-                  email: data.email,
-                  mobile: data.mobile,
-                  password: data.password_hash || data.mobile,
-                  status: data.status,
-                  hasAttempted: data.has_attempted,
-                  courseApplied: data.course_applied
-                };
-                DB.addStudent(student); // Save it locally for future logins
-                console.log('[Login] Restored student from Supabase:', student.email);
-              }
+        let student = null;
+        let fromCloud = false;
+        
+        try {
+          const { isReady, getClient } = await import('../js/supabase-db.js');
+          if (isReady()) {
+            const supabase = getClient();
+            console.log('[Login] Querying Supabase as source of truth for:', email);
+            const { data, error } = await supabase.from('students').select('*').eq('email', email).single();
+            
+            if (data && !error) {
+              student = {
+                id: 'STU' + Date.now(),
+                studentId: data.student_id,
+                fullName: data.full_name,
+                name: data.full_name,
+                email: data.email,
+                mobile: data.mobile,
+                password: data.password_hash || data.mobile,
+                status: data.status,
+                hasAttempted: data.has_attempted,
+                courseApplied: data.course_applied,
+                applicationStatus: data.application_status,
+                examStatus: data.exam_status,
+                examDate: data.exam_date
+              };
+              // Clear old session
+              localStorage.removeItem('studentData');
+              DB.addStudent(student); // Updates local cache
+              fromCloud = true;
+              console.log('[Login] Loaded current profile from Supabase:', student.email);
+            } else if (error && error.code !== 'PGRST116') {
+              console.log('[Login] Supabase error:', error.message);
             }
-          } catch (supaErr) {
-            console.warn('[Login] Supabase fallback failed:', supaErr);
           }
+        } catch (supaErr) {
+          console.warn('[Login] Supabase fetch failed, trying local storage:', supaErr);
+        }
+
+        // Fallback: If not found in Supabase (e.g. offline), try localStorage
+        if (!student) {
+          student = DB.getStudentByEmail(email);
+          if (student) console.log('[Login] Fallback: Loaded from local storage cache.');
         }
 
         if (!student) {
@@ -114,6 +126,7 @@
         }
 
         DB.setCurrentStudent(student);
+        localStorage.setItem("studentData", JSON.stringify(student));
         window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Login error:', error);
