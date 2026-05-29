@@ -8,7 +8,7 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/main.css" />
-
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* ──────────────────────────────────────────────────────────────────────── */
     /* Receipt Card ─────────────────────────────────────────────────────────── */
@@ -39,31 +39,89 @@
       border:1px solid rgba(245,158,11,0.4); border-radius:20px; padding:4px 14px;
       font-size:12px; font-weight:600; color:#fcd34d; }
 
-    /* --- Form Layout Fixes --- */
+    /* --- Premium Form Overrides --- */
     .form-card.wide {
       max-width: 900px !important;
+      background: rgba(15, 23, 42, 0.8) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+      border: 1px solid rgba(99, 102, 241, 0.25) !important;
+      border-radius: 24px !important;
+      box-shadow: 0 0 50px rgba(99, 102, 241, 0.1), inset 0 0 20px rgba(99,102,241,0.05) !important;
+      position: relative;
+      overflow: hidden !important;
+    }
+    .form-input, .form-select {
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid rgba(99, 102, 241, 0.3) !important;
+      border-radius: 12px !important;
+      color: #f1f5f9 !important;
+      padding: 14px 16px !important;
+      font-size: 14px !important;
+      transition: all 0.3s ease !important;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: #a855f7 !important;
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.4), inset 0 2px 4px rgba(0,0,0,0.2) !important;
+      background: rgba(30, 41, 59, 0.8) !important;
+      outline: none;
+    }
+    .form-label {
+      font-size: 12px !important;
+      color: #a5b4fc !important;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600 !important;
+      margin-bottom: 8px !important;
+      display: inline-block;
     }
     .steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      position: relative;
       margin-bottom: 30px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 16px;
+      padding: 8px;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    @media (max-width: 640px) {
+      .steps { flex-direction: column; gap: 8px; }
     }
     .step {
+      flex: 1;
       text-align: center;
-      padding: 14px 10px;
-      border: 1px solid rgba(255,255,255,0.12);
+      padding: 12px 10px;
+      border: none !important;
+      border-radius: 12px;
       font-size: 13px;
-      font-weight: 500;
-      color: var(--mid);
+      font-weight: 600;
+      color: #64748b;
       cursor: pointer;
       background: transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
     }
     .step.active {
-      font-weight: 600;
-      color: var(--primary-light);
-      background: rgba(99,102,241,0.1);
-      border-color: rgba(99,102,241,0.3);
+      color: #ffffff !important;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+      border: none !important;
+    }
+    .btn-solid {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      border: none !important;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+      transition: all 0.3s ease !important;
+      color: white !important;
+    }
+    .btn-solid:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6) !important;
     }
     .form-step {
       display: none;
@@ -89,35 +147,107 @@
 <body>
   <div class="bg-particles"></div>
 
-  <!-- Top bar -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <a href="../index.html" class="nav-brand-banner" style="text-decoration:none; display: block; border-radius: 8px; overflow: hidden; background: #ffffff; padding: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-        <img src="../images/logo.png" alt="New Arts, Commerce and Science College, Department of Computer Science" style="height: 56px; display: block;" />
-      </a>
-      <div class="nav-links">
-        <a href="login.html" class="nav-btn btn-outline">Already Applied? Login</a>
+  <!-- Top bar (Login link) -->
+  <div style="position: absolute; top: 20px; right: 32px; z-index: 10;">
+    <a href="login.html" class="nav-btn btn-outline" style="border-radius: 8px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);">Already Applied? Login</a>
+  </div>
+
+  <!-- Responsive HTML Branding Card -->
+  <section class="branding-card-container" style="padding-top: 60px; max-width: 1280px; margin: 0 auto; position: relative; z-index: 2; padding-left: 32px; padding-right: 32px; animation: fadeIn 1.2s ease-out;">
+    
+    <!-- Gradient Border Wrapper -->
+    <div style="background: linear-gradient(135deg, rgba(99,102,241,0.6), rgba(15,23,42,0) 40%, rgba(15,23,42,0) 60%, rgba(139,92,246,0.5)); padding: 1px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(99,102,241,0.15);">
+      
+      <!-- Inner Glass Card -->
+      <div class="branding-glass-card" style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 23px; padding: 36px 48px; display: flex; align-items: center; justify-content: space-between; gap: 32px;">
+        
+        <!-- College Logo -->
+        <div class="branding-logo" style="width: 120px; height: 120px; background: #fff; border-radius: 50%; padding: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(99,102,241,0.1);">
+          <img src="../images/maharaj.jpeg" alt="College Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
+        </div>
+
+        <!-- Center Text -->
+        <div class="branding-text" style="text-align: center; flex: 1;">
+          <h3 style="font-size: clamp(10px, 1.5vw, 13px); color: var(--light); font-weight: 700; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px;">AHMEDNAGAR JILHA MARATHA VIDYA PRASARAK SAMAJ'S</h3>
+          <h2 style="font-size: clamp(16px, 2.2vw, 22px); color: #fff; font-weight: 600; margin-bottom: 12px; line-height: 1.3; font-family: 'Space Grotesk', sans-serif;">New Arts, Commerce and Science College,<br>Ahmednagar (Autonomous)</h2>
+          <h1 style="font-size: clamp(22px, 3.5vw, 36px); font-weight: 800; color: transparent; background: linear-gradient(135deg, #ffffff 30%, var(--primary-light)); -webkit-background-clip: text; background-clip: text; margin-bottom: 6px; letter-spacing: 0.5px;">Center for Advanced Studies in Applied Sciences (CASAS)</h1>
+          <h4 style="font-size: clamp(14px, 1.8vw, 18px); color: var(--light); font-weight: 500; margin-top: 0; margin-bottom: 0;">Department of Computer Science</h4>
+        </div>
+
+        <!-- Department Logo -->
+        <div class="branding-logo" style="width: 120px; height: 120px; background: #fff; border-radius: 50%; padding: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(139,92,246,0.1);">
+          <img src="../images/department logo.jpeg" alt="Department Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
+        </div>
+
       </div>
     </div>
-  </nav>
+  </section>
 
-  <div class="form-page" style="padding-top: 100px;">
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 900px) {
+      .branding-glass-card {
+        flex-direction: column;
+        padding: 32px 20px !important;
+        text-align: center;
+        gap: 24px !important;
+      }
+      .branding-logo {
+        width: 90px !important;
+        height: 90px !important;
+      }
+      .branding-text h3 { margin-bottom: 8px; }
+      .branding-text h2 { margin-bottom: 8px; }
+    }
+  </style>
+
+  <div class="form-page" style="padding-top: 40px;">
     <div class="form-card wide">
+      <!-- Premium Background Glow Elements -->
+      <div class="absolute -top-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
       <!-- Header -->
-      <div class="form-logo">
-        <span>📝 Student Application Form</span>
-        <p>Fill all fields carefully. All information must be accurate.</p>
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-indigo-500/20 pb-8 mb-8">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+              <span class="text-2xl animate-pulse">📝</span>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-200 to-white drop-shadow-md">Apply for CET Admission</h2>
+          </div>
+          <p class="text-indigo-300/80 text-sm font-medium">Complete your application securely with our AI-powered admission portal.</p>
+        </div>
+        
+        <!-- Smart Badges -->
+        <div class="flex flex-col gap-3 items-start md:items-end">
+          <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg w-fit shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
+            <span class="text-emerald-400 font-semibold text-xs tracking-wide">Secure Application</span>
+          </div>
+          <div class="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/30 px-3 py-1.5 rounded-lg w-fit shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span class="text-indigo-300 font-semibold text-xs tracking-wide">AI Verification Enabled</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Progress Steps -->      <div class="steps">
+      <!-- Animated Shimmer Line -->
+      <div class="w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent mb-8 opacity-50 relative z-10"></div>
+
+      <!-- Progress Steps (Premium Tracker) -->
+      <div class="steps relative z-10">
         <div class="step active" id="stepTab1" onclick="window.showStep(1)">
-          1. Personal Info
+          <span class="mr-2">👤</span> Personal Info
         </div>
         <div class="step" id="stepTab2" onclick="if(validateStep(1)) window.showStep(2)">
-          2. Academic Details
+          <span class="mr-2">🎓</span> Academic Details
         </div>
         <div class="step" id="stepTab3" onclick="if(validateStep(1) && validateStep(2)) window.showStep(3)">
-          3. Documents & Payment
+          <span class="mr-2">📄</span> Documents & Payment
         </div>
       </div>
       <div id="alertBox"></div>
@@ -1115,9 +1245,17 @@
         let lightApp = { ...applicationData };
         delete lightApp.uploadedFiles;
         delete lightApp.paymentScreenshotData;
-
-        // 1. Save to DB (cet_students) for student login (needs full data for admin preview)
-        // CRITICAL FIX: Save lightApp instead of applicationData to avoid Mobile QuotaExceededError
+        
+        // --- NEW: SAVE DOCUMENTS PROPERLY ---
+        // Save documents in a dedicated storage key to prevent QuotaExceeded errors on main lists
+        try {
+          let cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+          cetDocs[appId] = fileDataMap;
+          localStorage.setItem('cetDocuments', JSON.stringify(cetDocs));
+          console.log('[Docs] Successfully saved documents for admin preview');
+        } catch(e) {
+          console.warn('[Docs] Failed to save local documents due to quota limit');
+        }
         const student = DB.addStudent(lightApp);
         DB.updateStudent(student.id, {
           status:            'pending',
