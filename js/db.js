@@ -34,8 +34,9 @@ const DB = {
   addStudent(student) {
     const students = this.getStudents();
     
-    // During testing, if email exists, overwrite to save space
-    const existingIdx = students.findIndex(s => s.email === student.email);
+    // During testing, if email exists for the SAME course, overwrite to save space
+    // If it's a different course, allow a new record (Multi-Course Application System)
+    const existingIdx = students.findIndex(s => s.email === student.email && (s.courseApplied === student.courseApplied || (!s.courseApplied && !student.courseApplied)));
     
     student.id = existingIdx !== -1 ? students[existingIdx].id : ('STU' + Date.now());
     // Preserve caller-supplied studentId (e.g. CET2026XXXX from demo payment)

@@ -236,6 +236,12 @@
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <select id="filterCourse" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Courses</option>
+                <option value="Science">M.Sc. Computer Science</option>
+                <option value="Application">M.Sc. Computer Application</option>
+              </select>
+
               <select id="filterStatus" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All Applications</option>
                 <option value="Submitted">Pending Review</option>
@@ -289,6 +295,12 @@
             </div>
             
             <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <select id="docFilterCourse" onchange="window.renderDocumentsTab()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Courses</option>
+                <option value="Science">M.Sc. Computer Science</option>
+                <option value="Application">M.Sc. Computer Application</option>
+              </select>
+              
               <select id="docFilterCategory" onchange="window.renderDocumentsTab()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All Categories</option>
                 <option value="OPEN">Open / General</option>
@@ -1629,11 +1641,13 @@
     // DOCUMENTS TAB LOGIC
     // ============================================
     window.renderDocumentsTab = function() {
-      const filter = document.getElementById('docFilterCategory')?.value || '';
+      const filterCategory = document.getElementById('docFilterCategory')?.value || '';
+      const filterCourse = document.getElementById('docFilterCourse')?.value || '';
       const search = (document.getElementById('docSearchInput')?.value || '').toLowerCase();
       let apps = getApplications();
 
-      if (filter) apps = apps.filter(s => (s.category || '').toUpperCase().includes(filter.toUpperCase()));
+      if (filterCategory) apps = apps.filter(s => (s.category || '').toUpperCase().includes(filterCategory.toUpperCase()));
+      if (filterCourse) apps = apps.filter(s => (s.courseApplied || '').includes(filterCourse));
       if (search) {
         apps = apps.filter(s => 
           (s.fullName || '').toLowerCase().includes(search) || 
@@ -1684,7 +1698,10 @@
               ${photoThumb}
               <div class="overflow-hidden">
                 <p class="font-bold text-slate-900 truncate" title="${s.fullName || ''}">${s.fullName || 'N/A'}</p>
-                <p class="text-xs font-mono text-indigo-600 font-bold">${s.applicationId || s.studentId || ''}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <p class="text-[10px] font-mono text-indigo-600 font-bold">${s.applicationId || s.studentId || ''}</p>
+                  ${(s.courseApplied || '').includes('Science') ? '<span class="bg-purple-100 text-purple-700 px-1.5 py-[1px] rounded text-[9px] font-bold">🟣 CS</span>' : '<span class="bg-blue-100 text-blue-700 px-1.5 py-[1px] rounded text-[9px] font-bold">🔵 CA</span>'}
+                </div>
               </div>
             </div>
             <div class="flex items-center justify-between mb-4 text-xs font-bold text-slate-600">
@@ -1796,10 +1813,15 @@
 
     window.renderApplications = function() {
       const filter = document.getElementById('filterStatus')?.value || '';
+      const courseFilter = document.getElementById('filterCourse')?.value || '';
       const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
       let apps = getApplications();
 
       if (filter) apps = apps.filter(s => (s.applicationStatus || 'Submitted') === filter);
+      if (courseFilter) apps = apps.filter(s => {
+          const c = (s.academicDetails && s.academicDetails.courseApplied) ? s.academicDetails.courseApplied : (s.courseApplied || '');
+          return c.includes(courseFilter);
+      });
       if (search) {
         apps = apps.filter(s => 
           (s.fullName || '').toLowerCase().includes(search) || 
@@ -1860,8 +1882,12 @@
               </div>
             </td>
             <td class="p-4">
-              <p class="text-sm font-medium text-slate-800">${acad.courseApplied || '--'}</p>
-              <p class="text-xs text-slate-500 mt-0.5"><span class="font-bold text-indigo-600">12th:</span> ${acad.twelfthPercent || '--'}%</p>
+              <div class="mb-1">
+                ${(acad.courseApplied || s.courseApplied || '').includes('Science') 
+                  ? '<span class="bg-purple-100 text-purple-700 border-purple-200 border px-2 py-0.5 rounded text-[11px] font-bold">🟣 M.Sc. CS</span>'
+                  : '<span class="bg-blue-100 text-blue-700 border-blue-200 border px-2 py-0.5 rounded text-[11px] font-bold">🔵 M.Sc. CA</span>'}
+              </div>
+              <p class="text-xs text-slate-500 mt-1"><span class="font-bold text-indigo-600">12th:</span> ${acad.twelfthPercent || '--'}%</p>
             </td>
             <td class="p-4 text-sm text-slate-600">
               ${s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : '--'}
