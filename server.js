@@ -15,11 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 const createOrderHandler = require('./api/payment/create-order.js');
 const verifyPaymentHandler = require('./api/payment/verify-payment.js');
 const checkStatusHandler = require('./api/payment/check-status.js');
+const sendEmailHandler = require('./api/send-email.js');
 
 // Mount as standard Express POST routes
 app.post('/api/payment/create-order', createOrderHandler);
 app.post('/api/payment/verify-payment', verifyPaymentHandler);
 app.post('/api/payment/check-status', checkStatusHandler);
+app.post('/api/send-email', sendEmailHandler);
 
 // Add a test ping route
 app.get('/api/ping', (req, res) => res.json({ message: 'Express Server Running' }));

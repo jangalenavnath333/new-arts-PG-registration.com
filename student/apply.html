@@ -1181,7 +1181,9 @@
             applicationData.studentId,
             applicationData.email,
             applicationData.mobile,
-            loginUrl
+            loginUrl,
+            applicationData.courseApplied,
+            applicationData.paymentStatus
           );
           await EmailSvc.sendEmail(applicationData.email, tmpl.subject, tmpl.html);
         } catch (emailErr) {

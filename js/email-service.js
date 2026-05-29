@@ -100,7 +100,7 @@ function statusBadge(text, bgColor, textColor) {
 export const EmailTemplates = {
 
   // 1. Application Submitted / Pending Approval (with Login Credentials)
-  pendingApproval: (name, cetId, email, mobile, loginUrl) => ({
+  pendingApproval: (name, cetId, email, mobile, loginUrl, courseName, paymentStatus) => ({
     subject: `📩 Application Received – CET Exam Portal | Your Login Credentials`,
     html: wrapEmail(`
       <h2 style="margin: 0 0 4px; color: #1e3a5f; font-size: 20px;">📩 Application Received Successfully</h2>
@@ -114,6 +114,12 @@ export const EmailTemplates = {
       </p>
 
       ${detailsBox([
+        ['👨‍🎓 Student Name', `<strong>${name}</strong>`],
+        ['📚 Course Applied', `<strong>${courseName || 'N/A'}</strong>`],
+        ['🆔 CET ID', `<strong>${cetId}</strong>`],
+        ['💰 Payment Status', statusBadge(paymentStatus || 'SUCCESS', '#d1fae5', '#065f46')],
+        ['📞 Contact Mobile', mobile],
+        ['📧 Contact Email', email],
         ['📋 Application Status', statusBadge('PENDING APPROVAL', '#fef3c7', '#92400e')],
         ['📝 Next Step', 'Document &amp; Payment Verification by Admin']
       ])}
