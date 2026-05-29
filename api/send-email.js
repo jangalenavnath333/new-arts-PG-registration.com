@@ -46,10 +46,11 @@ module.exports = async function handler(req, res) {
       html,
     });
 
-    console.log(`[Email] Success: Sent to ${to} | MessageId: ${info.messageId}`);
-    return res.status(200).json({ success: true, messageId: info.messageId });
+    console.log("Email sent successfully");
+    console.log(`[Email] MessageId: ${info.messageId}`);
+    return res.status(200).json({ success: true, message: "Email sent successfully", messageId: info.messageId });
   } catch (error) {
-    console.error('[Email] Failed to send email:', error);
+    console.error(error);
     return res.status(500).json({ error: 'Failed to send email', details: error.message });
   }
 }

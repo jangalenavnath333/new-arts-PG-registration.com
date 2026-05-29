@@ -7,8 +7,12 @@
 
 export async function sendEmail(to, subject, html) {
   try {
-    console.log('[EmailService] 📧 Sending email to:', to, '| Subject:', subject);
-    const response = await fetch('/api/send-email', {
+    console.log("Sending email...");
+    const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? 'http://localhost:3000/api/send-email' 
+      : '/api/send-email';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,11 +26,29 @@ export async function sendEmail(to, subject, html) {
     }
 
     const data = await response.json();
-    console.log('[EmailService] ✅ Email sent successfully to:', to, '| MessageId:', data.messageId);
+    console.log("Email sent successfully");
     return true;
   } catch (error) {
-    console.error('[EmailService] ❌ Email send error:', error.message || error);
+    console.error(error);
     return false; // Fail silently so app flow doesn't break
+  }
+}
+
+export async function sendConfirmationEmail(data) {
+  try {
+    const loginUrl = window.location.origin + '/student/login.html';
+    const tmpl = EmailTemplates.pendingApproval(
+      data.fullName || data.name,
+      data.studentId,
+      data.email,
+      data.mobile || data.password,
+      loginUrl,
+      data.courseApplied,
+      data.paymentStatus
+    );
+    await sendEmail(data.email, tmpl.subject, tmpl.html);
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -364,4 +386,4 @@ export const EmailTemplates = {
   })
 };
 
-export default { sendEmail, EmailTemplates };
+export default { sendEmail, sendConfirmationEmail, EmailTemplates };

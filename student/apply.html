@@ -1174,20 +1174,10 @@
 
         // Send Email Notification with Login Credentials
         try {
-          const { default: EmailSvc } = await import('../js/email-service.js');
-          const loginUrl = window.location.origin + '/student/login.html';
-          const tmpl = EmailSvc.EmailTemplates.pendingApproval(
-            applicationData.fullName,
-            applicationData.studentId,
-            applicationData.email,
-            applicationData.mobile,
-            loginUrl,
-            applicationData.courseApplied,
-            applicationData.paymentStatus
-          );
-          await EmailSvc.sendEmail(applicationData.email, tmpl.subject, tmpl.html);
+          const { sendConfirmationEmail } = await import('../js/email-service.js');
+          await sendConfirmationEmail(applicationData);
         } catch (emailErr) {
-          console.error('[EmailService] ❌ Failed to send application email:', emailErr);
+          console.error(emailErr);
         }
 
         return true;
