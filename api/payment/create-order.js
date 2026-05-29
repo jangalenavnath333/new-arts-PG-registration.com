@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
       key_secret: keySecret,
     });
 
-    const APPLICATION_FEE = 1; // Change to 500 later for production
+    const APPLICATION_FEE = 2; // Change to 500 later for production
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const amount = body.amount || APPLICATION_FEE; // Default to APPLICATION_FEE
     const receipt = body.receipt || `receipt_${Date.now()}`;
