@@ -289,22 +289,41 @@
       }
     })();
 
-    function generatePDF() {
+    async function generatePDF() {
+      // Setup loading state
+      const btn = event.currentTarget || document.querySelector('button[onclick="generatePDF()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '⏳ Generating Secure Receipt...';
+      btn.disabled = true;
+
       const element = document.getElementById('receiptContent');
-      const buttons = element.querySelector('.action-buttons');
+      const buttons = document.querySelector('.action-buttons');
+      const noPrintElements = element.querySelectorAll('.no-print');
+      
       if(buttons) buttons.style.display = 'none';
+      noPrintElements.forEach(el => el.style.display = 'none');
+      
+      // Force render logic before capture to ensure images/fonts load and containers expand
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const opt = {
-        margin:       0.5,
+        margin:       [10, 10, 10, 10], // Margin in mm (A4 size)
         filename:     'CET_Application_Receipt.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          windowWidth: 800, // Force desktop width so mobile doesn't crush the layout
+          scrollY: 0
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      // Ensure mobile compatibility by explicitly generating a blob URL and forcing a download
-      html2pdf().set(opt).from(element).outputPdf('blob').then((blob) => {
-        if(buttons) buttons.style.display = 'flex';
+      try {
+        // Ensure mobile compatibility by generating a blob URL and forcing a download
+        const worker = html2pdf().set(opt).from(element);
+        const blob = await worker.outputPdf('blob');
         
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -319,11 +338,17 @@
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }, 100);
-      }).catch(err => {
-        if(buttons) buttons.style.display = 'flex';
+      } catch(err) {
         console.error("PDF Generation Error:", err);
         alert("Could not generate PDF. Please use the Print Receipt button instead.");
-      });
+        window.print(); // Fallback to HTML print
+      } finally {
+        // Restore UI
+        if(buttons) buttons.style.display = 'flex';
+        noPrintElements.forEach(el => el.style.display = '');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
     }
   </script>
 </body>
