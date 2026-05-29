@@ -1942,20 +1942,16 @@
       if (Object.keys(supabaseDocs).length > 0) {
         app.uploadedFiles = supabaseDocs;
       } else {
-        let dbApp = DB.getStudentByEmail(app.email);
-        if (dbApp && dbApp.uploadedFiles && Object.keys(dbApp.uploadedFiles).length > 0) {
-           app.uploadedFiles = dbApp.uploadedFiles;
+        const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+        let localDocs = cetDocs[app.applicationId] || cetDocs[app.studentId] || null;
+        if (localDocs && Object.keys(localDocs).length > 0) {
+           app.uploadedFiles = localDocs;
         } else {
-           // Fallback for older applications where images were deleted from storage
-           app.uploadedFiles = {
-              tenthFile: 'data:application/pdf;base64,JVBERi0xLg==',
-              twelfthFile: 'data:application/pdf;base64,JVBERi0xLg==',
-              photoFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-              signatureFile: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-              paymentScreenshot: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-           };
-           if (app.category && app.category !== 'Open / General') {
-              app.uploadedFiles.casteCertificateFile = 'data:application/pdf;base64,JVBERi0xLg==';
+           let dbApp = DB.getStudentByEmail(app.email);
+           if (dbApp && dbApp.uploadedFiles && Object.keys(dbApp.uploadedFiles).length > 0) {
+              app.uploadedFiles = dbApp.uploadedFiles;
+           } else {
+              app.uploadedFiles = app.uploadedFiles || {};
            }
         }
       }
@@ -1971,29 +1967,50 @@
         photo: 'Passport Photo',
         signature: 'Signature',
         paymentScreenshot: 'Payment Screenshot', paymentProof: 'Payment Screenshot',
-        casteCertificateFile: 'Caste Certificate', casteCertificate: 'Caste Certificate'
+        casteCertificateFile: 'Caste Certificate', casteCertificate: 'Caste Certificate',
+        nonCreamyLayerFile: 'Non Creamy Layer', incomeCertificateFile: 'Income Certificate',
+        domicileFile: 'Domicile', gapCertificateFile: 'Gap Certificate'
       };
       
       const filesToRender = app.uploadedFiles || app.files || app.documents || {};
 
       if (Object.keys(filesToRender).length > 0) {
         for (const [key, data] of Object.entries(filesToRender)) {
-          if (!data) continue;
+          if (!data || (!data.startsWith('data:') && !data.startsWith('http'))) continue;
           let displayName = keyMap[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).replace('File', '').trim();
           
-          const isImage = data.startsWith('data:image') || /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(data);
           const isPdf = data.startsWith('data:application/pdf') || /\.pdf(\?|$)/i.test(data);
-          const isUrl = data.startsWith('http://') || data.startsWith('https://');
 
-          if (isImage) {
-            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" title="Click to view full image"><img src="${data}" class="max-w-full h-32 object-contain rounded bg-slate-50 border border-slate-100" /></a></div>`;
-          } else if (isPdf) {
-            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-indigo-100"><span>📄</span> Open PDF Document</a></div>`;
-          } else if (isUrl) {
-            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" target="_blank" class="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-bold text-sm bg-indigo-50 px-3 py-2 rounded-lg transition-colors border border-indigo-100"><span>🔗</span> View Document</a></div>`;
+          let previewHtml = '';
+          if (isPdf) {
+             previewHtml = `
+               <div class="w-full h-32 bg-slate-100 flex items-center justify-center rounded-t-lg border-b border-slate-200">
+                 <div class="text-center">
+                   <div class="text-3xl mb-1">📄</div>
+                   <p class="text-xs font-bold text-slate-500">PDF Document</p>
+                 </div>
+               </div>
+               <button onclick="downloadDocument('${data}', '${displayName}.pdf')" class="absolute top-2 right-2 bg-white text-indigo-600 p-1.5 rounded shadow border border-indigo-100 hover:bg-indigo-50 transition" title="Download">
+                 ⬇️
+               </button>
+             `;
           } else {
-            docsHtml += `<div class="mb-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">${displayName}</p><a href="${data}" download="${displayName}" class="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors">Download File</a></div>`;
+             previewHtml = `
+               <img src="${data}" class="w-full h-32 object-cover rounded-t-lg cursor-pointer" onclick="openFullscreenImage('${data}')" title="Click to view full screen" />
+               <button onclick="downloadDocument('${data}', '${displayName}.png')" class="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-1 rounded shadow-sm border border-slate-200 hover:bg-white transition" title="Download Image">
+                 ⬇️
+               </button>
+             `;
           }
+
+          docsHtml += `
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm relative group overflow-hidden flex flex-col">
+              ${previewHtml}
+              <div class="p-2 bg-slate-50 border-t border-slate-100 flex-grow flex items-center justify-center text-center">
+                <p class="font-bold text-[11px] text-slate-800 uppercase tracking-wide leading-tight">${displayName}</p>
+              </div>
+            </div>
+          `;
         }
       }
       
