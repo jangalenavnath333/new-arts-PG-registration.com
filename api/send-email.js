@@ -26,21 +26,25 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
     }
 
+    const port = Number(process.env.EMAIL_PORT) || 465;
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: process.env.EMAIL_PORT || 587,
-      secure: false, // true for 465, false for other ports
+      port: port,
+      secure: port === 465, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
       tls: {
         rejectUnauthorized: false
       }
     });
 
     const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"CET Exam Portal" <jangalenavnath97@gmail.com>',
+      from: process.env.EMAIL_FROM || '"CET Exam Portal" <casas@newartsdcs.ac.in>',
       to,
       subject,
       html,
