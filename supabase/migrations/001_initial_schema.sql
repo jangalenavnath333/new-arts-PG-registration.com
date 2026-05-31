@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.students (
   auth_user_id     UUID,
   student_id       TEXT UNIQUE,
   full_name        TEXT NOT NULL,
-  email            TEXT UNIQUE NOT NULL,
+  email            TEXT NOT NULL,
   mobile           TEXT,
   dob              TEXT,
   address          TEXT,
@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS public.students (
   password_hash    TEXT,
   submitted_at     TIMESTAMPTZ DEFAULT now(),
   applied_at       TIMESTAMPTZ DEFAULT now(),
-  created_at       TIMESTAMPTZ DEFAULT now()
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(email, course_applied)
 );
 
 -- =====================

@@ -87,6 +87,13 @@
       <div class="content-header hidden-old-header" style="display:none;"></div>
       
       <div class="content-body">
+        <!-- APP SWITCHER -->
+        <div id="appSwitcherContainer" style="display:none; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;">
+          <p style="font-size: 13px; color: var(--mid); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">My Applications</p>
+          <div id="appSwitcherCards" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          </div>
+        </div>
+
         <!-- OVERVIEW TAB (New Premium Design) -->
         <div id="section-overview" style="margin-bottom: 40px; padding-top: 10px;">
           <!-- Welcome Header -->
@@ -433,7 +440,7 @@
 
         if (isReady()) {
           const supabase = getClient();
-          const { data, error } = await supabase.from('students').select('*').eq('email', student.email).single();
+          const { data, error } = await supabase.from('students').select('*').eq('email', student.email).eq('course_applied', student.courseApplied).single();
           if (data && !error) {
             console.log('[Dashboard] Synced real-time status from Supabase');
             student.applicationStatus = data.application_status;
@@ -479,7 +486,7 @@
       // 4. Sync latest from admin's applications (Fallback)
       try {
         const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-        const appRecord = apps.find(a => a.email?.toLowerCase() === student.email?.toLowerCase());
+        const appRecord = apps.find(a => a.email?.toLowerCase() === student.email?.toLowerCase() && a.courseApplied === student.courseApplied);
         if (appRecord) {
           student.applicationStatus = student.applicationStatus || appRecord.applicationStatus;
           student.examStatus        = student.examStatus || appRecord.examStatus;
@@ -527,73 +534,196 @@
       try { renderResult(); } catch (e) { console.error("Result error", e); }
       
       try { checkExamEligibility(); } catch (e) { console.error("Eligibility check error", e); }
+      
+      try { renderAppSwitcher(); } catch(e) { console.error("App switcher error", e); }
+    }
+    
+    function renderAppSwitcher() {
+      let allApps = [];
+      try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
+      if (!allApps.length) {
+         // fallback to getting from cetApplications by email
+         const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+         allApps = apps.filter(a => a.email?.toLowerCase() === student.email?.toLowerCase());
+      }
+      
+      if (allApps.length > 1) {
+         const container = document.getElementById('appSwitcherContainer');
+         const cards = document.getElementById('appSwitcherCards');
+         container.style.display = 'block';
+         
+         cards.innerHTML = allApps.map(app => {
+            const isActive = app.courseApplied === student.courseApplied;
+            const courseColor = app.courseApplied.includes('Science') ? 'rgba(99,102,241,1)' : 'rgba(245,158,11,1)';
+            const bgHover = app.courseApplied.includes('Science') ? 'rgba(99,102,241,0.1)' : 'rgba(245,158,11,0.1)';
+            
+            let status = app.applicationStatus || (app.status === 'approved' ? 'Approved' : 'Pending');
+            if (status.toUpperCase() === 'PENDING_APPROVAL') status = 'Under Review';
+            
+            return `
+              <div onclick="switchApplication('${app.id}')" style="cursor: pointer; padding: 12px 16px; border-radius: 12px; border: 1px solid ${isActive ? courseColor : 'rgba(255,255,255,0.1)'}; background: ${isActive ? bgHover : 'rgba(0,0,0,0.2)'}; display: flex; flex-direction: column; gap: 4px; min-width: 200px; transition: all 0.2s ease;">
+                 <span style="font-size: 14px; font-weight: 700; color: ${isActive ? '#fff' : 'var(--light)'}">${app.courseApplied}</span>
+                 <span style="font-size: 11px; color: ${isActive ? courseColor : 'var(--mid)'}; font-weight: 600; text-transform: uppercase;">Status: ${status}</span>
+              </div>
+            `;
+         }).join('');
+      }
+    }
+    
+    window.switchApplication = function(appId) {
+      let allApps = [];
+      try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
+      if (!allApps.length) {
+         const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+         allApps = apps.filter(a => a.email?.toLowerCase() === student.email?.toLowerCase());
+      }
+      
+      const newApp = allApps.find(a => a.id === appId);
+      if (newApp) {
+         DB.setCurrentStudent(newApp);
+         localStorage.setItem("studentData", JSON.stringify(newApp));
+         window.location.reload();
+      }
     }
 
     function renderOverview() {
-      // 1. Populate Premium Header Info
-      const isApproved = student.status?.toLowerCase() === 'approved' || student.applicationStatus?.toLowerCase() === 'approved';
-      const appStatus = student.applicationStatus || (isApproved ? 'Approved' : 'PENDING_APPROVAL');
+      document.getElementById('appSwitcherContainer').style.display = 'none'; // Hide the old app switcher
+
+      let allApps = [];
+      try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
+      if (!allApps.length) {
+         if (student) allApps = [student]; // fallback
+      }
       
-      document.getElementById('headerStudentName').textContent = student.fullName ? student.fullName.split(' ')[0] : 'Student';
-      document.getElementById('headerCourse').textContent = student.courseApplied || student.academicDetails?.courseApplied || '--';
-      document.getElementById('headerCetId').textContent = student.studentId || 'Pending ID';
-      
-      const badgeColors = { pending: 'bg-amber-500 text-white', approved: 'bg-emerald-500 text-white', rejected: 'bg-red-500 text-white' };
-      const displayStatus = appStatus.toUpperCase() === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
-      document.getElementById('headerStatus').innerHTML = `<span class="px-3 py-1 text-xs font-bold uppercase rounded-full ${badgeColors[student.status] || badgeColors.pending}">${displayStatus}</span>`;
-      
-      // 2. Exam Schedule & Countdown Logic
-      const schedule = DB.getSchedule();
-      let config = window.examConfig || null;
-      if (!config) { try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){} }
-      
-      if (!config || !config.examDate || !config.startTime) {
-        document.getElementById('headerExamDate').textContent = schedule.date ? new Date(schedule.date).toLocaleDateString('en-IN') : 'TBD';
-        document.getElementById('headerExamTime').textContent = schedule.time || 'TBD';
-        document.getElementById('headerCountdown').textContent = '--:--:--';
-        document.getElementById('headerTimerLabel').textContent = 'Waiting for Schedule';
-      } else {
-        const start = new Date(`${config.examDate}T${config.startTime}`);
-        document.getElementById('headerExamDate').textContent = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-        document.getElementById('headerExamTime').textContent = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-        
-        // Start live countdown
-        if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
-        
-        const updateTimer = () => {
-          const status = window.getExamStatus ? window.getExamStatus(config.examDate, config.startTime, config.durationMinutes) : 'NOT_STARTED';
-          
-          if (status === 'NOT_STARTED') {
+      let html = `<h2 style="font-size: 24px; font-weight: 800; color: var(--white); margin-bottom: 24px;">My Exam Applications</h2>`;
+
+      allApps.forEach(app => {
+         const isApproved = app.status?.toLowerCase() === 'approved' || app.applicationStatus?.toLowerCase() === 'approved';
+         const appStatus = app.applicationStatus || (isApproved ? 'Approved' : 'PENDING_APPROVAL');
+         const displayStatus = appStatus.toUpperCase() === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
+         const badgeColors = { pending: 'bg-amber-500 text-white', approved: 'bg-emerald-500 text-white', rejected: 'bg-red-500 text-white' };
+         const statusColor = badgeColors[app.status?.toLowerCase()] || badgeColors.pending;
+
+         // Resolve Course-specific Exam Config
+         let config = null;
+         try { 
+            const allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; 
+            config = allConfigs[app.courseApplied] || allConfigs; // fallback
+         } catch(e){}
+
+         let examDateText = 'TBD';
+         let examTimeText = 'TBD';
+         let countdownHtml = '--:--:--';
+         let timerLabel = 'Waiting for Schedule';
+         let startBtnHtml = '';
+
+         if (config && config.examDate && config.startTime) {
+            const start = new Date(`${config.examDate}T${config.startTime}`);
+            const duration = config.durationMinutes || 60;
+            const end = new Date(start.getTime() + (duration * 60000));
             const now = new Date();
-            const diff = start - now;
-            const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-            const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-            document.getElementById('headerCountdown').textContent = `${h}:${m}:${s}`;
-            document.getElementById('headerCountdown').style.color = 'var(--emerald-400)';
-            document.getElementById('headerTimerLabel').textContent = 'Starts In';
-          } else if (status === 'LIVE') {
-            document.getElementById('headerCountdown').textContent = 'LIVE NOW';
-            document.getElementById('headerCountdown').style.color = 'var(--warning)';
-            document.getElementById('headerTimerLabel').textContent = 'Exam is Active';
-            checkExamEligibility(); // Trigger state change
-          } else {
-            document.getElementById('headerCountdown').textContent = 'ENDED';
-            document.getElementById('headerCountdown').style.color = 'var(--danger)';
-            document.getElementById('headerTimerLabel').textContent = 'Status';
-            if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
-            checkExamEligibility();
-          }
-        };
-        
-        updateTimer();
-        window.examCountdownInterval = setInterval(updateTimer, 1000);
-      }
+
+            examDateText = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+            examTimeText = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+            let status = 'NOT_STARTED';
+            if (now < start) status = 'NOT_STARTED';
+            else if (now > end) status = 'ENDED';
+            else status = 'LIVE';
+            
+            if (app.examStatus === 'COMPLETED' || app.hasAttempted) {
+                countdownHtml = '<span style="color:var(--success);">COMPLETED</span>';
+                timerLabel = 'Exam Status';
+            } else if (app.examStatus === 'LOCKED') {
+                countdownHtml = '<span style="color:var(--warning);">LOCKED</span>';
+                timerLabel = 'Status';
+            } else if (status === 'NOT_STARTED') {
+                const diff = start - now;
+                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                countdownHtml = `<span style="color:var(--emerald-400);">${h}:${m}:${s}</span>`;
+                timerLabel = 'Starts In';
+            } else if (status === 'LIVE') {
+                countdownHtml = '<span style="color:var(--warning);">LIVE NOW</span>';
+                timerLabel = 'Exam is Active';
+                if (isApproved) {
+                    startBtnHtml = `<button onclick="startSpecificExam('${app.id}')" class="btn btn-solid pulse-active" style="width: 100%; padding: 14px; font-weight: 800; border-radius: 8px; margin-top: 16px;"><span style="margin-right: 8px;">🚀</span> START EXAM</button>`;
+                }
+            } else {
+                countdownHtml = '<span style="color:var(--danger);">ENDED</span>';
+                timerLabel = 'Status';
+            }
+         }
+
+         let admitCardBtn = '';
+         if (isApproved && config && config.examDate) {
+             admitCardBtn = `<button onclick="downloadAdmitCard('${app.id}')" class="btn" style="width: 100%; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 10px; font-weight: 600; border-radius: 8px; margin-top: 12px; transition: all 0.2s ease;">📄 Download Admit Card</button>`;
+         }
+
+         if (!isApproved) {
+            startBtnHtml = `<div style="padding: 12px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; color: #fcd34d; font-size: 13px; text-align: center; margin-top: 16px;">Approve application to unlock exam</div>`;
+         } else if (!startBtnHtml && !countdownHtml.includes('COMPLETED') && !countdownHtml.includes('ENDED')) {
+            startBtnHtml = `<button disabled class="btn btn-solid" style="width: 100%; padding: 14px; font-weight: 800; border-radius: 8px; margin-top: 16px; opacity: 0.5; cursor: not-allowed;"><span style="margin-right: 8px;">⏳</span> WAITING FOR EXAM TIME</button>`;
+         }
+
+         html += `
+          <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.05)); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px;">
+              
+              <div style="flex: 1; min-width: 250px;">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--white); margin-bottom: 12px;">${app.courseApplied}</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                  <div>
+                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Application Status</p>
+                     <span class="px-2 py-1 text-[11px] font-bold uppercase rounded-full ${statusColor}">${displayStatus}</span>
+                  </div>
+                  <div>
+                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Payment Status</p>
+                     <span class="px-2 py-1 text-[11px] font-bold uppercase rounded-full bg-slate-700 text-slate-200">${app.paymentStatus || 'Pending'}</span>
+                  </div>
+                  <div>
+                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Student ID</p>
+                     <span style="font-size: 13px; font-family: monospace; color: var(--light); font-weight: bold;">${app.studentId || 'Pending'}</span>
+                  </div>
+                  <div>
+                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Exam Status</p>
+                     <span style="font-size: 13px; font-weight: bold; color: var(--light);">${app.examStatus || 'NOT_SCHEDULED'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="display: flex; flex-direction: column; gap: 12px; min-width: 280px; width: 100%; max-width: 350px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
+                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Date</p>
+                    <p style="font-size: 14px; font-weight: 700; color: var(--white);">${examDateText}</p>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
+                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Time</p>
+                    <p style="font-size: 14px; font-weight: 700; color: var(--white);">${examTimeText}</p>
+                  </div>
+                </div>
+                
+                <div class="countdown-timer" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px; text-align: center;">
+                  <p style="font-size: 11px; color: var(--emerald-400); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">${timerLabel}</p>
+                  <p style="font-size: 20px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; letter-spacing: 1px;">${countdownHtml}</p>
+                </div>
+
+                ${isApproved ? (startBtnHtml + admitCardBtn) : startBtnHtml}
+              </div>
+              
+            </div>
+          </div>
+         `;
+      });
+
+      document.getElementById('section-overview').innerHTML = html;
       
-      // 3. Admit Card Button visibility
-      if (isApproved && config?.examDate) {
-        document.getElementById('premiumAdmitCardBtn').style.display = 'block';
-      }
+      // Auto-refresh timer loop
+      if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
+      window.examCountdownInterval = setInterval(renderOverview, 1000);
     }
 
     function renderStatus() {
@@ -805,7 +935,7 @@
     }
 
     function renderResult() {
-      const result = DB.getResultByStudentId(student.id);
+      const result = DB.getResultByStudentId(student.studentId || student.id);
       if (!result) {
         document.getElementById('resultContent').innerHTML = `
           <div class="empty-state">
@@ -832,8 +962,8 @@
         document.getElementById('resultContent').innerHTML = `
           <div class="alert alert-success" style="flex-direction:column; align-items:center; text-align:center; padding:40px; border-radius:16px;">
             <div style="font-size:56px; margin-bottom:20px;">✅</div>
-            <h3 style="font-size:26px; font-weight:800; margin-bottom:12px; color:var(--success);">Exam Submitted Successfully</h3>
-            <p style="font-size:16px; color:var(--white); margin-bottom:8px;">Your exam has been submitted and is under review.</p>
+            <h3 style="font-size:26px; font-weight:800; margin-bottom:12px; color:var(--success);">Results Not Published Yet</h3>
+            <p style="font-size:16px; color:var(--white); margin-bottom:8px;">Your exam has been submitted successfully.</p>
             <p style="font-size:14px; color:var(--light); bg:rgba(255,255,255,0.1); padding:12px 24px; border-radius:8px;">Result will be published by the admin soon.</p>
           </div>
         `;
@@ -906,8 +1036,8 @@
       `;
     }
 
-    function downloadResultPDF() {
-      const result = DB.getResultByStudentId(student.id);
+    async function downloadResultPDF() {
+      const result = DB.getResultByStudentId(student.studentId || student.id);
       if (!result) return;
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
@@ -923,12 +1053,11 @@
       // Calculate Rank
       let rank = 'N/A';
       try {
-         // Student side DB is 'cet_results'. But wait, the admin side uses 'cetExamResults'. 
-         // Let's check both or whatever is available in localStorage.
-         const allResults = JSON.parse(localStorage.getItem('cetExamResults')) || JSON.parse(localStorage.getItem('cet_results')) || [];
+         let allResults = JSON.parse(localStorage.getItem('cetExamResults')) || JSON.parse(localStorage.getItem('cet_results')) || [];
          if (allResults.length > 0) {
+            const myCourse = student.courseApplied || 'M.Sc. Computer Science';
+            allResults = allResults.filter(r => r.course === myCourse || r.courseApplied === myCourse);
             allResults.sort((a,b) => (b.score||0) - (a.score||0));
-            // In cetExamResults, the key is usually studentId which equals cet_student_id.
             const myRankIdx = allResults.findIndex(r => r.studentId === student.studentId || r.studentId === student.id);
             if (myRankIdx !== -1) rank = myRankIdx + 1;
          }
@@ -955,7 +1084,25 @@
       
       let photoData = student.photoData || (student.uploadedFiles ? student.uploadedFiles.photoFile : null);
       if (photoData) {
-         try { doc.addImage(photoData, 'JPEG', 150, 40, 35, 45); } catch(e){}
+         try {
+           if (photoData.startsWith('http')) {
+              const imgData = await new Promise((resolve) => {
+                 const img = new Image();
+                 img.crossOrigin = 'Anonymous';
+                 img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg'));
+                 };
+                 img.onerror = () => resolve(null);
+                 img.src = photoData;
+              });
+              if (imgData) doc.addImage(imgData, 'JPEG', 150, 40, 35, 45);
+           } else {
+              doc.addImage(photoData, 'JPEG', 150, 40, 35, 45);
+           }
+         } catch(e){}
       }
       
       // QR Code
@@ -964,11 +1111,34 @@
          text: `CET ID: ${student.studentId} | Score: ${result.score}/${result.total} | Status: ${grade} | Rank: ${rank}`,
          width: 128, height: 128
       });
-      setTimeout(() => {
-        const qrCanvas = qrContainer.querySelector('canvas');
-        if (qrCanvas) doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 95, 30, 30);
-        doc.save(`CET_Scorecard_${student.studentId}.pdf`);
-      }, 100);
+      
+      await new Promise(r => setTimeout(r, 100)); // Wait for QR render
+      const qrCanvas = qrContainer.querySelector('canvas');
+      if (qrCanvas) doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 95, 30, 30);
+      
+      const fileName = `CET_Scorecard_${student.studentId}.pdf`;
+      doc.save(fileName);
+      console.log('[Student] Scorecard PDF Generated');
+      
+      // Upload to Supabase asynchronously
+      try {
+         const { uploadFile } = await import('../js/supabase-db.js');
+         if (uploadFile) {
+            const pdfBlob = doc.output('blob');
+            const dataUrl = await new Promise((res) => {
+               const reader = new FileReader();
+               reader.onload = () => res(reader.result);
+               reader.readAsDataURL(pdfBlob);
+            });
+            const folder = student.email ? student.email.replace(/[^a-z0-9]/g, '_') : student.studentId;
+            const path = `results/${folder}/${fileName}`;
+            uploadFile('student-documents', path, dataUrl).then(url => {
+               if (url) console.log('[Student] Scorecard automatically synced to cloud:', url);
+            });
+         }
+      } catch(e) {
+         console.warn("Could not sync scorecard to cloud", e);
+      }
     }
 
     function checkExamEligibility() {
@@ -1000,6 +1170,27 @@
       } else {
         if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); pBtn.innerHTML = 'EXAM ENDED'; }
       }
+    }
+
+    window.startSpecificExam = function(appId) {
+      let allApps = [];
+      try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
+      if (!allApps.length) {
+         if (student && student.id === appId) allApps = [student];
+      }
+      
+      const app = allApps.find(a => a.id === appId);
+      if (!app) {
+         alert('Application not found.');
+         return;
+      }
+      
+      // Update global context to the specific course exam they are starting
+      student = app;
+      DB.setCurrentStudent(student);
+      localStorage.setItem("studentData", JSON.stringify(student));
+      
+      startExam();
     }
 
     function startExam() {
@@ -1082,7 +1273,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
-      const config = DB.getSchedule();
+      const config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science');
       if (!config || !config.examDate) {
         alert('Exam schedule not set by admin yet.');
         return;
@@ -1104,22 +1295,37 @@
       doc.setFontSize(11);
       doc.text(`Student Name: ${student.fullName || ''}`, 20, 45);
       doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 55);
-      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 65);
+      doc.text(`Hall Ticket ID: ${student.hallTicketId || 'Assigned Post-Schedule'}`, 20, 65);
+      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 75);
       
       const start = new Date(`${config.examDate}T${config.startTime}`);
-      doc.text(`Exam Date: ${start.toLocaleDateString()}`, 20, 75);
-      doc.text(`Exam Time: ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 20, 85);
-      doc.text(`Duration: ${config.durationMinutes} Minutes`, 20, 95);
-      doc.text(`College: New Arts, Commerce and Science College`, 20, 105);
+      doc.text(`Exam Date: ${start.toLocaleDateString()}`, 20, 85);
+      doc.text(`Exam Time: ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 20, 95);
+      doc.text(`Duration: ${config.durationMinutes} Minutes`, 20, 105);
+      doc.text(`College: New Arts, Commerce and Science College`, 20, 115);
       
-      // Photo
-      let photoData = student.photoData;
-      if (!photoData && student.uploadedFiles?.photoFile) {
-         photoData = student.uploadedFiles.photoFile;
-      }
+      // Photo handling for Base64 vs URLs
+      let photoData = student.photoData || (student.uploadedFiles && student.uploadedFiles.photoFile);
       if (photoData) {
          try {
-           doc.addImage(photoData, 'JPEG', 150, 40, 35, 45);
+           if (photoData.startsWith('http')) {
+              // Fetch external URL as Base64 to avoid CORS issues in jsPDF
+              const imgData = await new Promise((resolve) => {
+                 const img = new Image();
+                 img.crossOrigin = 'Anonymous';
+                 img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg'));
+                 };
+                 img.onerror = () => resolve(null);
+                 img.src = photoData;
+              });
+              if (imgData) doc.addImage(imgData, 'JPEG', 150, 40, 35, 45);
+           } else {
+              doc.addImage(photoData, 'JPEG', 150, 40, 35, 45);
+           }
          } catch(e) { console.warn("Could not add photo to PDF", e); }
       }
       
@@ -1153,8 +1359,30 @@
          y += 7;
       });
       
-      doc.save(`CET_AdmitCard_${student.studentId || 'Pending'}.pdf`);
+      // Save locally
+      const fileName = `CET_AdmitCard_${student.studentId || 'Pending'}.pdf`;
+      doc.save(fileName);
       console.log('[Student] Admit Card PDF Generated');
+      
+      // Upload to Supabase asynchronously
+      try {
+         const { uploadFile } = await import('../js/supabase-db.js');
+         if (uploadFile) {
+            const pdfBlob = doc.output('blob');
+            const dataUrl = await new Promise((res) => {
+               const reader = new FileReader();
+               reader.onload = () => res(reader.result);
+               reader.readAsDataURL(pdfBlob);
+            });
+            const folder = student.email ? student.email.replace(/[^a-z0-9]/g, '_') : student.studentId;
+            const path = `halltickets/${folder}/${fileName}`;
+            uploadFile('student-documents', path, dataUrl).then(url => {
+               if (url) console.log('[Student] Hall ticket automatically synced to cloud:', url);
+            });
+         }
+      } catch(e) {
+         console.warn("Could not sync hall ticket to cloud", e);
+      }
     }
 
     init();

@@ -248,14 +248,20 @@
          return;
       }
       // 2. Fetch Exam Config & Strict Time Check
+      const course = currentStudent.courseApplied || 'M.Sc. Computer Science';
       if (ExamSupa.isReady()) {
          const dbConfig = await ExamSupa.fetchExamConfig();
          if (dbConfig) {
              examConfig = dbConfig;
-             LocalDB.set('cetExamConfig', dbConfig);
+             // Here we might need to properly sync to course, but assuming Supabase returns course config in future
+             // For now, let's keep local storage priority if cloud doesn't support course-wise config yet
          }
       }
-      if (!examConfig) examConfig = LocalDB.get('cetExamConfig');
+      
+      let allConfigs = LocalDB.get('cetExamConfig') || {};
+      if (allConfigs.examDate !== undefined) allConfigs = { 'M.Sc. Computer Science': allConfigs };
+      
+      if (!examConfig) examConfig = allConfigs[course];
 
       if(!examConfig || !examConfig.examDate || !examConfig.startTime) {
         console.warn('Exam config missing. Using demo mode (60 minutes).');
@@ -393,10 +399,13 @@
           }
         }
         if (!questionsLoaded) {
-          const allSets = LocalDB.get('cetQuestionSets') || [];
-          const activeSet = allSets.find(s => s.isActive);
+          let allSetsObj = LocalDB.get('cetQuestionSets') || {};
+          if (Array.isArray(allSetsObj)) allSetsObj = { 'M.Sc. Computer Science': allSetsObj };
+          
+          const courseSets = allSetsObj[currentStudent.courseApplied || 'M.Sc. Computer Science'] || [];
+          const activeSet = courseSets.find(s => s.isActive);
           if(!activeSet || !activeSet.questions || activeSet.questions.length === 0) {
-            alert('Exam not configured. No active question set found.');
+            alert('Exam not configured. No active question set found for your course.');
             window.location.replace('dashboard.html');
             return;
           }
@@ -839,7 +848,7 @@
       const elapsedSec = startDur - (examTimeLeft > 0 ? examTimeLeft : 0);
 
       let results = LocalDB.get('cetExamResults') || [];
-      results.push({ id: 'RES' + Date.now(), studentId: currentStudent.studentId || currentStudent.id, name: currentStudent.fullName, score: scoreAmt, totalQuestions: examData.length, violations: activeViolations, timeUsed: elapsedSec, submittedAt: new Date().toISOString(), status: submitStatus, autoSubmitted: isAuto, answers: answersStore, result_published: false });
+      results.push({ id: 'RES' + Date.now(), studentId: currentStudent.studentId || currentStudent.id, name: currentStudent.fullName, courseApplied: currentStudent.courseApplied || 'M.Sc. Computer Science', category: currentStudent.category || 'OPEN', score: scoreAmt, totalQuestions: examData.length, violations: activeViolations, timeUsed: elapsedSec, submittedAt: new Date().toISOString(), status: submitStatus, autoSubmitted: isAuto, answers: answersStore, result_published: false });
       LocalDB.set('cetExamResults', results);
 
       let students = LocalDB.get('cet_students') || [];
@@ -866,7 +875,7 @@
             name: currentStudent.fullName, score: scoreAmt, total: examData.length,
             correctAnswers: correctAmt, wrongAnswers: wrongAmt, unanswered: unansweredAmt,
             violations: activeViolations, timeUsed: elapsedSec, submitStatus, isAuto, answers: answersStore,
-            course: currentStudent.courseApplied || 'BSc Computer Science', category: currentStudent.category || 'OPEN',
+            course: currentStudent.courseApplied || 'M.Sc. Computer Science', category: currentStudent.category || 'OPEN',
           });
         } catch (e) { console.warn('[ExamSupa] Submit to cloud failed:', e); }
       }
@@ -876,7 +885,7 @@
       if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
       let oldResults = LocalDB.get('cet_results') || [];
-      oldResults.push({ id: 'RES' + Date.now(), studentId: currentStudent.id, studentName: currentStudent.fullName, studentCetId: currentStudent.studentId, score: scoreAmt, correctAnswers: correctAmt, wrongAnswers: wrongAmt, unanswered: unansweredAmt, violations: activeViolations, total: examData.length, submittedAt: new Date().toISOString(), result_published: false });
+      oldResults.push({ id: 'RES' + Date.now(), studentId: currentStudent.id, studentName: currentStudent.fullName, studentCetId: currentStudent.studentId, courseApplied: currentStudent.courseApplied || 'M.Sc. Computer Science', category: currentStudent.category || 'OPEN', score: scoreAmt, correctAnswers: correctAmt, wrongAnswers: wrongAmt, unanswered: unansweredAmt, violations: activeViolations, total: examData.length, submittedAt: new Date().toISOString(), result_published: false });
       LocalDB.set('cet_results', oldResults);
 
       if (submitStatus.includes('Terminated')) { window.location.replace('dashboard.html'); }

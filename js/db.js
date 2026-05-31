@@ -81,28 +81,38 @@ const DB = {
   },
 
   // ---- Questions ----
-  getQuestions() { return this.get(this.KEYS.QUESTIONS) || getDefaultQuestions(); },
-  saveQuestions(questions) { this.set(this.KEYS.QUESTIONS, questions); },
-  addQuestion(q) {
-    const questions = this.getQuestions();
+  getQuestions(course = 'M.Sc. Computer Science') { 
+    const all = this.get(this.KEYS.QUESTIONS) || {}; 
+    if (Array.isArray(all)) return all; // migration from old array format
+    return all[course] || getDefaultQuestions(); 
+  },
+  saveQuestions(course, questions) { 
+    let all = this.get(this.KEYS.QUESTIONS) || {};
+    if (Array.isArray(all)) all = { 'M.Sc. Computer Science': all };
+    all[course] = questions;
+    this.set(this.KEYS.QUESTIONS, all); 
+  },
+  addQuestion(course, q) {
+    const questions = this.getQuestions(course);
     q.id = 'Q' + Date.now();
     questions.push(q);
-    this.saveQuestions(questions);
+    this.saveQuestions(course, questions);
     return q;
   },
-  deleteQuestion(id) {
-    const questions = this.getQuestions().filter(q => q.id !== id);
-    this.saveQuestions(questions);
+  deleteQuestion(course, id) {
+    const questions = this.getQuestions(course).filter(q => q.id !== id);
+    this.saveQuestions(course, questions);
   },
-  updateQuestion(id, updates) {
-    const questions = this.getQuestions();
+  updateQuestion(course, id, updates) {
+    const questions = this.getQuestions(course);
     const idx = questions.findIndex(q => q.id === id);
-    if (idx !== -1) { questions[idx] = { ...questions[idx], ...updates }; this.saveQuestions(questions); }
+    if (idx !== -1) { questions[idx] = { ...questions[idx], ...updates }; this.saveQuestions(course, questions); }
   },
 
   // ---- Exam Schedule ----
-  getSchedule() {
-    return this.get(this.KEYS.EXAM_SCHEDULE) || {
+  getSchedule(course = 'M.Sc. Computer Science') {
+    const all = this.get(this.KEYS.EXAM_SCHEDULE) || {};
+    const defaultSchedule = {
       date: '', time: '', duration: 60,
       instructions: [
         'Ensure stable internet connection',
@@ -121,8 +131,15 @@ const DB = {
       ],
       isActive: false,
     };
+    if (all.date !== undefined) return all; // migration from old object format
+    return all[course] || defaultSchedule;
   },
-  saveSchedule(schedule) { this.set(this.KEYS.EXAM_SCHEDULE, schedule); },
+  saveSchedule(course, schedule) { 
+    let all = this.get(this.KEYS.EXAM_SCHEDULE) || {};
+    if (all.date !== undefined) all = { 'M.Sc. Computer Science': all };
+    all[course] = schedule;
+    this.set(this.KEYS.EXAM_SCHEDULE, all); 
+  },
 
   // ---- Results ----
   getResults() { return this.get(this.KEYS.RESULTS) || []; },

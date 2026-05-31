@@ -618,9 +618,12 @@
 
   <script type="module">
     import DB from '../js/db.js';
-    import { saveStudentApplication, isReady as isSupabaseReady } from '../js/supabase-db.js';
+    import { saveStudentApplication, isReady as isSupabaseReady, uploadFile } from '../js/supabase-db.js';
+    window.supabaseUploadFile = uploadFile;
+    window.isSupabaseReady = isSupabaseReady;
 
     window.APPLICATION_FEE = 2; // Change to 500 for production
+    window.pendingAppId = 'APP' + Date.now();
     
     document.addEventListener('DOMContentLoaded', () => {
       const feeDisplay = document.getElementById('feeAmountDisplay');
@@ -787,7 +790,7 @@
       setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 4000);
     }
 
-    window.handleFileUpload = function(inputId, previewId, nameId) {
+    window.handleFileUpload = async function(inputId, previewId, nameId) {
       const file = document.getElementById(inputId).files[0];
       if (!file) return;
 
@@ -802,42 +805,67 @@
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const previewEl = document.getElementById(previewId);
-        if (file.type.startsWith('image/')) {
-          if(previewEl) {
-            previewEl.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
-            previewEl.style.display = 'block';
-          }
-          
-          const img = new Image();
-          img.onload = function() {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 600;
-            const MAX_HEIGHT = 600;
-            let width = img.width;
-            let height = img.height;
-            if (width > height) {
-              if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-            } else {
-              if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+      const nameEl = document.getElementById(nameId);
+      nameEl.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;margin-right:8px;vertical-align:middle;"></span> Uploading...`;
+
+      const processFile = new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const previewEl = document.getElementById(previewId);
+          if (file.type.startsWith('image/')) {
+            if(previewEl) {
+              previewEl.innerHTML = `<img src="${e.target.result}" alt="Preview" />`;
+              previewEl.style.display = 'block';
             }
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.2); 
             
-            fileDataMap[inputId] = dataUrl;
+            const img = new Image();
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 800;
+              const MAX_HEIGHT = 800;
+              let width = img.width;
+              let height = img.height;
+              if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+              } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+              }
+              canvas.width = width; canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
+              resolve(dataUrl);
+            }
+            img.src = e.target.result;
+          } else {
+            if(previewEl) previewEl.style.display = 'block';
+            resolve(e.target.result);
           }
-          img.src = e.target.result;
-        } else {
-          fileDataMap[inputId] = e.target.result;
-          if(previewEl) previewEl.style.display = 'block';
-        }
-        document.getElementById(nameId).textContent = '✅ ' + file.name;
-      };
-      reader.readAsDataURL(file);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const dataUrl = await processFile;
+
+      if (window.isSupabaseReady && window.isSupabaseReady()) {
+         const studentFolder = `students/${window.pendingAppId}/documents`;
+         
+         const isPhoto = inputId === 'photoFile' || inputId === 'signatureFile';
+         const bucket = isPhoto ? 'student-photos' : 'student-documents';
+         const ext = file.type === 'application/pdf' ? 'pdf' : 'jpg';
+         const path = `${studentFolder}/${inputId}_${Date.now()}.${ext}`;
+
+         const publicUrl = await window.supabaseUploadFile(bucket, path, dataUrl);
+         if (publicUrl) {
+            fileDataMap[inputId] = publicUrl;
+            nameEl.textContent = '✅ ' + file.name + ' (Uploaded securely)';
+            return;
+         }
+      }
+
+      // Fallback
+      fileDataMap[inputId] = dataUrl;
+      nameEl.textContent = '✅ ' + file.name;
     }
 
     window.nextStep = function(step) {
@@ -1012,6 +1040,18 @@
       if (!validateStep(1)) { fail(1); return; }
       if (!validateStep(2)) { fail(2); return; }
       if (!validateStep(3)) { fail(3); return; }
+
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const course = document.getElementById('courseApplied').value;
+      const existingApps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+      const hasDuplicate = existingApps.some(app => app.email && app.email.toLowerCase() === email && app.courseApplied === course);
+      
+      if (hasDuplicate) {
+         showAlert('You have already submitted an application for this course.', 'danger');
+         btn.disabled = false;
+         btn.innerHTML = 'Submit Payment & Apply';
+         return;
+      }
 
       btn.disabled = true;
       btn.innerHTML = '⌛ Initializing Payment...';
@@ -1226,7 +1266,7 @@
         
         const coursePrefix = course.includes('Science') ? 'MSC-CS' : 'MSC-CA';
         const generatedStudentId = coursePrefix + '-2026-' + String(Math.floor(Math.random() * 9000) + 1000);
-        const appId = coursePrefix + '-APP' + Date.now();
+        const appId = window.pendingAppId; // Use the globally generated ID which aligns with the folder structure
         const paymentDate = new Date().toISOString();
         const now = paymentDate;
 
@@ -1468,15 +1508,12 @@
     // ── Stream → Course Dependency Logic ─────────────────────
     const STREAM_COURSES = {
       'Science (PCM)': [
-        'BSc Computer Science',
-        'BSc Data Science',
-        'BCA (Bachelor of Computer Applications)'
+        'M.Sc. Computer Science',
+        'M.Sc. Computer Application'
       ],
       'Science (PCB)': [
-        'Cloud Computing'
       ],
       'Commerce': [
-        'BCA (Bachelor of Computer Applications)'
       ],
       'Arts / Humanities': []
     };

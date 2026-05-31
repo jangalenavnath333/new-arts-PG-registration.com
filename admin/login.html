@@ -22,8 +22,8 @@
 
       <form id="adminLoginForm" novalidate>
         <div class="form-group">
-          <label class="form-label" for="username">Username <span>*</span></label>
-          <input type="text" id="username" class="form-input" placeholder="Enter username" required />
+          <label class="form-label" for="username">Email Address <span>*</span></label>
+          <input type="email" id="username" class="form-input" placeholder="Enter admin email" required />
         </div>
         <div class="form-group">
           <label class="form-label" for="password">Password <span>*</span></label>
@@ -44,11 +44,7 @@
   </div>
 
   <script type="module">
-    import DB from '../js/db.js';
-
-    // Secure credentials
-    const ADMIN_USER = 'cet';
-    const ADMIN_PASS = 'casas@pg';
+    import SupaDB from '../js/supabase-db.js';
 
     window.togglePwd = function() {
       const p = document.getElementById('password');
@@ -56,10 +52,18 @@
       document.getElementById('eyeBtn').textContent = p.type === 'password' ? '👁' : '🙈';
     }
 
-    // Check if already logged in
-    if (DB.isAdminLoggedIn()) window.location.href = 'dashboard.html';
+    const supabase = SupaDB.getClient();
 
-    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+    if (supabase) {
+       // Check if already logged in
+       supabase.auth.getUser().then(({ data }) => {
+         if (data && data.user) {
+            window.location.href = 'dashboard.html';
+         }
+       });
+    }
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const user = document.getElementById('username').value.trim();
       const pass = document.getElementById('password').value.trim();
@@ -73,16 +77,25 @@
       btn.disabled = true;
       btn.textContent = '⏳ Logging in...';
 
-      setTimeout(() => {
-        if (user === ADMIN_USER && pass === ADMIN_PASS) {
-          DB.setAdminLogin(true);
-          window.location.href = 'dashboard.html';
-        } else {
-          document.getElementById('alertBox').innerHTML = '<div class="alert alert-danger">❌ Invalid credentials. Please try again.</div>';
-          btn.disabled = false;
-          btn.textContent = '🔐 Login as Admin';
-        }
-      }, 700);
+      if (!supabase) {
+         document.getElementById('alertBox').innerHTML = '<div class="alert alert-danger">❌ Supabase client not initialized. Check .env config.</div>';
+         btn.disabled = false;
+         btn.textContent = '🔐 Login as Admin';
+         return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+         email: user,
+         password: pass
+      });
+
+      if (error) {
+         document.getElementById('alertBox').innerHTML = '<div class="alert alert-danger">❌ Invalid credentials or user not found.</div>';
+         btn.disabled = false;
+         btn.textContent = '🔐 Login as Admin';
+      } else {
+         window.location.href = 'dashboard.html';
+      }
     });
   </script>
 </body>

@@ -7,7 +7,11 @@
 
 export async function sendEmail(to, subject, html) {
   try {
-    console.log("Sending email...");
+    console.log(`[Email Service] Sending email to: ${to}`);
+    console.log(`[Email Service] Subject: ${subject}`);
+    const payloadSize = html ? html.length : 0;
+    console.log(`[Email Service] Request payload size: ${payloadSize} characters`);
+    
     const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
       ? 'http://localhost:3000/api/send-email' 
       : '/api/send-email';
@@ -20,16 +24,49 @@ export async function sendEmail(to, subject, html) {
       body: JSON.stringify({ to, subject, html }),
     });
 
+    const status = response.status;
+    console.log(`[Email Service] API response status code: ${status}`);
+
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(`Email API failed (${response.status}): ${errData.details || 'Unknown'}`);
+      const errBody = await response.text();
+      let errData = {};
+      try { errData = JSON.parse(errBody); } catch(e) {}
+      
+      console.error(`[Email Service] API Error Body:`, errBody);
+      
+      console.log(`\n========== Email Diagnostic Report ==========`);
+      console.log(`- Recipient: ${to}`);
+      console.log(`- Provider: Internal SMTP API`);
+      console.log(`- Response Status: ${status}`);
+      console.log(`- Delivery Result: FAILED`);
+      console.log(`- Error Message: ${errData.details || errData.error || errBody || 'Unknown API Error'}`);
+      console.log(`===========================================\n`);
+      
+      throw new Error(`Email API failed (${status}): ${errData.details || errData.error || 'Unknown'}`);
     }
 
     const data = await response.json();
-    console.log("Email sent successfully");
-    return true;
+    console.log(`[Email Service] API Response Body:`, data);
+    
+    let isSuccess = data && (data.success === true || data.messageId);
+    
+    console.log(`\n========== Email Diagnostic Report ==========`);
+    console.log(`- Recipient: ${to}`);
+    console.log(`- Provider: Internal SMTP API`);
+    console.log(`- Response Status: ${status}`);
+    console.log(`- Delivery Result: ${isSuccess ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`- Error Message: ${isSuccess ? 'None' : (data.error || 'Failed to verify success flag')}`);
+    console.log(`===========================================\n`);
+
+    if (isSuccess) {
+      console.log("Email sent successfully");
+      return true;
+    } else {
+      console.error("[Email Service] Success returned without delivery verification from API.");
+      return false;
+    }
   } catch (error) {
-    console.error(error);
+    console.error(`[Email Service] Exception caught:`, error);
     return false; // Fail silently so app flow doesn't break
   }
 }
@@ -46,9 +83,12 @@ export async function sendConfirmationEmail(data) {
       data.courseApplied,
       data.paymentStatus
     );
-    await sendEmail(data.email, tmpl.subject, tmpl.html);
+    const success = await sendEmail(data.email, tmpl.subject, tmpl.html);
+    if (!success) {
+      console.error(`[Email Service] Failed to send confirmation email to ${data.email}`);
+    }
   } catch (error) {
-    console.error(error);
+    console.error(`[Email Service] Error in sendConfirmationEmail:`, error);
   }
 }
 
@@ -185,7 +225,7 @@ export const EmailTemplates = {
   }),
 
   // 2. Application Approved
-  approval: (name, cetId, examDate, startTime) => ({
+  approval: (name, cetId, examDate, startTime, course) => ({
     subject: `✅ Application APPROVED – Your CET ID: ${cetId}`,
     html: wrapEmail(`
       <h2 style="margin: 0 0 4px; color: #059669; font-size: 20px;">✅ Application Approved!</h2>
@@ -199,7 +239,8 @@ export const EmailTemplates = {
       </p>
 
       ${detailsBox([
-        ['🆔 CET ID', `<span style="color: #2563eb; font-size: 16px; letter-spacing: 1px;">${cetId}</span>`],
+        ['🆔 Application ID', `<span style="color: #2563eb; font-size: 16px; letter-spacing: 1px;">${cetId}</span>`],
+        ['📚 Course', course || 'N/A'],
         ['📅 Exam Date', examDate || '<span style="color: #f59e0b;">To Be Announced</span>'],
         ['🕐 Start Time', startTime || '<span style="color: #f59e0b;">To Be Announced</span>'],
         ['📋 Status', statusBadge('APPROVED', '#d1fae5', '#065f46')]
@@ -281,36 +322,42 @@ export const EmailTemplates = {
   }),
 
   // 5. Exam Schedule / Reschedule
-  scheduleUpdate: (name, examDate, startTime) => ({
-    subject: `📅 Exam Schedule Update – CET Exam Portal`,
-    html: wrapEmail(`
-      <h2 style="margin: 0 0 4px; color: #2563eb; font-size: 20px;">📅 Exam Schedule Notification</h2>
-      <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">Your CET Examination has been scheduled / rescheduled.</p>
+  scheduleUpdate: (name, examDate, startTime, duration, course, loginId, portalUrl, examUrl, studentEmail) => ({
+    subject: `CET Examination Schedule – ${course}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <p>Dear Student,</p>
 
-      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
-        Dear <strong style="color: #0f172a;">${name}</strong>,
-      </p>
-      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
-        Please note the following exam schedule. Make sure to be prepared and available on time.
-      </p>
+        <p>Congratulations.</p>
 
-      ${detailsBox([
-        ['📅 Exam Date', `<strong style="font-size: 15px;">${examDate}</strong>`],
-        ['🕐 Start Time', `<strong style="font-size: 15px;">${startTime}</strong>`],
-        ['📋 Status', statusBadge('SCHEDULED', '#dbeafe', '#1e40af')]
-      ])}
+        <p>Your application has been approved for admission process.</p>
 
-      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin: 20px 0;">
-        <p style="margin: 0 0 8px; color: #92400e; font-size: 14px; font-weight: 700;">⚠️ Important Reminders:</p>
-        <ul style="margin: 0; padding-left: 18px; color: #78350f; font-size: 13px; line-height: 1.8;">
-          <li>Login to the CET portal <strong>10 minutes before</strong> the scheduled time.</li>
-          <li>Keep your <strong>CET ID</strong> and registered <strong>Mobile Number</strong> ready.</li>
-          <li>Use a <strong>laptop or desktop</strong> with Chrome/Edge browser for best experience.</li>
-          <li>Ensure a working <strong>webcam</strong> and <strong>microphone</strong> are connected.</li>
-          <li>Sit in a <strong>well-lit, quiet room</strong> with no other person present.</li>
-        </ul>
+        <p><strong>Course:</strong><br>
+        ${course}</p>
+
+        <p><strong>Examination Details:</strong></p>
+        <p>
+          Exam Date: ${examDate}<br>
+          Start Time: ${startTime}<br>
+          Duration: ${duration} Minutes
+        </p>
+
+        <p><strong>Examination Portal:</strong><br>
+        <a href="${examUrl}" style="color: #2563eb; text-decoration: none;">${examUrl}</a></p>
+
+        <p><strong>Login Email:</strong><br>
+        ${studentEmail || 'student@email.com'}</p>
+
+        <p>Please login using your registered credentials and appear for the examination as per schedule.</p>
+
+        <p style="margin-top: 30px;">
+          Best Regards,<br>
+          Admission Cell<br>
+          New Arts Commerce and Science College<br>
+          Ahmednagar
+        </p>
       </div>
-    `)
+    `
   }),
 
   // 6. Exam Reminder (uses same template as schedule but different subject)

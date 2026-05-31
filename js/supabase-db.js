@@ -149,6 +149,12 @@ export async function saveStudentApplication(appData, fileDataMap) {
     for (const fm of fileMapping) {
       const dataUrl = fileDataMap[fm.key];
       if (!dataUrl) continue;
+      
+      if (dataUrl.startsWith('http')) {
+        docUrls[fm.key] = { url: dataUrl, bucket: fm.bucket, path: fm.name };
+        continue;
+      }
+      
       const ext = getExtFromDataUrl(dataUrl);
       const path = `${studentFolder}/${fm.name}.${ext}`;
       uploadTasks.push(
@@ -190,7 +196,7 @@ export async function saveStudentApplication(appData, fileDataMap) {
 
     const { data: studentData, error: studentError } = await supabase
       .from('students')
-      .upsert(studentRow, { onConflict: 'email' })
+      .upsert(studentRow, { onConflict: 'email,course_applied' })
       .select('id')
       .single();
 
@@ -261,4 +267,76 @@ export async function saveStudentApplication(appData, fileDataMap) {
   }
 }
 
-export default { isReady, getClient, uploadFile, saveStudentApplication };
+// ============================================
+// RESULT PUBLISHING (Phase 4)
+// ============================================
+export async function setResultsPublished(isPublished) {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({ key: 'results_published', value: isPublished ? 'true' : 'false' }, { onConflict: 'key' });
+    if (error) {
+      console.warn('[SupaDB] setResultsPublished error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[SupaDB] setResultsPublished error:', e);
+    return false;
+  }
+}
+
+export async function getResultsPublished() {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'results_published')
+      .single();
+    if (error || !data) return false;
+    return data.value === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+export async function updateResultRanks(rankUpdates) {
+  // rankUpdates: [{ student_id: 'CET-123', overall_rank: 1, category_rank: 1 }]
+  if (!supabase || !rankUpdates.length) return false;
+  try {
+    // Supabase allows bulk upsert/update if we include the ID, but here we might only have cet_student_id.
+    // Instead of complex bulk update on non-PK, we can loop and update since this is an admin one-off action.
+    for (const update of rankUpdates) {
+      await supabase
+        .from('exam_results')
+        .update({ 
+          overall_rank: update.overall_rank,
+          category_rank: update.category_rank
+        })
+        .eq('cet_student_id', update.student_id);
+    }
+    return true;
+  } catch(e) {
+    console.error('[SupaDB] updateResultRanks error:', e);
+    return false;
+  }
+}
+
+export async function getStudentResultRanks(studentId) {
+  if (!supabase || !studentId) return { overallRank: null, categoryRank: null };
+  try {
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('overall_rank, category_rank')
+      .eq('cet_student_id', studentId)
+      .single();
+    if (error || !data) return { overallRank: null, categoryRank: null };
+    return { overallRank: data.overall_rank, categoryRank: data.category_rank };
+  } catch(e) {
+    return { overallRank: null, categoryRank: null };
+  }
+}
+
+export default { isReady, getClient, uploadFile, saveStudentApplication, setResultsPublished, getResultsPublished, updateResultRanks, getStudentResultRanks };

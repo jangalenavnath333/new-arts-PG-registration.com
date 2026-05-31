@@ -427,14 +427,23 @@
             <div id="scheduleAlertBox"></div>
             
             <div class="space-y-5">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Type *</label>
-                <select id="examType" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 mb-4">
-                  <option value="CET Exam">CET Exam</option>
-                  <option value="Internal Exam">Internal Exam</option>
-                  <option value="Unit Test">Unit Test</option>
-                  <option value="Practical Test">Practical Test</option>
-                </select>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-1">Course *</label>
+                  <select id="scheduleCourse" onchange="renderSchedulePreview()" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 font-medium">
+                    <option value="M.Sc. Computer Science">M.Sc. Computer Science</option>
+                    <option value="M.Sc. Computer Application">M.Sc. Computer Application</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Type *</label>
+                  <select id="examType" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 mb-4 font-medium">
+                    <option value="CET Exam">CET Exam</option>
+                    <option value="Internal Exam">Internal Exam</option>
+                    <option value="Unit Test">Unit Test</option>
+                    <option value="Practical Test">Practical Test</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Date *</label>
@@ -473,11 +482,12 @@
             </div>
             
             <div class="mt-6 pt-6 border-t border-slate-100">
-               <h3 class="font-bold text-slate-800 mb-2">Notifications</h3>
-               <p class="text-xs text-slate-500 mb-4">Send an automated reminder email with exam rules to all approved and scheduled students.</p>
-               <button onclick="sendExamReminders()" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold py-2 px-4 rounded-lg transition-colors border border-indigo-200 flex items-center gap-2">
-                 <span>📧</span> Send Exam Reminders Now
-               </button>
+               <h3 class="font-bold text-slate-800 mb-2">Schedule History & Automation Logs</h3>
+               <p class="text-xs text-slate-500 mb-4">View the recent automated assignment and notification statistics.</p>
+               <div id="scheduleLogsContainer" class="max-h-60 overflow-y-auto space-y-3">
+                 <!-- Injected by JS -->
+                 <p class="text-sm text-slate-400 italic text-center py-4">No automation logs yet.</p>
+               </div>
             </div>
           </div>
         </div>
@@ -488,12 +498,20 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           
           <!-- LEFT: Sets Management -->
-          <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[700px]">
+          <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[750px]">
+            <div class="mb-4">
+              <label class="block text-xs font-bold text-slate-500 mb-1">Course</label>
+              <select id="questionsCourse" onchange="currentlyViewingSetId=null; renderQuestions()" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500 font-medium">
+                <option value="M.Sc. Computer Science">M.Sc. Computer Science</option>
+                <option value="M.Sc. Computer Application">M.Sc. Computer Application</option>
+              </select>
+            </div>
+            
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-lg font-bold text-slate-900">Question Sets</h2>
-              <button onclick="if(confirm('Initialize default question set?')) { 
+              <button onclick="if(confirm('Initialize default question set for this course?')) { 
                 let sets = getQuestionSets(); 
-                sets.push({ id: 'SET_DEFAULT', name: 'Default Question Set', isActive: sets.length === 0, questions: window.getDefaultQuestions().map(q => ({...q, marks: 1, options: q.options})) }); 
+                sets.push({ id: 'SET_' + Date.now(), name: 'Default Question Set', isActive: sets.length === 0, questions: window.getDefaultQuestions().map(q => ({...q, marks: 1, options: q.options})) }); 
                 saveQuestionSets(sets); 
                 renderQuestions(); 
               }" class="text-xs text-indigo-600 font-bold hover:underline">
@@ -674,58 +692,107 @@
         </div>
       </div>
 
-      <!-- TAB: PAYMENT VERIFICATION -->
-      <!-- DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook. -->
+      <!-- TAB: PAYMENT VERIFICATION & ACCOUNTING -->
       <div class="tab-content" id="tab-payments">
         <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-6">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
             <div>
-              <h2 class="text-xl font-bold text-slate-900">Payment Verification</h2>
-              <p class="text-sm text-slate-500">All student payment submissions. Demo payments are auto-verified as PAID_DEMO.</p>
+              <h2 class="text-xl font-bold text-slate-900">Financial Accounting & Payments</h2>
+              <p class="text-sm text-slate-500">Comprehensive audit of fee collections, Razorpay transactions, and financial summaries.</p>
             </div>
-            <div class="flex items-center gap-3">
-              <span style="background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #6ee7b7;">DEMO MODE — Auto Verified</span>
-              <button type="button" onclick="renderPayments()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition">↻ Refresh</button>
+            <div class="flex flex-wrap items-center gap-3">
+              <select id="payFilterCourse" onchange="renderPayments()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Courses</option>
+                <option value="Science">M.Sc. Computer Science</option>
+                <option value="Application">M.Sc. Computer Application</option>
+                <option value="Other">Other Courses</option>
+              </select>
+              <select id="payFilterStatus" onchange="renderPayments()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PAID">Paid</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="REFUNDED">Refunded</option>
+              </select>
+              <div class="flex border border-slate-200 rounded-lg overflow-hidden">
+                <button onclick="downloadPaymentReport('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
+                <button onclick="downloadPaymentReport('csv')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">CSV</button>
+                <button onclick="downloadPaymentReport('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">PDF</button>
+              </div>
+              <button type="button" onclick="renderPayments()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+                <span>↻ Refresh</span>
+              </button>
             </div>
           </div>
 
-          <!-- Stats -->
-          <div class="grid grid-cols-4 gap-4 mb-6">
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p class="text-xs font-bold text-emerald-600 uppercase">Total Paid</p>
-              <p class="text-2xl font-bold text-emerald-800" id="pay-total">0</p>
+          <!-- Financial Summary Section -->
+          <div class="bg-slate-50 rounded-xl border border-slate-200 p-6 mb-8">
+            <h3 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Financial Overview</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+              <div>
+                <p class="text-xs font-bold text-slate-500">Total Apps</p>
+                <p class="text-xl font-bold text-slate-900" id="fin-total-apps">0</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-500">Fee / Form</p>
+                <p class="text-xl font-bold text-slate-900">₹500</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-indigo-600">Expected (₹)</p>
+                <p class="text-xl font-bold text-indigo-800" id="fin-expected">₹0</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-emerald-600">Collected (₹)</p>
+                <p class="text-xl font-bold text-emerald-800" id="fin-collected">₹0</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-amber-600">Pending (₹)</p>
+                <p class="text-xl font-bold text-amber-800" id="fin-pending">₹0</p>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-red-600">Rejected (Count)</p>
+                <p class="text-xl font-bold text-red-800" id="fin-rejected-count">0</p>
+              </div>
             </div>
-            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-              <p class="text-xs font-bold text-indigo-600 uppercase">Amount Collected</p>
-              <p class="text-2xl font-bold text-indigo-800" id="pay-amount">₹0</p>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white border border-emerald-200 rounded-xl p-4 shadow-sm border-l-4 border-l-emerald-500">
+              <p class="text-xs font-bold text-emerald-600 uppercase">Paid Students</p>
+              <p class="text-2xl font-bold text-slate-800" id="pay-total-paid">0</p>
             </div>
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p class="text-xs font-bold text-amber-600 uppercase">Demo Payments</p>
-              <p class="text-2xl font-bold text-amber-800" id="pay-demo">0</p>
+            <div class="bg-white border border-amber-200 rounded-xl p-4 shadow-sm border-l-4 border-l-amber-500">
+              <p class="text-xs font-bold text-amber-600 uppercase">Pending Verification</p>
+              <p class="text-2xl font-bold text-slate-800" id="pay-pending-students">0</p>
             </div>
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <p class="text-xs font-bold text-slate-500 uppercase">Pending</p>
-              <p class="text-2xl font-bold text-slate-700" id="pay-pending">0</p>
+            <div class="bg-white border border-indigo-200 rounded-xl p-4 shadow-sm border-l-4 border-l-indigo-500">
+              <p class="text-xs font-bold text-indigo-600 uppercase">Today's Collection</p>
+              <p class="text-2xl font-bold text-slate-800" id="pay-today-amount">₹0</p>
+            </div>
+            <div class="bg-white border border-blue-200 rounded-xl p-4 shadow-sm border-l-4 border-l-blue-500">
+              <p class="text-xs font-bold text-blue-600 uppercase">Verified Records</p>
+              <p class="text-2xl font-bold text-slate-800" id="pay-verified">0</p>
             </div>
           </div>
 
           <!-- Table -->
           <div class="overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full text-sm">
+            <table class="w-full text-sm text-left whitespace-nowrap min-w-[1400px]">
               <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
                 <tr>
-                  <th class="p-4 text-left">Student Name</th>
-                  <th class="p-4 text-left">Student ID</th>
-                  <th class="p-4 text-left">Course</th>
-                  <th class="p-4 text-left">Amount</th>
-                  <th class="p-4 text-left">UTR / Txn ID</th>
-                  <th class="p-4 text-center">Payment Status</th>
-                  <th class="p-4 text-center">Screenshot</th>
-                  <th class="p-4 text-left">Date</th>
+                  <th class="p-4 border-b border-slate-200">Applicant Info</th>
+                  <th class="p-4 border-b border-slate-200">Course</th>
+                  <th class="p-4 border-b border-slate-200">Amount</th>
+                  <th class="p-4 border-b border-slate-200">Txn / Razorpay ID</th>
+                  <th class="p-4 border-b border-slate-200">Date & Time</th>
+                  <th class="p-4 border-b border-slate-200 text-center">Status</th>
+                  <th class="p-4 border-b border-slate-200 text-center">Receipt & Docs</th>
+                  <th class="p-4 border-b border-slate-200 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody id="paymentsTableBody">
-                <tr><td colspan="8" class="p-8 text-center text-slate-400">Loading payments...</td></tr>
+              <tbody id="paymentsTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="p-8 text-center text-slate-400">Loading live financial data...</td></tr>
               </tbody>
             </table>
           </div>
@@ -745,11 +812,14 @@
               <p class="text-sm text-slate-500">Auto-graded secure execution reports.</p>
             </div>
             
-            <div class="flex gap-3">
-              <button onclick="publishGlobalResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-lg border border-blue-700 transition shadow-lg">
-                🚀 Publish Results
+            <div class="flex flex-wrap gap-3">
+              <button id="btnPublish" onclick="publishGlobalResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-4 py-2 rounded-lg border border-blue-700 transition shadow-lg flex items-center gap-2">
+                🚀 <span>Publish Results</span>
               </button>
-              <button onclick="generateRankList()" class="bg-amber-100 text-amber-700 hover:bg-amber-200 font-bold text-sm px-4 py-2 rounded-lg border border-amber-200 transition">
+              <button id="btnUnpublish" onclick="unpublishGlobalResults()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-4 py-2 rounded-lg border border-red-700 transition shadow-lg flex items-center gap-2 hidden">
+                🚫 <span>Unpublish Results</span>
+              </button>
+              <button onclick="generateRankList()" class="bg-amber-100 text-amber-700 hover:bg-amber-200 font-bold text-sm px-4 py-2 rounded-lg border border-amber-200 transition flex items-center gap-2">
                 🏆 Overall Merit List
               </button>
               <button onclick="generateCategoryRankList()" class="bg-purple-100 text-purple-700 hover:bg-purple-200 font-bold text-sm px-4 py-2 rounded-lg border border-purple-200 transition">
@@ -757,8 +827,9 @@
               </button>
               <select id="resultsDownloadSelect" onchange="handleResultsDownload(this.value); this.value='';" class="bg-slate-800 text-white font-bold text-sm px-4 py-2 rounded-lg border border-slate-700 outline-none hover:bg-slate-700 transition">
                 <option value="">Download Results...</option>
-                <option value="pdf">Download PDF</option>
-                <option value="word">Download Word</option>
+                <option value="pdf_overall">Download Overall Merit List PDF</option>
+                <option value="pdf_msc_cs">Download M.Sc Computer Science Merit List PDF</option>
+                <option value="pdf_msc_ca">Download M.Sc Computer Application Merit List PDF</option>
                 <option value="excel">Download Excel</option>
                 <option value="csv">Download CSV</option>
               </select>
@@ -789,6 +860,18 @@
             </div>
           </div>
 
+          <!-- Email Delivery Status Panel -->
+          <div id="emailDeliveryPanel" class="hidden bg-slate-900 text-white rounded-xl p-4 mb-8 shadow-lg border border-slate-700">
+             <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-sm text-slate-300">📧 Email Delivery Status</h3>
+                <span id="emailProgressText" class="text-xs font-bold text-indigo-400">0 / 0</span>
+             </div>
+             <div class="w-full bg-slate-800 rounded-full h-2.5">
+                <div id="emailProgressBar" class="bg-indigo-500 h-2.5 rounded-full" style="width: 0%"></div>
+             </div>
+             <p id="emailStatusDetail" class="text-xs text-slate-400 mt-2">Preparing to send...</p>
+          </div>
+
           <!-- Filters -->
           <div class="flex flex-col sm:flex-row gap-4 mb-6">
             <input type="text" id="resFilterSearch" oninput="renderResults()" placeholder="Search Student ID / Name" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4" />
@@ -803,7 +886,8 @@
             </select>
             <select id="resFilterCourse" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
               <option value="">All Courses</option>
-              <option value="BSc Computer Science">BSc Computer Science</option>
+              <option value="M.Sc Computer Science">M.Sc Computer Science</option>
+              <option value="M.Sc Computer Application">M.Sc Computer Application</option>
             </select>
             <select id="resFilterStatus" onchange="renderResults()" class="border border-slate-300 rounded-lg px-4 py-2 text-sm outline-none w-full sm:w-1/4">
               <option value="">All Statuses</option>
@@ -1075,12 +1159,10 @@
   <!-- JS Dependencies -->
   <script type="module">
     import DB, { getDefaultQuestions } from '../js/db.js';
-    import { createClient } from '@supabase/supabase-js';
+    import SupaDB from '../js/supabase-db.js';
 
     // ── Supabase client (Phase 3) ──
-    const _sUrl = import.meta.env.VITE_SUPABASE_URL;
-    const _sKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const supabase = (_sUrl && _sKey) ? createClient(_sUrl, _sKey) : null;
+    const supabase = SupaDB.getClient();
     let _supabaseAppsCache = null;  // in-memory cache to avoid re-fetching on every render
     let _supabaseFetched = false;
 
@@ -1127,14 +1209,44 @@
       btn.classList.remove('admin-btn-processing');
     }
 
-    // System Guard
-    if (!DB.isAdminLoggedIn()) window.location.href = 'login.html';
+    // System Guard using Supabase Auth
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!supabase) {
+         console.warn('[Security] Supabase not found');
+         window.location.href = 'login.html';
+         return;
+      }
 
-    window.addEventListener('DOMContentLoaded', () => {
+      // Await session recovery to prevent race conditions where fetch runs anonymously
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data || !data.user) {
+         console.warn('[Security] Not authenticated');
+         window.location.href = 'login.html';
+         return;
+      }
+
+      // Strict Admin Role Verification
+      if (data.user.email !== 'admin@newarts-casas-pgcet.in') {
+         console.warn('[Security] Unauthorized account attempt', data.user.email);
+         await supabase.auth.signOut();
+         window.location.href = 'login.html';
+         return;
+      }
+
+      console.log('[Security] Admin authenticated successfully');
+
+      // Safe to load dashboard now
       window.renderOverview();
       window.loadScheduleForm();
       handleRoute(); // Initialize routing
     });
+
+    window.adminLogout = async function() {
+       if (supabase) {
+         await supabase.auth.signOut();
+       }
+       window.location.href = 'login.html';
+    };
 
     // Chart instances
     let statusChart = null;
@@ -1226,6 +1338,15 @@
       if (tab === 'questions') window.renderQuestions();
       if (tab === 'results') {
         window.renderResults();
+        // Fetch publish status
+        import('../js/supabase-db.js').then(module => {
+           module.default.getResultsPublished().then(isPub => {
+              if (document.getElementById('btnPublish')) {
+                 document.getElementById('btnPublish').classList.toggle('hidden', isPub);
+                 document.getElementById('btnUnpublish').classList.toggle('hidden', !isPub);
+              }
+           });
+        });
         // Also fetch results from Supabase
         if (supabase) {
           supabase.from('exam_results').select('*').order('submitted_at', { ascending: false })
@@ -1282,188 +1403,228 @@
     // PAYMENT VERIFICATION
     // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
     // ============================================
-    window.renderPayments = function() {
-      // DEMO PAYMENT ONLY. Real auto verification requires payment gateway webhook.
-      // Read from cetPayments (written by apply.html on submission)
-      let paid = [];
-      try { paid = JSON.parse(localStorage.getItem('cetPayments')) || []; } catch(e) {}
-      // Fallback: also include students with paymentStatus from cet_students
-      const dbStudents = DB.getStudents().filter(s => s.paymentStatus && !paid.find(p => p.email === s.email));
-      dbStudents.forEach(s => paid.push({
-        applicationId: s.applicationId || s.id,
-        studentId: s.studentId,
-        fullName: s.fullName || s.name,
-        email: s.email,
-        courseApplied: s.courseApplied || s.academicDetails?.courseApplied,
-        paymentStatus: s.paymentStatus,
-        paymentAmount: s.paymentAmount || 'Rs.1',
-        paymentUtr: s.paymentUtr || s.transactionId,
-        paymentDate: s.paymentDate,
-        paymentScreenshotData: s.paymentScreenshotData,
-        submittedAt: s.submittedAt,
-      }));
-
-      // Stats
-      const paidVerified = paid.filter(s => s.paymentStatus === 'PAID' || s.paymentStatus === 'PAID_DEMO').length;
-      const pending  = paid.filter(s => s.paymentStatus === 'PENDING_VERIFICATION').length;
-      document.getElementById('pay-total').textContent   = paidVerified;
-      document.getElementById('pay-amount').textContent  = 'Rs.' + paidVerified;
-      document.getElementById('pay-demo').textContent    = paidVerified;
-      document.getElementById('pay-pending').textContent = pending;
-
-      const badge = document.getElementById('paymentBadge');
-      if (badge) badge.textContent = pending > 0 ? pending : '';
-
+    window.renderPayments = async function() {
       const tbody = document.getElementById('paymentsTableBody');
       if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-500 font-bold">Fetching secure payment records from Supabase...</td></tr>';
+      
+      let allPayments = [];
+      if (supabase) {
+        const { data, error } = await supabase.from('payments').select('*').order('submitted_at', { ascending: false });
+        if (data && !error) allPayments = data;
+      }
+      
+      // Filter logic
+      const filterCourse = document.getElementById('payFilterCourse')?.value || '';
+      const filterStatus = document.getElementById('payFilterStatus')?.value || '';
+      
+      let filtered = allPayments.filter(p => {
+        let matchCourse = true;
+        if (filterCourse === 'Science') matchCourse = (p.course_applied || '').includes('Science');
+        else if (filterCourse === 'Application') matchCourse = (p.course_applied || '').includes('Application');
+        else if (filterCourse === 'Other') matchCourse = !(p.course_applied || '').includes('Science') && !(p.course_applied || '').includes('Application');
+        
+        let matchStatus = true;
+        if (filterStatus) matchStatus = p.payment_status === filterStatus;
+        
+        return matchCourse && matchStatus;
+      });
 
-      if (paid.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No payment records found. Students must complete payment in the application form.</td></tr>';
+      // Calculate Statistics based on filtered records
+      const totalApps = filtered.length;
+      const expectedCollection = totalApps * 500;
+      
+      const paidRecords = filtered.filter(p => p.payment_status === 'PAID' || p.payment_status === 'VERIFIED');
+      const pendingRecords = filtered.filter(p => p.payment_status === 'PENDING' || p.payment_status === 'PENDING_VERIFICATION');
+      const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
+      
+      let collectedAmount = 0;
+      paidRecords.forEach(p => {
+         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(amt)) collectedAmount += parseFloat(amt);
+         else collectedAmount += 500; // default assumption if empty
+      });
+      
+      let pendingAmount = 0;
+      pendingRecords.forEach(p => {
+         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(amt)) pendingAmount += parseFloat(amt);
+         else pendingAmount += 500;
+      });
+      
+      // Calculate today's collection
+      let todayCollected = 0;
+      const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+      paidRecords.forEach(p => {
+         if (p.payment_date && new Date(p.payment_date).toLocaleDateString('en-CA') === todayDate) {
+             let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
+             if (amt && !isNaN(amt)) todayCollected += parseFloat(amt);
+             else todayCollected += 500;
+         }
+      });
+      
+      // Update DOM
+      document.getElementById('fin-total-apps').textContent = totalApps;
+      document.getElementById('fin-expected').textContent = '₹' + expectedCollection.toLocaleString('en-IN');
+      document.getElementById('fin-collected').textContent = '₹' + collectedAmount.toLocaleString('en-IN');
+      document.getElementById('fin-pending').textContent = '₹' + pendingAmount.toLocaleString('en-IN');
+      document.getElementById('fin-rejected-count').textContent = rejectedRecords.length;
+      
+      document.getElementById('pay-total-paid').textContent = paidRecords.length;
+      document.getElementById('pay-pending-students').textContent = pendingRecords.length;
+      document.getElementById('pay-today-amount').textContent = '₹' + todayCollected.toLocaleString('en-IN');
+      document.getElementById('pay-verified').textContent = filtered.filter(p => p.payment_status === 'VERIFIED').length;
+      
+      const badge = document.getElementById('paymentBadge');
+      if (badge) badge.textContent = pendingRecords.length > 0 ? pendingRecords.length : '';
+      
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No payment records found matching filters.</td></tr>';
         return;
       }
+      
+      window._currentPaymentsData = filtered; // For exports
 
-      tbody.innerHTML = paid.slice().reverse().map(s => {
-        const isPending = s.paymentStatus === 'PENDING_VERIFICATION';
-        const statusBadge = isPending
-          ? '<span style="background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fde68a;">PENDING</span>'
-          : (s.paymentStatus === 'REJECTED' ? '<span style="background:#fee2e2;color:#991b1b;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #fca5a5;">REJECTED</span>' : '<span style="background:#d1fae5;color:#065f46;font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;border:1px solid #6ee7b7;">VERIFIED</span>');
+      tbody.innerHTML = filtered.map(p => {
+        let statusColor = 'bg-slate-100 text-slate-600 border-slate-200';
+        const st = p.payment_status || 'PENDING';
+        if (st === 'VERIFIED') statusColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        else if (st === 'PAID') statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+        else if (st === 'REJECTED') statusColor = 'bg-red-100 text-red-700 border-red-200';
+        else if (st === 'PENDING' || st === 'PENDING_VERIFICATION') statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
+        else if (st === 'REFUNDED') statusColor = 'bg-purple-100 text-purple-700 border-purple-200';
+        
+        const statusBadge = `<span class="${statusColor} text-[10px] font-bold px-2.5 py-1 rounded-full border">${st}</span>`;
 
-        const screenshotBtn = s.paymentScreenshotData
-          ? `<button type="button" onclick="previewPaymentScreenshot('${s.applicationId}')" style="cursor:pointer;background:#eff6ff;color:#3b82f6;border:1px solid #bfdbfe;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;margin-right:4px;">View</button>`
-          : '<span style="color:#94a3b8;font-size:11px;margin-right:4px;">No Image</span>';
+        let screenshotBtn = '<span class="text-xs text-slate-400">No Receipt</span>';
+        if (p.screenshot_url) {
+           screenshotBtn = `<button onclick="window.openFullscreenImage('${p.screenshot_url}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 px-3 py-1 rounded font-bold text-xs transition">Preview</button>`;
+        }
 
-        const verifyBtn = (isPending)
-          ? `<button type="button" onclick="verifyPayment('${s.applicationId}')" style="cursor:pointer;background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;margin-right:4px;">Approve</button>
-             <button type="button" onclick="rejectPayment('${s.applicationId}')" style="cursor:pointer;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;">Reject</button>`
-          : '';
+        const date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : (p.submitted_at ? new Date(p.submitted_at).toLocaleString() : '--');
+        const course = p.course_applied || '--';
 
-        const date = s.paymentDate
-          ? new Date(s.paymentDate).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
-          : (s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : '--');
-        const course = s.courseApplied || '--';
-
-        return `<tr class="hover:bg-slate-50 border-b border-slate-100">
-          <td class="p-4 font-semibold text-slate-800">${s.fullName || '--'}</td>
-          <td class="p-4 font-mono text-indigo-600 font-bold text-xs">${s.studentId || '--'}</td>
-          <td class="p-4 text-slate-600 text-xs">${course}</td>
-          <td class="p-4 font-bold text-emerald-700">${s.paymentAmount || 'Rs.1'}</td>
-          <td class="p-4 font-mono text-xs text-slate-700">${s.paymentUtr || s.transactionId || '--'}</td>
-          <td class="p-4 text-center">${statusBadge}</td>
-          <td class="p-4 text-center">${screenshotBtn}${verifyBtn}</td>
-          <td class="p-4 text-xs text-slate-500">${date}</td>
+        return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+          <td class="p-4">
+            <p class="font-bold text-slate-800">${p.full_name || '--'}</p>
+            <p class="text-[10px] text-slate-500 font-mono">${p.email || '--'}</p>
+          </td>
+          <td class="p-4">
+            <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-indigo-100">${course}</span>
+          </td>
+          <td class="p-4">
+            <p class="font-bold text-slate-700">₹${p.payment_amount || '0'}</p>
+          </td>
+          <td class="p-4">
+            <p class="text-xs font-mono font-bold text-slate-600">${p.payment_utr || 'N/A'}</p>
+            ${(p.payment_utr || '').startsWith('pay_') ? '<span class="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">Razorpay</span>' : '<span class="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">Bank UTR</span>'}
+          </td>
+          <td class="p-4 text-xs font-bold text-slate-500">${date}</td>
+          <td class="p-4">${statusBadge}</td>
+          <td class="p-4">${screenshotBtn}</td>
+          <td class="p-4">
+             <div class="flex gap-2 justify-end">
+               <button onclick="verifyPaymentRecord('${p.id}', '${p.student_id}')" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-2 py-1 rounded text-xs font-bold transition border border-emerald-200 hover:border-emerald-600" title="Verify Payment">✓ Verify</button>
+               <button onclick="rejectPaymentRecord('${p.id}', '${p.student_id}')" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2 py-1 rounded text-xs font-bold transition border border-red-200 hover:border-red-600" title="Reject Payment">✗ Reject</button>
+             </div>
+          </td>
         </tr>`;
       }).join('');
     };
+    window.verifyPaymentRecord = async function(paymentId, studentId) {
+      if(!confirm('Mark this payment as VERIFIED?')) return;
+      if (!supabase) return;
 
-    window.previewPaymentScreenshot = function(appOrStudentId) {
-      // Search cetPayments first, then cet_students as fallback
-      let record = null;
       try {
-        const payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
-        record = payments.find(p => p.applicationId === appOrStudentId || p.studentId === appOrStudentId);
-      } catch(e) {}
-      
-      // If we found a record but it lacks the screenshot (due to space-saving), fetch from DB
-      if (record && !record.paymentScreenshotData) {
-         let dbRec = DB.getStudentById(record.studentId || appOrStudentId) || DB.getStudentByEmail(record.email);
-         if (dbRec && dbRec.paymentScreenshotData) {
-            record.paymentScreenshotData = dbRec.paymentScreenshotData;
-         }
-      }
+        // 1. Update payments table
+        const { error: pErr } = await supabase.from('payments').update({ payment_status: 'VERIFIED' }).eq('id', paymentId);
+        if (pErr) throw pErr;
 
-      if (!record || !record.paymentScreenshotData) record = DB.getStudentById(appOrStudentId);
-      if (!record || !record.paymentScreenshotData) {
-        // Try cetApplications
-        try {
-          const apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-          let appRec = apps.find(a => a.applicationId === appOrStudentId || a.studentId === appOrStudentId);
-          if (appRec && appRec.paymentScreenshotData) record = appRec;
-        } catch(e) {}
-      }
-      if (!record || !record.paymentScreenshotData) { alert('Screenshot not available.'); return; }
-      const w = window.open();
-      w.document.write('<html><body style="margin:0;background:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + record.paymentScreenshotData + '" style="max-width:90vw;max-height:90vh;border-radius:12px;" /></body></html>');
-      w.document.title = 'Payment Screenshot - ' + (record.fullName || record.studentId || appOrStudentId);
-    };
-
-    window.verifyPayment = async function(id) {
-      if(!confirm('Mark this payment as verified and submit application?')) return;
-      console.log('[Admin Action] Start: Verify payment', id);
-      const dbStudents = DB.getStudents();
-      const st = dbStudents.find(s => s.applicationId === id || s.studentId === id);
-      if (st) {
-        st.paymentStatus = 'PAID';
-        st.applicationStatus = 'SUBMITTED';
-        localStorage.setItem('cet_students', JSON.stringify(dbStudents));
-
-        // Also sync cetPayments
-        try {
-          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
-          const pi = payments.findIndex(p => p.applicationId === id || p.studentId === id || p.email === st.email);
-          if (pi !== -1) { payments[pi].paymentStatus = 'PAID'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
-        } catch(e) {}
-
-        // Also sync cetApplications
-        try {
-          let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-          const ai = apps.findIndex(a => a.email === st.email);
-          if (ai !== -1) { apps[ai].paymentStatus = 'PAID'; apps[ai].applicationStatus = 'SUBMITTED'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
-        } catch(e) {}
-        
-        // Supabase dual-write
-        if (supabase) {
-          await supabase.from('students').update({ payment_status: 'PAID', application_status: 'SUBMITTED' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email)
-            .then(({error}) => { if(!error) console.log('[Admin Action] Success: Payment verified in cloud'); else console.warn('[Admin Action] Failed: Payment verify error:', error.message); });
+        // 2. Optionally update applications/students table
+        // We update payment_status in applications so the dashboard reflects it
+        if (studentId) {
+           await supabase.from('applications').update({ payment_status: 'PAID', status: 'PENDING_APPROVAL' }).eq('user_id', studentId);
         }
-        
+
         // Email Notification
-        if (st.email) {
+        const p = window._currentPaymentsData.find(x => x.id === paymentId);
+        if (p && p.email) {
           import('../js/email-service.js').then(({ default: EmailSvc }) => {
-            const emailHtml = EmailSvc.EmailTemplates.paymentVerified(st.fullName, st.paymentAmount, st.paymentUtr || st.transactionId).html;
-            const emailSubject = EmailSvc.EmailTemplates.paymentVerified(st.fullName, st.paymentAmount, st.paymentUtr || st.transactionId).subject;
-            EmailSvc.sendEmail(st.email, emailSubject, emailHtml);
+            const emailHtml = EmailSvc.EmailTemplates.paymentVerified(p.full_name, p.payment_amount, p.payment_utr).html;
+            const emailSubject = EmailSvc.EmailTemplates.paymentVerified(p.full_name, p.payment_amount, p.payment_utr).subject;
+            EmailSvc.sendEmail(p.email, emailSubject, emailHtml);
           }).catch(err => console.warn('Email service import failed', err));
         }
 
-        invalidateCache();
-        renderOverview();
         renderPayments();
-        renderApplications();
-        showToast('Payment verified and application submitted.', 'success');
-        console.log('[Admin Action] Success: Payment verified', id);
+        showToast('Payment verified successfully.', 'success');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to verify payment: ' + err.message);
       }
     };
 
-    window.rejectPayment = async function(id) {
+    window.rejectPaymentRecord = async function(paymentId, studentId) {
       if(!confirm('Are you sure you want to REJECT this payment?')) return;
-      const dbStudents = DB.getStudents();
-      const st = dbStudents.find(s => s.applicationId === id || s.studentId === id);
-      if (st) {
-        st.paymentStatus = 'REJECTED';
-        localStorage.setItem('cet_students', JSON.stringify(dbStudents));
+      if (!supabase) return;
 
-        try {
-          let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
-          const pi = payments.findIndex(p => p.applicationId === id || p.studentId === id || p.email === st.email);
-          if (pi !== -1) { payments[pi].paymentStatus = 'REJECTED'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
-        } catch(e) {}
+      try {
+        const { error: pErr } = await supabase.from('payments').update({ payment_status: 'REJECTED' }).eq('id', paymentId);
+        if (pErr) throw pErr;
 
-        try {
-          let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-          const ai = apps.findIndex(a => a.email === st.email);
-          if (ai !== -1) { apps[ai].paymentStatus = 'REJECTED'; localStorage.setItem('cetApplications', JSON.stringify(apps)); }
-        } catch(e) {}
-        
-        if (supabase) {
-          await supabase.from('students').update({ payment_status: 'REJECTED' }).eq(st.studentId ? 'student_id' : 'email', st.studentId || st.email);
+        if (studentId) {
+           await supabase.from('applications').update({ payment_status: 'PAYMENT_PENDING' }).eq('user_id', studentId);
         }
-        
-        invalidateCache();
-        renderOverview();
+
         renderPayments();
-        renderApplications();
         showToast('Payment rejected.', 'danger');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to reject payment: ' + err.message);
       }
+    };
+
+    window.downloadPaymentReport = function(format) {
+       const data = window._currentPaymentsData || [];
+       if (data.length === 0) {
+           alert('No data to export.');
+           return;
+       }
+
+       let csvContent = "data:text/csv;charset=utf-8,";
+       csvContent += "Student Name,Email,Course,Amount,Transaction ID,Status,Date\n";
+       
+       data.forEach(p => {
+           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           let row = [
+               p.full_name,
+               p.email,
+               p.course_applied,
+               p.payment_amount,
+               p.payment_utr,
+               p.payment_status,
+               date
+           ].map(v => '"' + (v || '') + '"').join(",");
+           csvContent += row + "\n";
+       });
+
+       const encodedUri = encodeURI(csvContent);
+       const link = document.createElement("a");
+       link.setAttribute("href", encodedUri);
+       link.setAttribute("download", `payment_report_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xls' : 'csv'}`);
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+       
+       if (format === 'pdf') {
+          // Simply trigger print for PDF for now
+          window.print();
+       }
+    };
+
+    window.previewPaymentScreenshot = function(appOrStudentId) {
+      // Not strictly used by the new table, but kept for legacy UI if any
+      alert('Use the preview button in the new table.');
     };
 
     // ============================================
@@ -1581,49 +1742,65 @@
 
     // Async fetch from Supabase — call once on tab switch, then use cache
     window.fetchApplicationsFromSupabase = async function() {
-      if (!supabase) return null;
+      if (!supabase) {
+         console.warn('[Supabase] Client not initialized.');
+         return null;
+      }
+      
       try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        console.log('[Supabase Audit] Current Session:', sessionData?.session);
+        console.log('[Supabase Audit] Session User ID:', sessionData?.session?.user?.id);
+        console.log('[Supabase Audit] Session Error:', sessionError);
+
         const { data, error } = await supabase
           .from('students')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('*');
+          
+        console.log('[Supabase Audit] Raw Fetch Response Data:', data);
+        console.log('[Supabase Audit] Fetch Error:', error);
+
+        console.log('[TRACE] Query Result:', data);
+        console.log('[TRACE] Row Count:', data?.length);
+        console.log('[TRACE] Error:', error);
+
         if (error) { console.warn('[Supabase] Fetch applications error:', error.message); return null; }
-        // Map Supabase columns to the format renderApplications expects
-        _supabaseAppsCache = (data || []).map(s => ({
-          // IDs
-          id: s.id,
-          applicationId: s.transaction_id ? 'APP' + s.transaction_id : s.id,
-          studentId: s.student_id,
-          supabaseId: s.id,
-          // Personal
-          fullName: s.full_name,
-          name: s.full_name,
-          email: s.email,
-          mobile: s.mobile,
-          dob: s.dob,
-          address: s.address,
-          category: s.category,
-          courseApplied: s.course_applied,
-          stream: s.stream,
-          // Status
-          applicationStatus: s.application_status || 'PENDING_APPROVAL',
-          status: s.status || 'pending',
-          examStatus: s.exam_status,
-          hasAttempted: s.has_attempted,
-          // Payment
-          paymentStatus: s.payment_status || 'Pending Verification',
-          paymentUtr: s.payment_utr,
-          transactionId: s.transaction_id || s.payment_utr,
-          paymentDate: s.payment_date,
-          paymentAmount: s.payment_amount,
-          // Academic
-          academicDetails: s.academic_details || {},
-          // Timestamps
-          submittedAt: s.submitted_at || s.created_at,
-          appliedAt: s.applied_at || s.created_at,
-          // Flag for Supabase origin
-          _fromSupabase: true,
-        }));
+        
+        // Map exactly to the actual schema
+        _supabaseAppsCache = (data || []).map(s => {
+          console.log('[TRACE] Raw Student Row', s);
+          
+          const application = {
+            id: s.id,
+            supabaseId: s.id,
+            applicationId: 'APP' + (s.student_id || s.id.substring(0,6)),
+            studentId: s.student_id || s.id,
+            fullName: s.full_name || 'Unknown',
+            name: s.full_name || 'Unknown',
+            email: s.email || 'N/A',
+            mobile: s.mobile || 'N/A',
+            dob: s.dob || 'N/A',
+            address: s.address || 'N/A',
+            
+            // Default mappings for missing columns
+            category: s.category || 'General',
+            courseApplied: s.course_applied || 'Not Specified',
+            stream: s.stream || 'Not Specified',
+            applicationStatus: s.application_status || 'Submitted',
+            status: s.status || 'pending',
+            examStatus: s.exam_status || 'NOT_SCHEDULED',
+            hasAttempted: s.has_attempted || false,
+            paymentStatus: s.payment_status || 'Pending Verification',
+            paymentAmount: s.payment_amount || 'Rs. 0',
+            academicDetails: s.academic_details || {},
+            submittedAt: s.submitted_at || new Date().toISOString(),
+            appliedAt: new Date().toISOString(),
+            _fromSupabase: true,
+          };
+          
+          console.log('[TRACE] Mapped Application', application);
+          return application;
+        });
         _supabaseFetched = true;
         console.log('[Supabase] Loaded', _supabaseAppsCache.length, 'applications from cloud');
         return _supabaseAppsCache;
@@ -1640,7 +1817,7 @@
     // ============================================
     // DOCUMENTS TAB LOGIC
     // ============================================
-    window.renderDocumentsTab = function() {
+    window.renderDocumentsTab = async function() {
       const filterCategory = document.getElementById('docFilterCategory')?.value || '';
       const filterCourse = document.getElementById('docFilterCourse')?.value || '';
       const search = (document.getElementById('docSearchInput')?.value || '').toLowerCase();
@@ -1666,91 +1843,124 @@
         return;
       }
       noData.classList.add('hidden');
+      
+      grid.innerHTML = '<div class="col-span-full py-10 text-center text-slate-500 font-bold">Fetching secure documents from Supabase...</div>';
+
+      let allSupaDocs = [];
+      if (supabase) {
+         const { data, error } = await supabase.from('student_documents').select('*');
+         if (data && !error) allSupaDocs = data;
+      }
 
       const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
 
       grid.innerHTML = apps.map(s => {
-        let docs = cetDocs[s.applicationId] || cetDocs[s.studentId] || null;
-        if (!docs) {
-           let dbApp = DB.getStudentByEmail(s.email);
-           if (dbApp && dbApp.uploadedFiles) docs = dbApp.uploadedFiles;
-        }
-        if (!docs) docs = s.uploadedFiles || {};
-
-        const docKeys = Object.keys(docs).filter(k => docs[k] && docs[k].startsWith('data:'));
-        const docCount = docKeys.length;
+        const studentDocs = allSupaDocs.filter(d => d.student_id === s.id);
+        let docCount = studentDocs.length;
         
+        let photoThumbHtml = '<div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xl shrink-0">User</div>';
+        const photoDoc = studentDocs.find(d => d.doc_type === 'photoFile' || d.doc_type === 'photo');
+        if (photoDoc) {
+           photoThumbHtml = `<img src="${photoDoc.file_url}" class="w-12 h-12 rounded-full object-cover shadow-sm bg-white shrink-0 border-2 border-indigo-100" />`;
+        }
+
+        // Fallback for legacy base64 if no cloud docs
+        if (docCount === 0) {
+           let docs = cetDocs[s.applicationId] || cetDocs[s.studentId] || null;
+           if (!docs) docs = s.uploadedFiles || {};
+           const docKeys = Object.keys(docs).filter(k => docs[k] && docs[k].startsWith('data:'));
+           docCount = docKeys.length;
+           if (docs.photoFile && docs.photoFile.startsWith('data:')) {
+               photoThumbHtml = `<img src="${docs.photoFile}" class="w-12 h-12 rounded-full object-cover shadow-sm bg-white shrink-0 border-2 border-indigo-100" />`;
+           }
+        }
+
         let statusBadge = '';
         if (docCount === 0) {
-           statusBadge = `<span class="bg-red-100 text-red-700 border border-red-200 text-[10px] px-2 py-0.5 rounded-full font-bold">Missing Files</span>`;
+           statusBadge = '<span class="bg-red-100 text-red-700 border border-red-200 text-[10px] px-2 py-0.5 rounded-full font-bold">Missing Files</span>';
         } else {
-           statusBadge = `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold">${docCount} Uploaded</span>`;
+           statusBadge = '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold">' + docCount + ' Uploaded</span>';
         }
 
-        let photoThumb = `<div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xl shrink-0">👤</div>`;
-        if (docs.photoFile) {
-           photoThumb = `<img src="${docs.photoFile}" class="w-12 h-12 rounded-full object-cover shadow-sm bg-white shrink-0 border-2 border-indigo-100" />`;
+        let html = '<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col">';
+        html += '<div class="flex items-center gap-4 mb-4">';
+        html += photoThumbHtml;
+        html += '<div class="overflow-hidden">';
+        html += '<p class="font-bold text-slate-900 truncate">' + (s.fullName || 'N/A') + '</p>';
+        html += '<div class="flex items-center gap-2 mt-1">';
+        html += '<p class="text-[10px] font-mono text-indigo-600 font-bold">' + (s.applicationId || s.studentId || '') + '</p>';
+        if ((s.courseApplied || '').includes('Science')) {
+            html += '<span class="bg-purple-100 text-purple-700 px-1.5 py-[1px] rounded text-[9px] font-bold truncate">CS</span>';
+        } else {
+            html += '<span class="bg-blue-100 text-blue-700 px-1.5 py-[1px] rounded text-[9px] font-bold truncate">CA</span>';
         }
-
-        return `
-          <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col">
-            <div class="flex items-center gap-4 mb-4">
-              ${photoThumb}
-              <div class="overflow-hidden">
-                <p class="font-bold text-slate-900 truncate" title="${s.fullName || ''}">${s.fullName || 'N/A'}</p>
-                <div class="flex items-center gap-2 mt-1">
-                  <p class="text-[10px] font-mono text-indigo-600 font-bold">${s.applicationId || s.studentId || ''}</p>
-                  ${(s.courseApplied || '').includes('Science') ? '<span class="bg-purple-100 text-purple-700 px-1.5 py-[1px] rounded text-[9px] font-bold">🟣 CS</span>' : '<span class="bg-blue-100 text-blue-700 px-1.5 py-[1px] rounded text-[9px] font-bold">🔵 CA</span>'}
-                </div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between mb-4 text-xs font-bold text-slate-600">
-              <span class="bg-slate-200 px-2 py-1 rounded border border-slate-300">${s.category || 'N/A'}</span>
-              ${statusBadge}
-            </div>
-            <button onclick="viewStudentDocuments('${s.applicationId}', '${s.email}')" class="mt-auto w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition text-sm">
-              Verify Documents
-            </button>
-          </div>
-        `;
+        html += '</div></div></div>';
+        html += '<div class="flex items-center justify-between mb-4 text-xs font-bold text-slate-600">';
+        html += '<span class="bg-slate-200 px-2 py-1 rounded border border-slate-300">' + (s.category || 'N/A') + '</span>';
+        html += statusBadge;
+        html += '</div>';
+        html += '<button onclick="viewStudentDocuments(\'' + (s.id || '') + '\', \'' + (s.email || '') + '\')" class="mt-auto w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg transition text-sm">Verify Documents</button>';
+        html += '</div>';
+        
+        return html;
       }).join('');
     };
 
-    window.viewStudentDocuments = function(appId, email) {
-      let app = getApplications().find(a => a.applicationId === appId || a.studentId === appId || a.email === email);
+    window.viewStudentDocuments = async function(studentDbId, email) {
+      let app = getApplications().find(a => a.id === studentDbId || a.applicationId === studentDbId || a.studentId === studentDbId || a.email === email);
       if (!app) return;
       
-      const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
-      let docs = cetDocs[appId] || null;
-      if (!docs) {
-         let dbApp = DB.getStudentByEmail(email);
-         if (dbApp && dbApp.uploadedFiles) docs = dbApp.uploadedFiles;
-      }
-      if (!docs) docs = app.uploadedFiles || {};
-
       const modal = document.getElementById('documentsModal');
       const content = document.getElementById('documentsContent');
-      
-      if (Object.keys(docs).length === 0) {
-        content.innerHTML = `<div class="text-center py-10"><div class="text-4xl mb-3">📂</div><p class="text-slate-500 font-bold">No documents uploaded.</p></div>`;
-      } else {
-        const docNames = {
-          'photoFile': 'Passport Photo',
-          'signatureFile': 'Signature',
-          'syFile': 'SY Marksheet',
-          'tyFile': 'TY Marksheet',
-          'casteCertificateFile': 'Caste Certificate',
-          'nonCreamyLayerFile': 'Non Creamy Layer',
-          'incomeCertificateFile': 'Income Certificate',
-          'paymentScreenshot': 'Payment Screenshot'
-        };
+      content.innerHTML = '<p class="p-6 text-center text-slate-500 font-bold">Loading from cloud storage...</p>';
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
 
-        let html = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">`;
-        for (const [key, base64] of Object.entries(docs)) {
-          if (!base64 || !base64.startsWith('data:')) continue;
-          const label = docNames[key] || key.replace('File', '');
-          const isPdf = base64.startsWith('data:application/pdf');
+      let cloudDocs = [];
+      if (supabase && studentDbId) {
+         const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', studentDbId);
+         if (data && !error) cloudDocs = data;
+      }
+
+      // Legacy fallback
+      const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+      let localDocs = cetDocs[app.applicationId] || cetDocs[app.studentId] || null;
+      if (!localDocs) localDocs = app.uploadedFiles || {};
+
+      if (cloudDocs.length === 0 && Object.keys(localDocs).filter(k=>localDocs[k] && localDocs[k].startsWith('data:')).length === 0) {
+        content.innerHTML = '<div class="text-center py-10"><div class="text-4xl mb-3">📂</div><p class="text-slate-500 font-bold">No documents uploaded.</p></div>';
+        return;
+      }
+
+      const docNames = {
+        'photoFile': 'Passport Photo',
+        'signatureFile': 'Signature',
+        'syFile': 'SY Marksheet',
+        'tyFile': 'TY Marksheet',
+        'casteCertificateFile': 'Caste Certificate',
+        'nonCreamyLayerFile': 'Non Creamy Layer',
+        'incomeCertificateFile': 'Income Certificate',
+        'paymentScreenshot': 'Payment Screenshot',
+        'aadharCard': 'Aadhar Card',
+        '10thMarksheet': '10th Marksheet',
+        '12thMarksheet': '12th Marksheet',
+        'graduationMarksheet': 'Graduation Marksheet'
+      };
+
+      let html = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">`;
+
+      // Render Cloud Docs
+      for (const doc of cloudDocs) {
+          const label = docNames[doc.doc_type] || doc.doc_type;
+          const isPdf = doc.file_url.toLowerCase().endsWith('.pdf');
           
+          let filePath = doc.file_name || doc.file_url.split('/student-documents/')[1];
+          if (!filePath) filePath = doc.file_url.split('/student-photos/')[1];
+          if (!filePath) filePath = doc.file_url.split('/payment-screenshots/')[1];
+          if (!filePath) filePath = doc.file_url.substring(doc.file_url.lastIndexOf('/') + 1);
+
+          console.log(`[Diagnostics] app_id: ${app.id}, file_name: ${doc.doc_type}, storage_path: ${filePath}, public_url: ${doc.file_url}`);
+
           let previewHtml = '';
           if (isPdf) {
              previewHtml = `
@@ -1760,38 +1970,114 @@
                    <p class="text-xs font-bold text-slate-500">PDF Document</p>
                  </div>
                </div>
-               <button onclick="downloadDocument('${base64}', '${label}.pdf')" class="absolute top-2 right-2 bg-white text-indigo-600 p-2 rounded-lg shadow border border-indigo-100 hover:bg-indigo-50 transition" title="Download">
+               <a href="${doc.file_url}" target="_blank" class="absolute top-2 right-12 bg-white text-indigo-600 p-2 rounded-lg shadow border border-indigo-100 hover:bg-indigo-50 transition" title="Preview PDF">
+                 👁️
+               </a>
+               <a href="${doc.file_url}" download="${label}.pdf" target="_blank" class="absolute top-2 right-2 bg-white text-emerald-600 p-2 rounded-lg shadow border border-emerald-100 hover:bg-emerald-50 transition" title="Download">
                  ⬇️
-               </button>
+               </a>
              `;
           } else {
              previewHtml = `
-               <img src="${base64}" class="w-full h-40 object-cover rounded-t-lg cursor-pointer" onclick="openFullscreenImage('${base64}')" title="Click to view full screen" />
-               <button onclick="downloadDocument('${base64}', '${label}.png')" class="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-1.5 rounded-md shadow-sm border border-slate-200 hover:bg-white transition" title="Download Image">
+               <img src="${doc.file_url}" class="w-full h-40 object-cover rounded-t-lg cursor-pointer" onclick="openFullscreenImage('${doc.file_url}')" title="Click to view full screen" />
+               <a href="${doc.file_url}" download="${label}.png" target="_blank" class="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-1.5 rounded-md shadow-sm border border-slate-200 hover:bg-white transition" title="Download Image">
                  ⬇️
-               </button>
+               </a>
              `;
           }
 
           html += `
             <div class="bg-white border border-slate-200 rounded-lg shadow-sm relative group overflow-hidden">
               ${previewHtml}
-              <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+              <div class="p-3 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
                 <p class="font-bold text-sm text-slate-800 truncate">${label}</p>
-                <div class="flex gap-2" id="docActions_${key}">
-                   <button onclick="document.getElementById('docActions_${key}').innerHTML='<span class=\\'text-xs font-bold text-emerald-700\\'>✅ Verified</span>'" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold hover:bg-emerald-200 transition">Approve</button>
-                   <button onclick="document.getElementById('docActions_${key}').innerHTML='<span class=\\'text-xs font-bold text-red-700\\'>❌ Rejected</span>'" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold hover:bg-red-200 transition">Reject</button>
+                <div class="flex justify-between items-center w-full">
+                  <div class="flex gap-2" id="docActions_${doc.id}">
+                     <button onclick="document.getElementById('docActions_${doc.id}').innerHTML='<span class=&quot;text-xs font-bold text-emerald-700&quot;>✅ Verified</span>'" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold hover:bg-emerald-200 transition">Approve</button>
+                     <button onclick="document.getElementById('docActions_${doc.id}').innerHTML='<span class=&quot;text-xs font-bold text-red-700&quot;>❌ Rejected</span>'" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-bold hover:bg-red-200 transition">Reject</button>
+                  </div>
+                  <button onclick="deleteDocument('${doc.id}', '${studentDbId}', '${email}', '${filePath}', '${doc.file_url}')" class="text-xs bg-slate-200 text-slate-600 hover:bg-red-500 hover:text-white px-2 py-1 rounded transition" title="Delete permanently">🗑️</button>
                 </div>
               </div>
             </div>
           `;
+      }
+
+      // Render Legacy Base64 Docs
+      for (const [key, base64] of Object.entries(localDocs)) {
+        if (!base64 || !base64.startsWith('data:')) continue;
+        const label = docNames[key] || key.replace('File', '');
+        const isPdf = base64.startsWith('data:application/pdf');
+        
+        let previewHtml = '';
+        if (isPdf) {
+           previewHtml = `
+             <div class="w-full h-40 bg-slate-100 flex items-center justify-center rounded-t-lg border-b border-slate-200">
+               <div class="text-center">
+                 <div class="text-3xl mb-2">📄</div>
+                 <p class="text-xs font-bold text-slate-500">PDF Document</p>
+               </div>
+             </div>
+             <button onclick="downloadDocument('${base64}', '${label}.pdf')" class="absolute top-2 right-2 bg-white text-indigo-600 p-2 rounded-lg shadow border border-indigo-100 hover:bg-indigo-50 transition" title="Download">
+               ⬇️
+             </button>
+           `;
+        } else {
+           previewHtml = `
+             <img src="${base64}" class="w-full h-40 object-cover rounded-t-lg cursor-pointer" onclick="openFullscreenImage('${base64}')" title="Click to view full screen" />
+             <button onclick="downloadDocument('${base64}', '${label}.png')" class="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-1.5 rounded-md shadow-sm border border-slate-200 hover:bg-white transition" title="Download Image">
+               ⬇️
+             </button>
+           `;
         }
-        html += `</div>`;
-        content.innerHTML = html;
+
+        html += `
+          <div class="bg-white border border-slate-200 rounded-lg shadow-sm relative group overflow-hidden opacity-80">
+            ${previewHtml}
+            <div class="absolute top-0 left-0 bg-yellow-400 text-yellow-900 text-[9px] font-bold px-1 py-0.5 rounded-br">Legacy Storage</div>
+            <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+              <p class="font-bold text-sm text-slate-800 truncate">${label}</p>
+              <div class="flex gap-2" id="docActions_legacy_${key}">
+                 <button onclick="document.getElementById('docActions_legacy_${key}').innerHTML='<span class=&quot;text-xs font-bold text-emerald-700&quot;>✅ Verified</span>'" class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold hover:bg-emerald-200 transition">Approve</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      content.innerHTML = html;
+    };
+
+    window.deleteDocument = async function(docId, studentDbId, email, filePath, publicUrl) {
+      if (!confirm('Are you sure you want to permanently delete this document?')) return;
+      if (!supabase) {
+        alert('Supabase client not initialized. Cannot delete cloud document.');
+        return;
       }
       
-      modal.style.display = 'flex';
-      modal.classList.remove('hidden'); // Ensure tailwind hidden is removed
+      try {
+        console.log(`[Diagnostics] Deleting docId: ${docId}, filePath: ${filePath}`);
+        
+        // 1. Remove from DB first so the UI updates immediately if it succeeds
+        const { error: dbError } = await supabase.from('student_documents').delete().eq('id', docId);
+        if (dbError) throw dbError;
+        
+        // 2. Remove from Storage
+        // The file could be in student-documents, student-photos, or payment-screenshots bucket.
+        // We will try deleting from all to be safe, since storage.remove fails silently on non-existent paths.
+        await supabase.storage.from('student-documents').remove([filePath]);
+        await supabase.storage.from('student-photos').remove([filePath]);
+        await supabase.storage.from('payment-screenshots').remove([filePath]);
+        
+        // Refresh UI
+        if (window.renderDocumentsTab) await window.renderDocumentsTab();
+        viewStudentDocuments(studentDbId, email); // Refresh modal view
+        
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Failed to delete document: ' + err.message);
+      }
     };
 
     window.openFullscreenImage = function(base64) {
@@ -1816,6 +2102,8 @@
       const courseFilter = document.getElementById('filterCourse')?.value || '';
       const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
       let apps = getApplications();
+      
+      console.log('[TRACE] Before Render:', apps.length);
 
       if (filter) apps = apps.filter(s => (s.applicationStatus || 'Submitted') === filter);
       if (courseFilter) apps = apps.filter(s => {
@@ -1845,7 +2133,9 @@
         const badgeColors = {
           'Submitted': 'bg-amber-100 text-amber-700 border-amber-200',
           'Approved': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-          'Rejected': 'bg-red-100 text-red-700 border-red-200'
+          'APPROVED': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+          'Rejected': 'bg-red-100 text-red-700 border-red-200',
+          'REJECTED': 'bg-red-100 text-red-700 border-red-200'
         };
         const payColors = {
           'Pending Verification': 'bg-slate-100 text-slate-700 border-slate-200',
@@ -1901,10 +2191,10 @@
             </td>
             <td class="p-4 text-right whitespace-nowrap">
               <button onclick="previewApplication('${s.applicationId}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-bold shadow-sm transition">Preview</button>
-              ${appStatus !== 'Approved' ? `
+              ${(appStatus !== 'Approved' && appStatus !== 'APPROVED') ? `
                 <button onclick="approveStudent('${s.applicationId}')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded text-xs font-bold shadow-sm transition">Approve</button>
               ` : ''}
-              ${appStatus !== 'Rejected' ? `
+              ${(appStatus !== 'Rejected' && appStatus !== 'REJECTED') ? `
                 <button onclick="rejectStudent('${s.applicationId}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1.5 rounded text-xs font-bold border border-red-200 transition">Reject</button>
               ` : ''}
               <button onclick="deleteApplication('${s.applicationId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1.5 rounded text-xs font-bold border border-slate-300 transition ml-1">Delete</button>
@@ -1969,7 +2259,9 @@
         paymentScreenshot: 'Payment Screenshot', paymentProof: 'Payment Screenshot',
         casteCertificateFile: 'Caste Certificate', casteCertificate: 'Caste Certificate',
         nonCreamyLayerFile: 'Non Creamy Layer', incomeCertificateFile: 'Income Certificate',
-        domicileFile: 'Domicile', gapCertificateFile: 'Gap Certificate'
+        domicileFile: 'Domicile', gapCertificateFile: 'Gap Certificate',
+        cetScorecard: 'CET Scorecard', cetScorecardFile: 'CET Scorecard',
+        graduation: 'Graduation Documents', graduationFile: 'Graduation Documents'
       };
       
       const filesToRender = app.uploadedFiles || app.files || app.documents || {};
@@ -2106,7 +2398,11 @@
     }
     
     window.deleteApplication = async function(appId) {
-      if(!confirm('Are you sure you want to delete this application?')) return;
+      const confirmation = prompt(`To delete this application, type "DELETE" below:\n\nApplication ID: ${appId}`);
+      if(confirmation !== "DELETE") {
+         showToast("Deletion cancelled.", "info");
+         return;
+      }
       console.log('[Admin Action] Start: Delete application', appId);
       
       let apps = getApplications();
@@ -2137,20 +2433,29 @@
         } catch(e) {}
       }
 
-      // Supabase: delete student
+      // Supabase: delete application
       if (supabase && app) {
         try {
+          const { data: session } = await supabase.auth.getSession();
+          const adminId = session?.session?.user?.id || 'admin';
+          
           const q = app.supabaseId ? supabase.from('students').delete().eq('id', app.supabaseId)
                                    : supabase.from('students').delete().eq('email', app.email);
           const { error } = await q;
+          
           if (error) {
             console.error('[Admin Action] Failed: Supabase delete error', error.message);
             showToast('Delete failed in cloud – retry', 'error');
           } else {
             console.log('[Admin Action] Success: Application deleted from cloud');
+            await supabase.from('security_logs').insert({
+               event_type: 'STUDENT_DELETED',
+               message: `Application ${app.applicationId} soft-deleted by admin ${adminId}`,
+               student_name: app.fullName || app.name
+            });
           }
         } catch(e) {
-          console.error('[Admin Action] Failed: Supabase delete exception', e);
+          console.error('[Admin Action] Failed: Supabase soft-delete exception', e);
         }
       }
 
@@ -2176,77 +2481,102 @@
 
       console.log('[Admin Action] Start: Approve student', appId);
 
+      console.log('[TRACE] Before Update:');
+      console.log(`[TRACE] Student ID: ${app.studentId || app.applicationId}`);
+      const oldStatus = app.applicationStatus || app.status || 'PENDING_APPROVAL';
+      console.log(`[TRACE] Current Status: ${oldStatus}`);
+
       // Generate studentId if not already set
       const newStudentId = app.studentId || ('CET2026' + String(Math.floor(Math.random() * 9000) + 1000));
       const examConfig = (() => { try { return JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e) { return null; } })();
       const examDate = examConfig?.examDate || '';
+      const now = new Date().toISOString();
 
-      // 1. Update cetApplications
-      app.applicationStatus = 'Approved';
-      app.status = 'approved';
+      // 1. Supabase dual-write (MUST BE FIRST)
+      if (supabase) {
+        showToast('Saving approval to database...', 'info');
+        const updateData = {
+          status: 'APPROVED',
+          application_status: 'APPROVED',
+          student_id: newStudentId,
+          exam_status: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
+          approved_at: now
+        };
+        try {
+          const matchField = app.supabaseId ? supabase.from('students').update(updateData).eq('id', app.supabaseId)
+                                            : supabase.from('students').update(updateData).eq('email', app.email).eq('course_applied', app.courseApplied);
+          const { error } = await matchField;
+          
+          if (error) {
+            console.error('[Admin Action] Failed: Supabase approve error:', error.message);
+            showToast('Database update failed. Approval aborted.', 'error');
+            return; // ⛔ STOP HERE: Do not update UI or localStorage if DB fails
+          }
+          
+          console.log('[Admin Action] Success: Student approved in cloud:', newStudentId);
+
+          // Audit Log
+          const { data: session } = await supabase.auth.getSession();
+          const adminId = session?.session?.user?.id || 'admin';
+          await supabase.from('security_logs').insert({
+             student_id: app.supabaseId || app.id,
+             student_name: app.fullName || app.name,
+             event_type: 'STUDENT_APPROVED',
+             message: `Admin ${adminId} changed status from ${oldStatus} to APPROVED. App ID: ${app.applicationId}`
+          });
+        } catch(e) {
+          console.error('[Admin Action] Failed: Supabase approve exception', e);
+          showToast('Network error during approval.', 'error');
+          return;
+        }
+      }
+
+      // 2. Update cetApplications locally
+      app.applicationStatus = 'APPROVED';
+      app.status = 'APPROVED';
       app.studentId = newStudentId;
       app.examStatus = examDate ? 'SCHEDULED' : 'NOT_SCHEDULED';
       app.examDate = examDate;
-      app.approvedAt = new Date().toISOString();
+      app.approvedAt = now;
       localStorage.setItem('cetApplications', JSON.stringify(apps));
+      
+      console.log('[TRACE] After Update:');
+      console.log(`[TRACE] Updated Status: ${app.applicationStatus}`);
 
-      // 2. Add/update cetApprovedStudents
+      // 3. Add/update cetApprovedStudents
       let approved = [];
       try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
       approved = approved.filter(a => a.applicationId !== appId);
       approved.push({ ...app });
       localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
 
-      // 3. Sync cet_students (for student login & exam engine)
+      // 4. Sync cet_students (for student login & exam engine)
       const dbStudents = DB.getStudents();
-      const dbIdx = dbStudents.findIndex(s => s.email === app.email);
+      const dbIdx = dbStudents.findIndex(s => s.applicationId === app.applicationId || (s.email === app.email && s.courseApplied === app.courseApplied));
       if (dbIdx !== -1) {
         dbStudents[dbIdx] = {
           ...dbStudents[dbIdx],
-          status: 'approved',
+          status: 'APPROVED',
           studentId: newStudentId,
-          applicationStatus: 'Approved',
+          applicationStatus: 'APPROVED',
           examStatus: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
           examDate: examDate,
-          approvedAt: app.approvedAt,
+          approvedAt: now,
         };
         localStorage.setItem('cet_students', JSON.stringify(dbStudents));
       }
 
-      // 4. Also sync cetPayments status if present
+      // 5. Also sync cetPayments status if present
       try {
         let payments = JSON.parse(localStorage.getItem('cetPayments')) || [];
         const pi = payments.findIndex(p => p.applicationId === appId);
-        if (pi !== -1) { payments[pi].applicationStatus = 'Approved'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
+        if (pi !== -1) { payments[pi].applicationStatus = 'APPROVED'; localStorage.setItem('cetPayments', JSON.stringify(payments)); }
       } catch(e) {}
 
-      // 5. Supabase dual-write: update student status
-      if (supabase) {
-        const updateData = {
-          status: 'approved',
-          student_id: newStudentId,
-          application_status: 'Approved',
-          exam_status: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
-        };
-        try {
-          const matchField = app.supabaseId ? supabase.from('students').update(updateData).eq('id', app.supabaseId)
-                                            : supabase.from('students').update(updateData).eq('email', app.email);
-          const { error } = await matchField;
-          if (error) {
-            console.warn('[Admin Action] Failed: Supabase approve error:', error.message);
-            showToast('Approval saved locally but cloud sync failed – retry', 'error');
-          } else {
-            console.log('[Admin Action] Success: Student approved in cloud:', newStudentId);
-          }
-        } catch(e) {
-          console.error('[Admin Action] Failed: Supabase approve exception', e);
-        }
-      }
-
-      // Email Notification
+      // 6. Email Notification
       import('../js/email-service.js').then(({ default: EmailSvc }) => {
-        const emailHtml = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime).html;
-        const emailSubject = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime).subject;
+        const emailHtml = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime, app.courseApplied).html;
+        const emailSubject = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime, app.courseApplied).subject;
         EmailSvc.sendEmail(app.email, emailSubject, emailHtml);
       }).catch(err => console.warn('Email service import failed', err));
 
@@ -2270,7 +2600,7 @@
 
         // Sync cet_students
         const dbStudents = DB.getStudents();
-        const dbIdx = dbStudents.findIndex(s => s.email === app.email);
+        const dbIdx = dbStudents.findIndex(s => s.applicationId === app.applicationId || (s.email === app.email && s.courseApplied === app.courseApplied));
         if (dbIdx !== -1) {
           dbStudents[dbIdx].status = 'rejected';
           dbStudents[dbIdx].applicationStatus = 'Rejected';
@@ -2288,7 +2618,7 @@
         if (supabase) {
           try {
             const q = app.supabaseId ? supabase.from('students').update({ status: 'rejected', application_status: 'Rejected' }).eq('id', app.supabaseId)
-                                     : supabase.from('students').update({ status: 'rejected', application_status: 'Rejected' }).eq('email', app.email);
+                                     : supabase.from('students').update({ status: 'rejected', application_status: 'Rejected' }).eq('email', app.email).eq('course_applied', app.courseApplied);
             const { error } = await q;
             if (error) {
               console.warn('[Admin Action] Failed: Supabase reject error:', error.message);
@@ -2517,9 +2847,16 @@
     // ============================================
     // SCHEDULING & QUESTIONS
     // ============================================
-    window.loadScheduleForm = function() {
-      let config = { examType: 'CET Exam', examDate: '', startTime: '', durationMinutes: 60 };
-      try { config = JSON.parse(localStorage.getItem('cetExamConfig')) || config; } catch(e){}
+    window.renderSchedulePreview = function() {
+      const course = document.getElementById('scheduleCourse')?.value || 'M.Sc. Computer Science';
+      let allConfigs = {};
+      try { allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; } catch(e){}
+      if (allConfigs.examDate !== undefined) allConfigs = { 'M.Sc. Computer Science': allConfigs }; // migrate old format
+      
+      let config = allConfigs[course];
+      if (!config) {
+        config = { examType: 'CET Exam', examDate: '', startTime: '', durationMinutes: 60 };
+      }
       
       document.getElementById('examType').value = config.examType || 'CET Exam';
       document.getElementById('examDate').value = config.examDate;
@@ -2538,10 +2875,12 @@
       
       document.getElementById('examDuration').value = config.durationMinutes;
       
-      renderConfigPreview(config);
+      renderConfigPreview(config, course);
+      renderScheduleLogs();
     }
+    window.loadScheduleForm = window.renderSchedulePreview;
     
-    window.renderConfigPreview = function(config) {
+    window.renderConfigPreview = function(config, course = 'M.Sc. Computer Science') {
       if (!config.examDate || !config.startTime) {
         document.getElementById('configPreview').innerHTML = '<p class="text-slate-500 italic text-sm">No complete configuration saved.</p>';
         return;
@@ -2566,7 +2905,8 @@
           <span class="text-sm font-bold text-slate-500 uppercase tracking-wider">Status</span>
           <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusColor} animate-pulse">${status.toUpperCase()}</span>
         </div>
-        <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="grid grid-cols-2 gap-4 text-sm mt-4">
+          <div class="col-span-2"><p class="text-slate-500 mb-1">Course</p><p class="font-bold text-indigo-700 bg-indigo-50 px-2 py-1 inline-block rounded">${course}</p></div>
           <div><p class="text-slate-500 mb-1">Exam Type</p><p class="font-bold text-slate-800">${config.examType || 'CET Exam'}</p></div>
           <div><p class="text-slate-500 mb-1">Date</p><p class="font-bold text-slate-800">${start.toLocaleDateString()}</p></div>
           <div><p class="text-slate-500 mb-1">Duration</p><p class="font-bold text-slate-800">${config.durationMinutes} mins</p></div>
@@ -2574,9 +2914,10 @@
           <div><p class="text-slate-500 mb-1">End Time</p><p class="font-bold text-slate-800">${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p></div>
         </div>
       `;
+      renderScheduleLogs();
     }
     
-    window.saveSchedule = function() {
+    window.saveSchedule = async function() {
       const date = document.getElementById('examDate').value;
       
       let hourStr = document.getElementById('examHour').value;
@@ -2601,15 +2942,22 @@
       const endTimeStr = endObj.toTimeString().substring(0, 5);
       
       const examType = document.getElementById('examType').value;
+      const course = document.getElementById('scheduleCourse')?.value || 'M.Sc. Computer Science';
       const config = {
         examType: examType,
         examDate: date,
         startTime: time,
         endTime: endTimeStr,
-        durationMinutes: duration
+        durationMinutes: duration,
+        course: course
       };
       
-      localStorage.setItem('cetExamConfig', JSON.stringify(config));
+      let allConfigs = {};
+      try { allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; } catch(e){}
+      if (allConfigs.examDate !== undefined) allConfigs = { 'M.Sc. Computer Science': allConfigs };
+      allConfigs[course] = config;
+      
+      localStorage.setItem('cetExamConfig', JSON.stringify(allConfigs));
       // Supabase dual-write: save to exam_config table
       if (supabase) {
         supabase.from('exam_config').select('id').limit(1).then(({ data }) => {
@@ -2623,54 +2971,198 @@
           }
         });
       }
-      showToast('Exam configuration saved securely', 'success');
+      
+      showToast('Exam configuration saved securely. Assigning students...', 'success');
       console.log('[Admin Action] Success: Exam schedule saved');
-      renderConfigPreview(config);
-    }
+      renderConfigPreview(config, course);
+      
+      // EXAM AUTOMATION SYSTEM
+      showToast('Fetching approved students from database...', 'info');
+      let approvedStudents = [];
+      let allDbStudents = [];
+      
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('students').select('*');
+          if (error) throw error;
+          allDbStudents = data || [];
+          approvedStudents = allDbStudents.filter(s => 
+             (s.status?.toUpperCase() === 'APPROVED' || s.application_status?.toUpperCase() === 'APPROVED') &&
+             s.course_applied === course
+          );
+        } catch (e) {
+          console.error('[Admin Action] Failed to fetch students from DB:', e);
+          showToast('Failed to fetch students from DB.', 'error');
+          return;
+        }
+      }
 
-    window.sendExamReminders = function() {
-      const config = JSON.parse(localStorage.getItem('cetExamConfig'));
-      if (!config || !config.examDate) {
-        showToast('Please save the Exam Configuration first', 'error');
+      console.log('--- EXAM NOTIFICATION DIAGNOSTICS ---');
+      console.log('Total Applications in DB:', allDbStudents.length);
+      console.log('Approved Applications for Course (' + course + '):', approvedStudents.length);
+      approvedStudents.forEach(s => {
+         console.log(`Student ID: ${s.student_id || s.id} | Name: ${s.full_name} | Email: ${s.email} | Status: ${s.status}`);
+      });
+      console.log('-------------------------------------');
+      
+      if (approvedStudents.length === 0) {
+        alert('Schedule saved, but no approved students found for course: ' + course);
         return;
       }
       
-      const dbStudents = DB.getStudents().filter(s => s.status === 'approved' && s.examStatus === 'SCHEDULED');
-      if (dbStudents.length === 0) {
-        alert('No students found with SCHEDULED exam status.');
+      alert(`Approved Students Found: ${approvedStudents.length}\nStarting exam notification sequence...`);
+
+      let emailsPromises = [];
+      let emailsFound = 0;
+      
+      approvedStudents.forEach(st => {
+         // Generate hall ticket ID
+         const htId = st.hallTicketId || ('HT-' + (st.student_id || st.id) + '-' + Date.now());
+         
+         // Send automated email to every approved student (no skipping)
+         if (st.email) {
+            emailsFound++;
+            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
+              const portalUrl = window.location.origin + '/student/login.html';
+              const examUrl = window.location.origin + '/exam/index.html';
+              
+              const tpl = EmailSvc.EmailTemplates.scheduleUpdate(
+                 st.full_name || st.name || 'Student', date, time, duration, course, st.student_id || st.id, portalUrl, examUrl, st.email
+              );
+              
+              return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html).then((success) => {
+                 // Store email history in Supabase
+                 if (success && supabase) {
+                    supabase.from('security_logs').insert({
+                       student_id: st.id,
+                       student_name: st.full_name || st.name,
+                       event_type: 'SCHEDULE_EMAIL_SENT',
+                       message: `Exam Notification Sent: ${course} on ${date} at ${time}`
+                    }).then(()=>{}).catch(e=>console.warn(e));
+                 }
+                 return success === true;
+              });
+            }).catch(e => false);
+            emailsPromises.push(p);
+         }
+      });
+      
+      // Sync to Supabase in bulk
+      if (supabase && approvedStudents.length > 0) {
+         const idsToUpdate = approvedStudents.map(s => s.id);
+         supabase.from('students').update({ exam_status: 'SCHEDULED' }).in('id', idsToUpdate)
+           .then(()=>{}).catch(e=>console.warn('Batch exam_status update failed:', e));
+      }
+      
+      // Update local storage arrays for immediate UI feedback
+      try {
+          let localStudents = DB.getStudents();
+          let updated = false;
+          localStudents.forEach(ls => {
+              if (approvedStudents.find(as => as.id === ls.supabaseId || as.id === ls.id)) {
+                  ls.examStatus = 'SCHEDULED';
+                  ls.examDate = date;
+                  ls.examTime = time;
+                  ls.examDuration = duration;
+                  updated = true;
+              }
+          });
+          if (updated) localStorage.setItem('cet_students', JSON.stringify(localStudents));
+      } catch(e) {}
+      
+      invalidateCache();
+      
+      // Wait for emails to complete and show stats
+      showToast('Sending notifications...', 'info');
+      Promise.all(emailsPromises).then(results => {
+         const sentCount = results.filter(r => r === true).length;
+         const failedCount = emailsPromises.length - sentCount;
+         alert(`Exam Automation Complete:\n\n- Total Applications in DB: ${allDbStudents.length}\n- Approved For Course: ${approvedStudents.length}\n- Valid Emails Found: ${emailsFound}\n- Notification Sent Count: ${sentCount}\n- Failed Email Count: ${failedCount}`);
+         
+         // Save to log history
+         const logMsg = {
+           date: new Date().toLocaleString(),
+           course: course,
+           assigned: assignedCount,
+           sent: sentCount,
+           failed: failedCount
+         };
+         let logs = [];
+         try { logs = JSON.parse(localStorage.getItem('cetScheduleLogs')) || []; } catch(e){}
+         logs.unshift(logMsg);
+         if(logs.length > 50) logs = logs.slice(0,50);
+         localStorage.setItem('cetScheduleLogs', JSON.stringify(logs));
+         renderScheduleLogs();
+      });
+    }
+
+    window.renderScheduleLogs = function() {
+      let logs = [];
+      try { logs = JSON.parse(localStorage.getItem('cetScheduleLogs')) || []; } catch(e){}
+      const container = document.getElementById('scheduleLogsContainer');
+      if (!container) return;
+      
+      if (logs.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-4">No automation logs yet.</p>';
         return;
       }
-
-      if (!confirm(`Send exam reminder emails to ${dbStudents.length} scheduled students?`)) return;
-
-      import('../js/email-service.js').then(({ default: EmailSvc }) => {
-        let count = 0;
-        dbStudents.forEach(st => {
-          if (st.email) {
-            const tmpl = EmailSvc.EmailTemplates.examReminder(st.fullName, config.examDate, config.startTime);
-            EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html);
-            count++;
-          }
-        });
-        alert(`Successfully queued ${count} exam reminder emails.`);
-      }).catch(err => console.warn('Email service import failed', err));
+      
+      container.innerHTML = logs.map(l => `
+        <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm">
+          <div class="flex justify-between items-center mb-1">
+             <span class="font-bold text-indigo-700">${l.course}</span>
+             <span class="text-xs text-slate-500">${l.date}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 mt-2">
+             <div class="bg-slate-50 p-2 rounded text-center">
+                <div class="text-xs text-slate-500">Assigned</div>
+                <div class="font-bold text-slate-800">${l.assigned}</div>
+             </div>
+             <div class="bg-emerald-50 p-2 rounded text-center">
+                <div class="text-xs text-emerald-600">Sent</div>
+                <div class="font-bold text-emerald-700">${l.sent}</div>
+             </div>
+             <div class="bg-red-50 p-2 rounded text-center">
+                <div class="text-xs text-red-600">Failed</div>
+                <div class="font-bold text-red-700">${l.failed}</div>
+             </div>
+          </div>
+        </div>
+      `).join('');
     }
+
+    // sendExamReminders removed as logic is now fully automated inside saveSchedule
 
     let currentlyViewingSetId = null;
     let editingQuestionId = null;
 
-    window.getQuestionSets = function() {
-      let sets = [];
-      try { sets = JSON.parse(localStorage.getItem('cetQuestionSets')) || []; } catch(e){}
-      return sets;
+    window.getQuestionSets = function(courseParam = null) {
+      let course = courseParam || document.getElementById('questionsCourse')?.value || 'M.Sc. Computer Science';
+      let allSets = {};
+      try { allSets = JSON.parse(localStorage.getItem('cetQuestionSets')) || {}; } catch(e){}
+      
+      if (Array.isArray(allSets)) {
+         // migration
+         allSets = { 'M.Sc. Computer Science': allSets };
+         localStorage.setItem('cetQuestionSets', JSON.stringify(allSets));
+      }
+      return allSets[course] || [];
     }
 
-    window.saveQuestionSets = function(sets) {
-      localStorage.setItem('cetQuestionSets', JSON.stringify(sets));
+    window.saveQuestionSets = function(sets, courseParam = null) {
+      let course = courseParam || document.getElementById('questionsCourse')?.value || 'M.Sc. Computer Science';
+      let allSets = {};
+      try { allSets = JSON.parse(localStorage.getItem('cetQuestionSets')) || {}; } catch(e){}
+      if (Array.isArray(allSets)) allSets = { 'M.Sc. Computer Science': allSets };
+      
+      allSets[course] = sets;
+      localStorage.setItem('cetQuestionSets', JSON.stringify(allSets));
+      
       // Supabase dual-write: sync question sets
       if (supabase) {
         sets.forEach(set => {
           const row = { name: set.name, is_active: set.isActive || false, questions: set.questions || [] };
+          // We'd ideally add a course column to Supabase question_sets here, but keeping it simple for now
           supabase.from('question_sets').upsert({ ...row, id: set.supabaseId || undefined }, { onConflict: 'id' })
             .then(({ error }) => { if (error) console.warn('[Supabase] Question set sync error:', error.message); });
         });
@@ -3064,16 +3556,39 @@
       let res = [];
       try { res = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
       
-      // Inject dummy data if empty as requested
-      if (res.length === 0) {
-        res = [
-          { id: '1', studentId: 'CET20261944', name: 'Navnath', course: 'BSc Computer Science', category: 'OBC', score: 1, total: 2, status: 'Completed', submittedAt: new Date().toISOString() },
-          { id: '2', studentId: 'CET20262406', name: 'Navnath', course: 'BSc Computer Science', category: 'OPEN', score: 1, total: 2, status: 'Completed', submittedAt: new Date().toISOString() }
-        ];
-      }
+      // Do not inject dummy data, use actual DB/localstorage records.
+      
+      // Calculate Course Ranks
+      const courseGroups = {};
+      res.forEach(r => {
+         const c = r.course || 'M.Sc Computer Science';
+         if (!courseGroups[c]) courseGroups[c] = [];
+         courseGroups[c].push(r);
+      });
+      
+      Object.values(courseGroups).forEach(group => {
+         group.sort((a, b) => {
+            if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+            const percentA = a.total ? (a.score / a.total) : 0;
+            const percentB = b.total ? (b.score / b.total) : 0;
+            if (percentB !== percentA) return percentB - percentA;
+            const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+            const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+            return timeA - timeB; // Earliest submission first
+         });
+         group.forEach((r, i) => r.courseRank = i + 1);
+      });
 
-      // Sort by score descending to form Rank List
-      res.sort((a, b) => (b.score || 0) - (a.score || 0));
+      // Overall Sort by score descending to display in table
+      res.sort((a, b) => {
+         if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+         const percentA = a.total ? (a.score / a.total) : 0;
+         const percentB = b.total ? (b.score / b.total) : 0;
+         if (percentB !== percentA) return percentB - percentA;
+         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+         return timeA - timeB;
+      });
 
       // Filter Logic
       const filterSearch = (document.getElementById('resFilterSearch')?.value || '').toLowerCase();
@@ -3114,11 +3629,11 @@
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="p-4 font-mono font-bold text-sm text-indigo-600">${r.studentId}</td>
           <td class="p-4 font-medium text-slate-900 text-sm">${r.name || r.studentName || 'Unknown'}</td>
-          <td class="p-4 text-sm text-slate-600">${r.course || 'BSc Computer Science'}</td>
+          <td class="p-4 text-sm text-slate-600">${r.course || 'M.Sc Computer Science'}</td>
           <td class="p-4 text-sm font-bold text-slate-500">${r.category || 'OPEN'}</td>
           <td class="p-4 font-bold text-lg text-slate-800">${r.score || 0} <span class="text-xs text-slate-400 font-normal">/ ${r.totalQuestions || r.total || 0}</span></td>
           <td class="p-4 text-sm font-bold text-slate-700">${percent}%</td>
-          <td class="p-4 text-sm font-bold text-slate-900">#${idx+1}</td>
+          <td class="p-4 text-sm font-bold text-slate-900">#${r.courseRank || idx+1}</td>
           <td class="p-4">${statusBadge}</td>
           <td class="p-4 text-slate-500 text-sm">${r.submittedAt ? new Date(r.submittedAt).toLocaleString() : '--'}</td>
           <td class="p-4" style="white-space:nowrap;">
@@ -3132,70 +3647,151 @@
     }
 
     window.publishGlobalResults = async function() {
-      if(!confirm("Are you sure you want to publish results? This will make them visible to students and send email notifications.")) return;
+      const filterCourse = document.getElementById('resFilterCourse')?.value || '';
+      if(!confirm(`Are you sure you want to publish results${filterCourse ? ' for ' + filterCourse : ''}? This will make them visible to students and send email notifications.`)) return;
+      
       let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
       if (resList.length === 0) {
          showToast('No results to publish.', 'error'); return;
       }
       
       const allStudents = JSON.parse(localStorage.getItem('cet_students')) || [];
-      resList.sort((a,b) => (b.score||0) - (a.score||0));
+      let resultsToPublish = filterCourse ? resList.filter(r => r.course === filterCourse || r.courseApplied === filterCourse) : resList;
+      if (resultsToPublish.length === 0) {
+         showToast('No results found for selected course.', 'error'); return;
+      }
       
+      const courseGroups = {};
+      resultsToPublish.forEach(r => {
+         const course = r.course || r.courseApplied || 'M.Sc. Computer Science';
+         if (!courseGroups[course]) courseGroups[course] = [];
+         courseGroups[course].push(r);
+      });
+      
+      const SupaDB = (await import('../js/supabase-db.js')).default;
+      const EmailSvc = (await import('../js/email-service.js')).default;
+      
+      document.getElementById('emailDeliveryPanel').classList.remove('hidden');
+      const emailProgressText = document.getElementById('emailProgressText');
+      const emailProgressBar = document.getElementById('emailProgressBar');
+      const emailStatusDetail = document.getElementById('emailStatusDetail');
+      
+      let totalEmails = 0;
+      let sentEmails = 0;
+      let rankUpdates = [];
       let emailsPromises = [];
-      resList.forEach((r, idx) => {
-         r.result_published = true;
+      
+      Object.keys(courseGroups).forEach(courseName => {
+         let group = courseGroups[courseName];
+         group.sort((a,b) => (b.score||0) - (a.score||0));
+         totalEmails += group.length;
          
-         // Find student to get email and category
-         const st = allStudents.find(s => s.id === r.studentId || s.studentId === r.studentId);
-         if (st && st.email) {
+         group.forEach((r, idx) => {
+            r.result_published = true;
+            const st = allStudents.find(s => s.id === r.studentId || s.studentId === r.studentId);
+            
             const overallRank = idx + 1;
+            let catRank = 'N/A';
+            let stCat = 'OPEN';
             
-            // Calc category rank
-            const stCat = st.category || st.academicDetails?.category || 'OPEN';
-            const catResults = resList.filter(cr => {
-               const cs = allStudents.find(s => s.id === cr.studentId || s.studentId === cr.studentId);
-               const csCat = cs?.category || cs?.academicDetails?.category || 'OPEN';
-               return csCat === stCat;
-            });
-            const catIdx = catResults.findIndex(cr => cr.studentId === r.studentId);
-            const catRank = catIdx !== -1 ? catIdx + 1 : 'N/A';
+            if (st) {
+               stCat = st.category || st.academicDetails?.category || 'OPEN';
+               const catResults = group.filter(cr => {
+                  const cs = allStudents.find(s => s.id === cr.studentId || s.studentId === cr.studentId);
+                  const csCat = cs?.category || cs?.academicDetails?.category || 'OPEN';
+                  return csCat === stCat;
+               });
+               const catIdx = catResults.findIndex(cr => cr.studentId === r.studentId);
+               catRank = catIdx !== -1 ? catIdx + 1 : 'N/A';
+            }
             
-            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
-              const url = window.location.origin + '/student/login.html';
-              const html = `
-                <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #eee; border-radius:10px;">
-                  <h2 style="color:#4f46e5; text-align:center;">CET Exam Result Published</h2>
-                  <p>Dear <strong>${r.name}</strong>,</p>
-                  <p>Your CET Exam results have been officially published by the administration.</p>
-                  <div style="background:#f8fafc; padding:15px; border-radius:8px; margin:20px 0;">
-                    <p><strong>Student ID:</strong> ${r.studentId}</p>
-                    <p><strong>Score:</strong> ${r.score} / ${r.totalQuestions || r.total || 0}</p>
-                    <p><strong>Overall Rank:</strong> #${overallRank}</p>
-                    <p><strong>Category Rank (${stCat}):</strong> #${catRank}</p>
-                  </div>
-                  <div style="text-align:center; margin-top:30px;">
-                    <a href="${url}" style="background:#4f46e5; color:white; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">View Scorecard Dashboard</a>
-                  </div>
-                </div>
-              `;
-              return EmailSvc.sendEmail(st.email, "CET Exam Result Published", html);
-            }).catch(e => console.error("Email fail", e));
-            emailsPromises.push(p);
-         }
+            if (r.studentId) {
+               rankUpdates.push({ student_id: r.studentId, overall_rank: overallRank, category_rank: catRank !== 'N/A' ? catRank : null });
+            }
+            
+            if (st && st.email) {
+               const url = window.location.origin + '/student/login.html';
+               const html = `
+                 <div style="font-family:sans-serif; max-width:600px; margin:0 auto; padding:20px; border:1px solid #eee; border-radius:10px;">
+                   <h2 style="color:#4f46e5; text-align:center;">CET Exam Result Published</h2>
+                   <p>Dear <strong>${r.name || r.studentName}</strong>,</p>
+                   <p>Your CET Exam results for <strong>${courseName}</strong> have been officially published by the administration.</p>
+                   <div style="background:#f8fafc; padding:15px; border-radius:8px; margin:20px 0;">
+                     <p><strong>Student ID:</strong> ${r.studentId}</p>
+                     <p><strong>Score:</strong> ${r.score} / ${r.totalQuestions || r.total || 0}</p>
+                     <p><strong>Overall Rank:</strong> #${overallRank}</p>
+                     <p><strong>Category Rank (${stCat}):</strong> #${catRank}</p>
+                   </div>
+                   <div style="text-align:center; margin-top:30px;">
+                     <a href="${url}" style="background:#4f46e5; color:white; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">View Scorecard Dashboard</a>
+                   </div>
+                 </div>
+               `;
+               const p = EmailSvc.sendEmail(st.email, "CET Exam Result Published - " + courseName, html).then(() => {
+                 sentEmails++;
+                 emailProgressText.textContent = `${sentEmails} / ${totalEmails}`;
+                 emailProgressBar.style.width = `${(sentEmails / totalEmails) * 100}%`;
+                 emailStatusDetail.textContent = `Sent to ${st.email}`;
+               }).catch(e => console.error("Email fail", e));
+               emailsPromises.push(p);
+            }
+         });
       });
       
       localStorage.setItem('cetExamResults', JSON.stringify(resList));
       
-      // Update local copy too
       let cetResults = JSON.parse(localStorage.getItem('cet_results')) || [];
-      cetResults.forEach(r => r.result_published = true);
+      cetResults.forEach(cr => {
+         const matchingPublished = resultsToPublish.find(r => r.studentId === cr.studentId && (r.course === cr.courseApplied || r.course === cr.course || r.courseApplied === cr.courseApplied));
+         if (matchingPublished) {
+            cr.result_published = true;
+         }
+      });
       localStorage.setItem('cet_results', JSON.stringify(cetResults));
+
+      emailStatusDetail.textContent = 'Updating database...';
+      const isPublished = await SupaDB.setResultsPublished(true);
+      if (rankUpdates.length > 0) {
+         await SupaDB.updateResultRanks(rankUpdates);
+      }
+      
+      if (!isPublished) {
+         showToast('Failed to update Supabase, but local records are updated.', 'error');
+      }
 
       showToast('Publishing results and sending emails...', 'success');
       Promise.allSettled(emailsPromises).then(() => {
+         emailStatusDetail.textContent = 'All emails processed!';
          showToast('Results published successfully!', 'success');
+         document.getElementById('btnPublish').classList.add('hidden');
+         document.getElementById('btnUnpublish').classList.remove('hidden');
          renderResults();
+         setTimeout(() => { document.getElementById('emailDeliveryPanel').classList.add('hidden'); }, 3000);
       });
+    }
+
+    window.unpublishGlobalResults = async function() {
+      if(!confirm(`Are you sure you want to unpublish results? Students will no longer be able to view their results.`)) return;
+      
+      let resList = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+      resList.forEach(r => r.result_published = false);
+      localStorage.setItem('cetExamResults', JSON.stringify(resList));
+      
+      let cetResults = JSON.parse(localStorage.getItem('cet_results')) || [];
+      cetResults.forEach(r => r.result_published = false);
+      localStorage.setItem('cet_results', JSON.stringify(cetResults));
+
+      const SupaDB = (await import('../js/supabase-db.js')).default;
+      const isUpdated = await SupaDB.setResultsPublished(false);
+      
+      if (isUpdated) {
+         showToast('Results unpublished successfully!', 'success');
+         document.getElementById('btnUnpublish').classList.add('hidden');
+         document.getElementById('btnPublish').classList.remove('hidden');
+      } else {
+         showToast('Failed to unpublish on Supabase, but local state updated.', 'error');
+      }
+      renderResults();
     }
 
     window.generateCategoryRankList = async function() {
@@ -3209,7 +3805,15 @@
         showToast('Please select a Category from the dropdown filter first.', 'error'); return;
       }
       
-      let sorted = [...resList].sort((a,b) => (b.score || 0) - (a.score || 0));
+      let sorted = [...resList].sort((a,b) => {
+         if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+         const percentA = a.total ? (a.score / a.total) : 0;
+         const percentB = b.total ? (b.score / b.total) : 0;
+         if (percentB !== percentA) return percentB - percentA;
+         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+         return timeA - timeB;
+      });
       
       if (!window.jspdf || !window.jspdf.jsPDF) {
         showToast('PDF library not loaded yet', 'error'); return;
@@ -3261,7 +3865,15 @@
         return;
       }
       
-      let sorted = [...resList].sort((a,b) => (b.score || 0) - (a.score || 0));
+      let sorted = [...resList].sort((a,b) => {
+         if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+         const percentA = a.total ? (a.score / a.total) : 0;
+         const percentB = b.total ? (b.score / b.total) : 0;
+         if (percentB !== percentA) return percentB - percentA;
+         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+         return timeA - timeB;
+      });
       
       if (!window.jspdf || !window.jspdf.jsPDF) {
         showToast('PDF library not loaded yet', 'error');
@@ -3294,7 +3906,7 @@
          i + 1,
          r.studentId,
          r.name || r.studentName || 'Unknown',
-         r.course || 'BSc CS',
+         r.course || 'M.Sc Computer Science',
          `${r.score} / ${r.totalQuestions || r.total || 0}`,
          ((r.score / (r.totalQuestions || r.total || 1)) * 100).toFixed(2) + '%'
       ]);
@@ -3311,6 +3923,81 @@
       showToast('Rank List PDF generated successfully', 'success');
       console.log('[Admin Action] Success: Rank List generated');
     }
+
+    window.handleResultsDownload = function(action) {
+      if (!action) return;
+      if (action === 'pdf_overall') {
+        window.generateRankList();
+      } else if (action === 'pdf_msc_cs') {
+        window.generateCourseRankList('M.Sc. Computer Science');
+      } else if (action === 'pdf_msc_ca') {
+        window.generateCourseRankList('M.Sc. Computer Application');
+      } else if (action === 'excel' || action === 'csv') {
+        showToast('Feature coming soon', 'info');
+      }
+    };
+
+    window.generateCourseRankList = async function(courseName) {
+      let resList = window._allResults || JSON.parse(localStorage.getItem('cetExamResults')) || [];
+      resList = resList.filter(r => (r.course === courseName || r.courseApplied === courseName));
+      
+      if (resList.length === 0) {
+        showToast(`No results available for ${courseName}`, 'error');
+        return;
+      }
+      
+      let sorted = [...resList].sort((a,b) => {
+         if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+         const percentA = a.total ? (a.score / a.total) : 0;
+         const percentB = b.total ? (b.score / b.total) : 0;
+         if (percentB !== percentA) return percentB - percentA;
+         const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+         const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+         return timeA - timeB;
+      });
+      
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('PDF library not loaded yet', 'error'); return;
+      }
+      
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      doc.setFontSize(22);
+      doc.setTextColor(30, 58, 138);
+      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Official Rank List - ${courseName}`, 105, 30, { align: "center" });
+      
+      const config = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      if (config.examDate) {
+         doc.setFontSize(12);
+         doc.text(`Exam Date: ${new Date(config.examDate).toLocaleDateString()}`, 105, 38, { align: "center" });
+      }
+      
+      let tableData = sorted.map((r, i) => [
+         i + 1,
+         r.studentId,
+         r.name || r.studentName || 'Unknown',
+         `${r.score} / ${r.totalQuestions || r.total || 0}`,
+         ((r.score / (r.totalQuestions || r.total || 1)) * 100).toFixed(2) + '%'
+      ]);
+      
+      doc.autoTable({
+         startY: 45,
+         head: [['Rank', 'CET ID', 'Student Name', 'Score', 'Percentage']],
+         body: tableData,
+         theme: 'grid',
+         headStyles: { fillColor: [30, 58, 138], textColor: 255 },
+      });
+      
+      const fileNameSafe = courseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      doc.save(`CET_Merit_List_${fileNameSafe}.pdf`);
+      showToast(`${courseName} Rank List generated`, 'success');
+    }
+
 
     let currentEvalResultId = null;
     let tempManualMarks = {};
@@ -3695,8 +4382,16 @@
 
     window.confirmDeleteStudent = async function() {
       const id = document.getElementById('deleteStudentConfirmId').value;
-      console.log('[Admin Action] Start: Delete approved student', id);
       const s = DB.getStudentById(id);
+      
+      const confirmation = prompt(`To delete this student, type "DELETE" below:\n\nStudent Name: ${s?.fullName || 'this student'}`);
+      if(confirmation !== "DELETE") {
+         showToast("Deletion cancelled.", "info");
+         hideModal('deleteStudentModal');
+         return;
+      }
+      
+      console.log('[Admin Action] Start: Delete approved student', id);
       const studentEmail = s?.email;
       const studentStudentId = s?.studentId;
 
@@ -3731,15 +4426,23 @@
       // 5. Supabase: delete from cloud
       if (supabase && s) {
         try {
+          const { data: session } = await supabase.auth.getSession();
+          const adminId = session?.session?.user?.id || 'admin';
+          
           const { error } = await supabase.from('students').delete().eq('student_id', studentStudentId || id);
           if (error) {
-            console.error('[Admin Action] Failed: Supabase delete student error:', error.message);
+            console.error('[Admin Action] Failed: Supabase delete error:', error.message);
             showToast('Delete failed in cloud – retry', 'error');
           } else {
             console.log('[Admin Action] Success: Student deleted from cloud');
+            await supabase.from('security_logs').insert({
+               event_type: 'STUDENT_DELETED',
+               message: `Student ${studentStudentId || id} soft-deleted by admin ${adminId}`,
+               student_name: s.fullName || s.name
+            });
           }
         } catch(e) {
-          console.error('[Admin Action] Failed: Supabase delete exception', e);
+          console.error('[Admin Action] Failed: Supabase soft-delete exception', e);
         }
       }
 
@@ -3980,8 +4683,28 @@
         XLSX.utils.book_append_sheet(wb, ws, 'Results');
         XLSX.writeFile(wb, 'CET_Results.xlsx');
       }
-      else if (type === 'pdf') {
+      else if (type.startsWith('pdf')) {
         if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
+        
+        let filteredData = data;
+        let title = 'CET Exam Overall Merit List';
+        let filename = 'CET_Overall_Merit_List.pdf';
+        
+        if (type === 'pdf_msc_cs') {
+           filteredData = data.filter(r => r.course === 'M.Sc Computer Science' || r.course === 'M.Sc. Computer Science');
+           title = 'M.Sc Computer Science Merit List';
+           filename = 'MSc_Computer_Science_Merit_List.pdf';
+        } else if (type === 'pdf_msc_ca') {
+           filteredData = data.filter(r => r.course === 'M.Sc Computer Application' || r.course === 'M.Sc. Computer Application');
+           title = 'M.Sc Computer Application Merit List';
+           filename = 'MSc_Computer_Application_Merit_List.pdf';
+        }
+        
+        if (filteredData.length === 0) {
+           alert('No results available for this merit list.');
+           return;
+        }
+
         const { jsPDF } = window.jspdf || window;
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFillColor(79, 70, 229);
@@ -3989,15 +4712,15 @@
         doc.setFontSize(13);
         doc.setTextColor(255,255,255);
         doc.setFont('helvetica','bold');
-        doc.text('CET Exam Results — All Students', 148, 14, { align: 'center' });
+        doc.text(title, 148, 14, { align: 'center' });
         doc.setTextColor(30,30,30);
-        const tableRows = data.map((r, i) => {
+        const tableRows = filteredData.map((r, i) => {
           const pct = r.total ? ((r.score/r.total)*100).toFixed(2) : 0;
-          return [i+1, r.studentId, r.name||'', r.course||'', r.category||'', `${r.score||0}/${r.total||0}`, pct+'%', r.status||''];
+          return [r.courseRank || (i+1), r.studentId, r.name||'', r.course||'', r.category||'', `${r.score||0}/${r.total||0}`, pct+'%', r.status||''];
         });
         doc.autoTable({
           startY: 30,
-          head: [['#','Student ID','Name','Course','Category','Score','Percentage','Status']],
+          head: [['Rank','Student ID','Name','Course','Category','Score','Percentage','Status']],
           body: tableRows,
           styles: { fontSize: 9, cellPadding: 5 },
           headStyles: { fillColor: [79, 70, 229], textColor: [255,255,255], fontStyle: 'bold' },
@@ -4010,7 +4733,7 @@
         doc.text('Exam Coordinator', 45, finalY+8, {align:'center'});
         doc.text('Head of Department', 138, finalY+8, {align:'center'});
         doc.text('Principal', 245, finalY+8, {align:'center'});
-        doc.save('CET_All_Results.pdf');
+        doc.save(filename);
       }
       else if (type === 'word') {
         // Fallback: generate a plain-text .doc file since docx CDN may vary

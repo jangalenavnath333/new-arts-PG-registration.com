@@ -77,31 +77,29 @@
           const { isReady, getClient } = await import('../js/supabase-db.js');
           if (isReady()) {
             const supabase = getClient();
-            console.log('[Login] Querying Supabase as source of truth for:', email);
-            const { data, error } = await supabase.from('students').select('*').eq('email', email).single();
+            console.log('[Login] Querying Supabase for:', email);
+            const { data, error } = await supabase.from('students').select('*').eq('email', email);
             
-            if (data && !error) {
-              student = {
-                id: 'STU' + Date.now(),
-                studentId: data.student_id,
-                fullName: data.full_name,
-                name: data.full_name,
-                email: data.email,
-                mobile: data.mobile,
-                password: data.password_hash || data.mobile,
-                status: data.status,
-                hasAttempted: data.has_attempted,
-                courseApplied: data.course_applied,
-                applicationStatus: data.application_status,
-                examStatus: data.exam_status,
-                examDate: data.exam_date
-              };
-              // Clear old session
-              localStorage.removeItem('studentData');
-              DB.addStudent(student); // Updates local cache
+            if (data && data.length > 0 && !error) {
+              const studentsData = data.map(d => ({
+                id: 'STU' + Date.now() + Math.random(),
+                studentId: d.student_id,
+                fullName: d.full_name,
+                name: d.full_name,
+                email: d.email,
+                mobile: d.mobile,
+                password: d.password_hash || d.mobile,
+                status: d.status,
+                hasAttempted: d.has_attempted,
+                courseApplied: d.course_applied,
+                applicationStatus: d.application_status,
+                examStatus: d.exam_status,
+                examDate: d.exam_date
+              }));
+              student = studentsData;
               fromCloud = true;
-              console.log('[Login] Loaded current profile from Supabase:', student.email);
-            } else if (error && error.code !== 'PGRST116') {
+              console.log(`[Login] Loaded ${studentsData.length} profiles from Supabase for:`, email);
+            } else if (error) {
               console.log('[Login] Supabase error:', error.message);
             }
           }
@@ -110,23 +108,27 @@
         }
 
         // Fallback: If not found in Supabase (e.g. offline), try localStorage
-        if (!student) {
-          student = DB.getStudentByEmail(email);
-          if (student) console.log('[Login] Fallback: Loaded from local storage cache.');
+        if (!student || student.length === 0) {
+          student = DB.getStudents().filter(s => s.email?.toLowerCase() === email);
+          if (student.length > 0) console.log(`[Login] Fallback: Loaded ${student.length} profiles from local storage cache.`);
+          else student = null;
         }
 
-        if (!student) {
+        if (!student || student.length === 0) {
           showAlert('❌ No account found with this email. Please apply first.', 'danger');
           btn.disabled = false; btn.textContent = 'Login to Portal'; return;
         }
         
-        if (student.password !== pwd && student.mobile !== pwd) {
+        const activeStudent = student[0];
+        if (activeStudent.password !== pwd && activeStudent.mobile !== pwd) {
           showAlert('❌ Incorrect password. Use your registered mobile number.', 'danger');
           btn.disabled = false; btn.textContent = 'Login to Portal'; return;
         }
 
-        DB.setCurrentStudent(student);
-        localStorage.setItem("studentData", JSON.stringify(student));
+        // Save all applications for the student dashboard to manage
+        localStorage.setItem("allStudentApps", JSON.stringify(student));
+        DB.setCurrentStudent(activeStudent);
+        localStorage.setItem("studentData", JSON.stringify(activeStudent));
         window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Login error:', error);
