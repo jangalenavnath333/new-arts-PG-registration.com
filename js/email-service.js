@@ -96,12 +96,14 @@ export async function sendConfirmationEmail(data) {
 
 function emailHeader() {
   return `
-    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%); padding: 32px 20px; text-align: center; border-radius: 12px 12px 0 0;">
-      <div style="font-size: 28px; margin-bottom: 6px;">🎓</div>
-      <h1 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;">Department of Computer Science</h1>
-      <p style="margin: 4px 0 0 0; color: #bfdbfe; font-size: 13px; font-weight: 500;">🏛️ New Arts, Commerce and Science College, Ahilyanagar</p>
-      <p style="margin: 4px 0 0 0; color: #93c5fd; font-size: 12px; font-weight: 600; letter-spacing: 1px;">📘 CET Examination Cell</p>
-      <div style="width: 60px; height: 3px; background: #60a5fa; margin: 14px auto 0; border-radius: 2px;"></div>
+    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%); padding: 24px 20px; text-align: center; border-radius: 12px 12px 0 0;">
+      <div style="font-size: 28px; margin-bottom: 8px;">🎓</div>
+      <p style="margin: 0 0 4px 0; color: #cbd5e1; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">AHMEDNAGAR JILHA MARATHA VIDYA PRASARAK SAMAJ'S</p>
+      <h1 style="margin: 0 0 2px 0; color: #ffffff; font-size: 18px; font-weight: 700;">New Arts, Commerce and Science College,</h1>
+      <p style="margin: 0 0 8px 0; color: #e2e8f0; font-size: 14px; font-weight: 500;">Ahmednagar (Autonomous)</p>
+      <p style="margin: 0 0 4px 0; color: #93c5fd; font-size: 13px; font-weight: 600;">Center for Advanced Studies in Applied Sciences (CASAS)</p>
+      <p style="margin: 0; color: #bfdbfe; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">Department of Computer Science</p>
+      <div style="width: 80px; height: 3px; background: #60a5fa; margin: 16px auto 0; border-radius: 2px;"></div>
     </div>`;
 }
 
@@ -109,10 +111,10 @@ function emailFooter() {
   return `
     <div style="background: #f8fafc; padding: 24px 20px; text-align: center; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
       <p style="margin: 0 0 8px 0; color: #64748b; font-size: 12px;">Warm Regards,</p>
-      <p style="margin: 0; color: #1e3a5f; font-size: 13px; font-weight: 700;">🎓 Department of Computer Science</p>
-      <p style="margin: 2px 0; color: #475569; font-size: 11px;">🏛️ New Arts, Commerce and Science College, Ahilyanagar</p>
-      <p style="margin: 2px 0; color: #64748b; font-size: 11px;">📘 CET Examination Cell</p>
-      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+      <p style="margin: 0; color: #1e3a5f; font-size: 14px; font-weight: 700;">Admission Cell / CET Examination Cell</p>
+      <p style="margin: 4px 0 2px 0; color: #475569; font-size: 12px; font-weight: 600;">Department of Computer Science (CASAS)</p>
+      <p style="margin: 2px 0; color: #64748b; font-size: 11px;">New Arts, Commerce and Science College, Ahmednagar (Autonomous)</p>
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
         <p style="margin: 0; color: #94a3b8; font-size: 10px;">This is an automated notification from the CET Exam Portal. Please do not reply to this email.</p>
       </div>
     </div>`;
@@ -323,41 +325,52 @@ export const EmailTemplates = {
 
   // 5. Exam Schedule / Reschedule
   scheduleUpdate: (name, examDate, startTime, duration, course, loginId, portalUrl, examUrl, studentEmail) => ({
-    subject: `CET Examination Schedule – ${course}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <p>Dear Student,</p>
+    subject: `📅 CET Examination Schedule Announced – ${course}`,
+    html: wrapEmail(`
+      <h2 style="margin: 0 0 4px; color: #2563eb; font-size: 20px;">📅 Exam Schedule Announced</h2>
+      <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">Your CET Exam time and date have been finalized.</p>
 
-        <p>Congratulations.</p>
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        Dear <strong style="color: #0f172a;">${name}</strong>,
+      </p>
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        Congratulations! Your application has been approved for the admission process. The examination details are provided below:
+      </p>
 
-        <p>Your application has been approved for admission process.</p>
+      ${detailsBox([
+        ['📚 Course', course || 'N/A'],
+        ['📅 Exam Date', `<strong style="color: #dc2626; font-size: 15px;">${examDate}</strong>`],
+        ['🕐 Start Time', `<strong style="color: #dc2626; font-size: 15px;">${startTime}</strong>`],
+        ['⏳ Duration', `${duration} Minutes`]
+      ])}
 
-        <p><strong>Course:</strong><br>
-        ${course}</p>
-
-        <p><strong>Examination Details:</strong></p>
-        <p>
-          Exam Date: ${examDate}<br>
-          Start Time: ${startTime}<br>
-          Duration: ${duration} Minutes
-        </p>
-
-        <p><strong>Examination Portal:</strong><br>
-        <a href="${examUrl}" style="color: #2563eb; text-decoration: none;">${examUrl}</a></p>
-
-        <p><strong>Login Email:</strong><br>
-        ${studentEmail || 'student@email.com'}</p>
-
-        <p>Please login using your registered credentials and appear for the examination as per schedule.</p>
-
-        <p style="margin-top: 30px;">
-          Best Regards,<br>
-          Admission Cell<br>
-          New Arts Commerce and Science College<br>
-          Ahmednagar
-        </p>
+      <div style="background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 2px solid #3b82f6; border-radius: 10px; padding: 20px; margin: 24px 0;">
+        <h3 style="margin: 0 0 14px; color: #1e40af; font-size: 16px; text-align: center;">🔐 Your Login Info</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 12px; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 1px solid #bfdbfe; width: 40%;">🆔 CET ID / Username</td>
+            <td style="padding: 8px 12px; color: #1e40af; font-size: 15px; font-weight: 800; border-bottom: 1px solid #bfdbfe;">${loginId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 12px; color: #475569; font-size: 13px; font-weight: 600; border-bottom: 1px solid #bfdbfe;">📧 Login Email</td>
+            <td style="padding: 8px 12px; color: #0f172a; font-size: 14px; font-weight: 700; border-bottom: 1px solid #bfdbfe;">${studentEmail || 'student@email.com'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 12px; color: #475569; font-size: 13px; font-weight: 600;">🔑 Password</td>
+            <td style="padding: 8px 12px; color: #dc2626; font-size: 14px; font-weight: 800;">Your Registered Mobile Number</td>
+          </tr>
+        </table>
       </div>
-    `
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${examUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 32px; border-radius: 8px; letter-spacing: 0.5px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">🔗 Go to Examination Portal</a>
+        <p style="margin: 8px 0 0; color: #94a3b8; font-size: 11px;">${examUrl}</p>
+      </div>
+
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        Please login using your registered credentials and appear for the examination at least 10 minutes before the scheduled time.
+      </p>
+    `)
   }),
 
   // 6. Exam Reminder (uses same template as schedule but different subject)

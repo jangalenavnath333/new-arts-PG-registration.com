@@ -1206,9 +1206,17 @@
           modal: {
             ondismiss: function () {
               console.log("RAZORPAY CLOSED");
-              setTimeout(() => {
-                window.location.href = "./receipt.html";
-              }, 1000);
+              // Only redirect if payment was actually successful and we finished processing
+              if (localStorage.getItem("payment_success") === "true") {
+                 // Do nothing here, let the handler() do the redirect after saving
+              } else {
+                 // User cancelled payment
+                 const btn = document.getElementById('submitBtn');
+                 if (btn) {
+                   btn.disabled = false;
+                   btn.innerHTML = 'Retry Payment';
+                 }
+              }
             }
           }
         };
@@ -1395,24 +1403,25 @@
         localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
 
         // ── SUPABASE DUAL-WRITE (Phase 2) ──
-        // Await Supabase save before navigating. If it fails/times out, still navigate.
+        // Await Supabase save before navigating. If it fails, halt the process.
         if (isSupabaseReady()) {
           btn.innerHTML = '☁️ Syncing to cloud...';
           console.log('[Supabase] Starting cloud sync...');
           try {
             const supabasePromise = saveStudentApplication(applicationData, fileDataMap);
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 15000));
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 15000));
             const result = await Promise.race([supabasePromise, timeoutPromise]);
             if (result) {
               console.log('[Supabase] ✅ Synced! ID:', result.supabaseId);
             } else {
-              console.warn('[Supabase] ⚠️ Cloud sync timed out or failed. localStorage backup is safe.');
+              throw new Error('Supabase save returned null');
             }
           } catch (supaErr) {
             console.error('[Supabase] ❌ Cloud sync error:', supaErr);
+            throw new Error('Database save failed: ' + supaErr.message);
           }
         } else {
-          console.log('[Supabase] Client not ready, skipping cloud sync.');
+          throw new Error('Database connection not available.');
         }
 
         // Send Email Notification with Login Credentials

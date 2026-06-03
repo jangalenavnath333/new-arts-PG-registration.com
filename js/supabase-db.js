@@ -79,11 +79,11 @@ export async function uploadFile(bucket, path, dataUrl) {
       .from(bucket)
       .upload(path, blob, {
         contentType: blob.type,
-        upsert: true,  // overwrite if re-submitting
+        upsert: false,  // Because we appended Date.now(), it will always be a new file
       });
 
     if (error) {
-      console.warn(`[SupaDB] Upload to ${bucket}/${path} failed:`, error.message);
+      console.error(`[SupaDB] Upload to ${bucket}/${path} failed:`, error);
       return null;
     }
 
@@ -120,9 +120,55 @@ export async function saveStudentApplication(appData, fileDataMap) {
 
   try {
     const email = appData.email?.toLowerCase();
-    const studentFolder = email.replace(/[^a-z0-9]/g, '_');
+    
+    if (!email) {
+      console.error("[SupaDB] Email missing or invalid");
+      return null;
+    }
 
-    // 1. Upload files to Storage (non-blocking individual failures)
+    // 1. Upsert student record FIRST to get the strict UUID
+    const studentRow = {
+      student_id:         appData.studentId,
+      full_name:          appData.fullName,
+      email:              email,
+      mobile:             appData.mobile,
+      dob:                appData.dob,
+      address:            appData.address,
+      category:           appData.category,
+      status:             appData.status || 'pending',
+      application_status: appData.applicationStatus || 'PENDING_APPROVAL',
+      exam_status:        appData.examStatus || 'NOT_SCHEDULED',
+      has_attempted:      false,
+      payment_status:     appData.paymentStatus || 'PAID_DEMO',
+      payment_utr:        appData.paymentUtr || appData.transactionId,
+      payment_date:       appData.paymentDate || null,
+      payment_amount:     appData.paymentAmount || 'Rs.1',
+      transaction_id:     appData.transactionId,
+      course_applied:     appData.courseApplied,
+      stream:             appData.stream,
+      academic_details:   appData.academicDetails,
+      password_hash:      appData.password,  // Will be replaced with proper auth in Phase 3
+      submitted_at:       appData.submittedAt || null,
+      applied_at:         appData.appliedAt || null,
+    };
+
+    console.log('[SupaDB] Upserting studentRow payload:', studentRow);
+    const { data: studentData, error: studentError } = await supabase
+      .from('students')
+      .upsert(studentRow, { onConflict: 'email,course_applied' })
+      .select('id')
+      .single();
+    
+    if (studentError || !studentData || !studentData.id) {
+      console.error('[SupaDB] Student upsert error or missing UUID:', studentError?.message || 'No ID returned');
+      return null;
+    }
+
+    const supabaseStudentId = studentData.id;
+    console.log('[SupaDB] Student saved with exact UUID:', supabaseStudentId);
+
+    // 2. Upload files to Storage using text-based application ID for folder naming
+    const studentFolder = appData.applicationId; // Keep folder naming based on APP ID
     const docUrls = {};
     const uploadTasks = [];
 
@@ -156,10 +202,13 @@ export async function saveStudentApplication(appData, fileDataMap) {
       }
       
       const ext = getExtFromDataUrl(dataUrl);
-      const path = `${studentFolder}/${fm.name}.${ext}`;
+      // Append timestamp to ensure a unique file name, making it an INSERT and bypassing RLS UPDATE restrictions
+      const path = `${studentFolder}/${fm.name}_${Date.now()}.${ext}`;
       uploadTasks.push(
         uploadFile(fm.bucket, path, dataUrl).then(url => {
           if (url) docUrls[fm.key] = { url, bucket: fm.bucket, path };
+        }).catch(err => {
+          console.error(`[SupaDB] Upload exception for ${fm.key}:`, err);
         })
       );
     }
@@ -167,46 +216,6 @@ export async function saveStudentApplication(appData, fileDataMap) {
     // Wait for all uploads (parallel)
     await Promise.allSettled(uploadTasks);
     console.log('[SupaDB] Uploaded files:', Object.keys(docUrls));
-
-    // 2. Upsert student record
-    const studentRow = {
-      student_id:         appData.studentId,
-      full_name:          appData.fullName,
-      email:              email,
-      mobile:             appData.mobile,
-      dob:                appData.dob,
-      address:            appData.address,
-      category:           appData.category,
-      status:             appData.status || 'pending',
-      application_status: appData.applicationStatus || 'PENDING_APPROVAL',
-      exam_status:        appData.examStatus || 'NOT_SCHEDULED',
-      has_attempted:      false,
-      payment_status:     appData.paymentStatus || 'PAID_DEMO',
-      payment_utr:        appData.paymentUtr || appData.transactionId,
-      payment_date:       appData.paymentDate,
-      payment_amount:     appData.paymentAmount || 'Rs.1',
-      transaction_id:     appData.transactionId,
-      course_applied:     appData.courseApplied,
-      stream:             appData.stream,
-      academic_details:   appData.academicDetails,
-      password_hash:      appData.password,  // Will be replaced with proper auth in Phase 3
-      submitted_at:       appData.submittedAt,
-      applied_at:         appData.appliedAt,
-    };
-
-    const { data: studentData, error: studentError } = await supabase
-      .from('students')
-      .upsert(studentRow, { onConflict: 'email,course_applied' })
-      .select('id')
-      .single();
-
-    if (studentError) {
-      console.error('[SupaDB] Student upsert error:', studentError.message);
-      return null;
-    }
-
-    const supabaseStudentId = studentData.id;
-    console.log('[SupaDB] Student saved with ID:', supabaseStudentId);
 
     // 3. Save document references
     if (Object.keys(docUrls).length > 0) {
@@ -218,14 +227,18 @@ export async function saveStudentApplication(appData, fileDataMap) {
       }));
 
       // Delete old docs for this student first (re-submission)
-      await supabase
+      console.log('[SupaDB] Deleting old docs for student_id:', supabaseStudentId);
+      const { error: delError } = await supabase
         .from('student_documents')
         .delete()
         .eq('student_id', supabaseStudentId);
+      console.log('[SupaDB] Delete docs error object:', delError);
 
+      console.log('[SupaDB] Inserting docRows payload:', docRows);
       const { error: docError } = await supabase
         .from('student_documents')
         .insert(docRows);
+      console.log('[SupaDB] Insert docs error object:', docError);
 
       if (docError) {
         console.warn('[SupaDB] Document refs save error:', docError.message);
@@ -250,9 +263,11 @@ export async function saveStudentApplication(appData, fileDataMap) {
       submitted_at:   appData.submittedAt,
     };
 
+    console.log('[SupaDB] Inserting paymentRow payload:', paymentRow);
     const { error: payError } = await supabase
       .from('payments')
       .insert(paymentRow);
+    console.log('[SupaDB] Insert payment error object:', payError);
 
     if (payError) {
       console.warn('[SupaDB] Payment save error:', payError.message);

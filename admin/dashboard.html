@@ -1236,6 +1236,7 @@
       console.log('[Security] Admin authenticated successfully');
 
       // Safe to load dashboard now
+      await window.fetchApplicationsFromSupabase();
       window.renderOverview();
       window.loadScheduleForm();
       handleRoute(); // Initialize routing
@@ -1251,6 +1252,7 @@
     // Chart instances
     let statusChart = null;
     let scoresChart = null;
+    let monitoringInterval = null;
 
     // Routing Logic
     window.addEventListener('popstate', handleRoute);
@@ -1266,6 +1268,7 @@
       else if (path.includes('/approved-students') || hash === '#students') tab = 'students';
       else if (path.includes('/exam-settings') || hash === '#schedule') tab = 'schedule';
       else if (path.includes('/question-bank') || hash === '#questions') tab = 'questions';
+      else if (path.includes('/live-monitoring') || hash === '#monitoring') tab = 'monitoring';
       else if (path.includes('/live-results') || hash === '#results') tab = 'results';
       else if (path.includes('/overview') || hash === '#overview' || path.includes('/dashboard')) tab = 'overview';
 
@@ -1282,6 +1285,7 @@
           'students': '/admin/approved-students',
           'schedule': '/admin/exam-settings',
           'questions': '/admin/question-bank',
+          'monitoring': '/admin/live-monitoring',
           'results': '/admin/live-results',
           'locked': '/admin/locked-exams'
         };
@@ -1292,6 +1296,11 @@
     }
 
     function activateTabUI(tab) {
+      if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+      }
+
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => {
         n.classList.remove('bg-indigo-600', 'text-white');
@@ -1336,6 +1345,10 @@
         }
       }
       if (tab === 'questions') window.renderQuestions();
+      if (tab === 'monitoring') {
+        window.renderMonitoring();
+        monitoringInterval = setInterval(window.renderMonitoring, 5000);
+      }
       if (tab === 'results') {
         window.renderResults();
         // Fetch publish status
@@ -1543,7 +1556,7 @@
         // 2. Optionally update applications/students table
         // We update payment_status in applications so the dashboard reflects it
         if (studentId) {
-           await supabase.from('applications').update({ payment_status: 'PAID', status: 'PENDING_APPROVAL' }).eq('user_id', studentId);
+           await supabase.from('students').update({ payment_status: 'PAID', status: 'PENDING_APPROVAL' }).eq('id', studentId);
         }
 
         // Email Notification
@@ -1573,7 +1586,7 @@
         if (pErr) throw pErr;
 
         if (studentId) {
-           await supabase.from('applications').update({ payment_status: 'PAYMENT_PENDING' }).eq('user_id', studentId);
+           await supabase.from('students').update({ payment_status: 'PAYMENT_PENDING' }).eq('id', studentId);
         }
 
         renderPayments();
@@ -1720,7 +1733,9 @@
     // --- DATA SOURCE: Supabase-first, localStorage fallback ---
     window.getApplications = function() {
       // Return cached Supabase data if available
-      if (_supabaseFetched && _supabaseAppsCache) return _supabaseAppsCache;
+      if (_supabaseFetched && _supabaseAppsCache) {
+          return _supabaseAppsCache.filter(a => a.applicationStatus !== 'DELETED');
+      }
 
       // Fallback: localStorage
       let apps = [];
@@ -1737,7 +1752,7 @@
         } catch(e){}
         localStorage.removeItem('cetApplication');
       }
-      return apps;
+      return apps.filter(a => a.applicationStatus !== 'DELETED');
     }
 
     // Async fetch from Supabase — call once on tab switch, then use cache
@@ -1855,7 +1870,7 @@
       const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
 
       grid.innerHTML = apps.map(s => {
-        const studentDocs = allSupaDocs.filter(d => d.student_id === s.id);
+        const studentDocs = allSupaDocs.filter(d => d.student_id === (s.supabaseId || s.id));
         let docCount = studentDocs.length;
         
         let photoThumbHtml = '<div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xl shrink-0">User</div>';
@@ -1917,9 +1932,40 @@
       modal.classList.remove('hidden');
 
       let cloudDocs = [];
-      if (supabase && studentDbId) {
-         const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', studentDbId);
-         if (data && !error) cloudDocs = data;
+      if (supabase && (app.supabaseId || app.id)) {
+         const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', app.supabaseId || app.id);
+         if (data && !error) {
+             cloudDocs = data;
+             
+             // Generate signed URLs for all fetched cloud documents using the text-based application ID folder format
+             for (const doc of cloudDocs) {
+                 let bucket = 'student-documents';
+                 if (['photoFile', 'signatureFile', 'photo', 'signature'].includes(doc.doc_type)) bucket = 'student-photos';
+                 else if (['paymentScreenshot', 'paymentProof'].includes(doc.doc_type)) bucket = 'payment-screenshots';
+                 
+                 // Extract precise storage path from the saved public URL
+                 let storagePath = `${app.applicationId}/${doc.file_name}`;
+                 try {
+                     const urlObj = new URL(doc.file_url);
+                     const pathParts = urlObj.pathname.split(`/public/${bucket}/`);
+                     if (pathParts.length > 1) storagePath = pathParts[1];
+                 } catch(e) {}
+                 
+                 try {
+                     const { data: signedData, error: signError } = await supabase.storage
+                         .from(bucket)
+                         .createSignedUrl(storagePath, 900); // 15 mins expiry
+                         
+                     if (signedData && !signError) {
+                         doc.file_url = signedData.signedUrl;
+                     } else {
+                         console.warn(`[Supabase] Failed to sign URL for ${doc.doc_type}:`, signError);
+                     }
+                 } catch (err) {
+                     console.warn('[Supabase] Doc fetch error:', err);
+                 }
+             }
+         }
       }
 
       // Legacy fallback
@@ -2222,8 +2268,33 @@
             .select('doc_type, file_url, file_name')
             .eq('student_id', app.supabaseId);
           if (!error && data && data.length > 0) {
-            data.forEach(d => { supabaseDocs[d.doc_type] = d.file_url; });
-            console.log('[Supabase] Loaded', data.length, 'document URLs for preview');
+            // Generate Signed URLs for each document
+            for (const d of data) {
+              let bucket = 'student-documents';
+              if (['photoFile', 'signatureFile', 'photo', 'signature'].includes(d.doc_type)) bucket = 'student-photos';
+              else if (['paymentScreenshot', 'paymentProof'].includes(d.doc_type)) bucket = 'payment-screenshots';
+              
+              // Extract precise storage path from the saved public URL
+              let filePath = `${app.applicationId}/${d.file_name}`;
+              try {
+                  const urlObj = new URL(d.file_url);
+                  const pathParts = urlObj.pathname.split(`/public/${bucket}/`);
+                  if (pathParts.length > 1) filePath = pathParts[1];
+              } catch(e) {}
+              
+              const { data: signedData, error: signError } = await supabase.storage
+                .from(bucket)
+                .createSignedUrl(filePath, 900); // 15 mins expiry
+                
+              if (signedData && !signError) {
+                supabaseDocs[d.doc_type] = signedData.signedUrl;
+              } else {
+                console.warn(`[Supabase] Failed to sign URL for ${d.doc_type}:`, signError);
+                // Fallback to the saved public URL just in case
+                supabaseDocs[d.doc_type] = d.file_url;
+              }
+            }
+            console.log('[Supabase] Loaded', data.length, 'document URLs for preview (Signed)');
           }
         } catch(e) { console.warn('[Supabase] Doc fetch error:', e); }
       }
@@ -2439,8 +2510,8 @@
           const { data: session } = await supabase.auth.getSession();
           const adminId = session?.session?.user?.id || 'admin';
           
-          const q = app.supabaseId ? supabase.from('students').delete().eq('id', app.supabaseId)
-                                   : supabase.from('students').delete().eq('email', app.email);
+          const q = app.supabaseId ? supabase.from('students').update({ status: 'deleted', application_status: 'DELETED' }).eq('id', app.supabaseId)
+                                   : supabase.from('students').update({ status: 'deleted', application_status: 'DELETED' }).eq('email', app.email);
           const { error } = await q;
           
           if (error) {
@@ -2499,8 +2570,7 @@
           status: 'APPROVED',
           application_status: 'APPROVED',
           student_id: newStudentId,
-          exam_status: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED',
-          approved_at: now
+          exam_status: examDate ? 'SCHEDULED' : 'NOT_SCHEDULED'
         };
         try {
           const matchField = app.supabaseId ? supabase.from('students').update(updateData).eq('id', app.supabaseId)
@@ -2577,7 +2647,13 @@
       import('../js/email-service.js').then(({ default: EmailSvc }) => {
         const emailHtml = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime, app.courseApplied).html;
         const emailSubject = EmailSvc.EmailTemplates.approval(app.fullName, newStudentId, examDate, examConfig?.startTime, app.courseApplied).subject;
-        EmailSvc.sendEmail(app.email, emailSubject, emailHtml);
+        EmailSvc.sendEmail(app.email, emailSubject, emailHtml).then(success => {
+            if (success) {
+                showToast('Email sent successfully to ' + app.fullName, 'success');
+            } else {
+                showToast('Student approved, but failed to send email.', 'error');
+            }
+        });
       }).catch(err => console.warn('Email service import failed', err));
 
       invalidateCache();
@@ -2967,9 +3043,10 @@
               .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config update error:', error.message); else console.log('[Admin Action] Success: Exam config saved to cloud'); });
           } else {
             supabase.from('exam_config').insert(row)
-              .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config insert error:', error.message); else console.log('[Admin Action] Success: Exam config created in cloud'); });
+              .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config insert error:', error.message); else console.log('[Admin Action] Success: Exam config created in cloud'); })
+              .catch(err => console.error(err));
           }
-        });
+        }).catch(err => console.error(err));
       }
       
       showToast('Exam configuration saved securely. Assigning students...', 'success');
@@ -3010,12 +3087,28 @@
         return;
       }
       
-      alert(`Approved Students Found: ${approvedStudents.length}\nStarting exam notification sequence...`);
+      let studentsToNotify = approvedStudents;
+      const alreadyScheduled = approvedStudents.filter(s => s.exam_status === 'SCHEDULED' || s.examStatus === 'SCHEDULED');
+      
+      if (alreadyScheduled.length > 0 && alreadyScheduled.length === approvedStudents.length) {
+         if (!confirm(`All ${approvedStudents.length} approved students are ALREADY scheduled for this course.\n\nDo you want to re-send the exam schedule email to EVERYONE? (Use this only if you changed the exam time).`)) {
+             alert('Schedule saved successfully. No duplicate emails sent.');
+             return;
+         }
+      } else if (alreadyScheduled.length > 0) {
+         if (confirm(`You have ${approvedStudents.length} approved students, but ${alreadyScheduled.length} of them ALREADY received the schedule email.\n\nClick OK to ONLY send emails to the newly approved students.\nClick Cancel to re-send the email to EVERYONE.`)) {
+             studentsToNotify = approvedStudents.filter(s => s.exam_status !== 'SCHEDULED' && s.examStatus !== 'SCHEDULED');
+         }
+      }
 
+      if (studentsToNotify.length === 0) {
+        return; // Already alerted above
+      }
+      
       let emailsPromises = [];
       let emailsFound = 0;
       
-      approvedStudents.forEach(st => {
+      studentsToNotify.forEach(st => {
          // Generate hall ticket ID
          const htId = st.hallTicketId || ('HT-' + (st.student_id || st.id) + '-' + Date.now());
          
@@ -3048,8 +3141,8 @@
       });
       
       // Sync to Supabase in bulk
-      if (supabase && approvedStudents.length > 0) {
-         const idsToUpdate = approvedStudents.map(s => s.id);
+      if (supabase && studentsToNotify.length > 0) {
+         const idsToUpdate = studentsToNotify.map(s => s.id);
          supabase.from('students').update({ exam_status: 'SCHEDULED' }).in('id', idsToUpdate)
            .then(()=>{}).catch(e=>console.warn('Batch exam_status update failed:', e));
       }
@@ -3059,7 +3152,7 @@
           let localStudents = DB.getStudents();
           let updated = false;
           localStudents.forEach(ls => {
-              if (approvedStudents.find(as => as.id === ls.supabaseId || as.id === ls.id)) {
+              if (studentsToNotify.find(as => as.id === ls.supabaseId || as.id === ls.id)) {
                   ls.examStatus = 'SCHEDULED';
                   ls.examDate = date;
                   ls.examTime = time;
@@ -3077,13 +3170,13 @@
       Promise.all(emailsPromises).then(results => {
          const sentCount = results.filter(r => r === true).length;
          const failedCount = emailsPromises.length - sentCount;
-         alert(`Exam Automation Complete:\n\n- Total Applications in DB: ${allDbStudents.length}\n- Approved For Course: ${approvedStudents.length}\n- Valid Emails Found: ${emailsFound}\n- Notification Sent Count: ${sentCount}\n- Failed Email Count: ${failedCount}`);
+         alert(`Exam Automation Complete:\n\n- Total Applications in DB: ${allDbStudents.length}\n- Sent to New Students: ${studentsToNotify.length}\n- Valid Emails Found: ${emailsFound}\n- Notification Sent Count: ${sentCount}\n- Failed Email Count: ${failedCount}`);
          
          // Save to log history
          const logMsg = {
            date: new Date().toLocaleString(),
            course: course,
-           assigned: assignedCount,
+           assigned: studentsToNotify.length,
            sent: sentCount,
            failed: failedCount
          };
@@ -4429,7 +4522,8 @@
           const { data: session } = await supabase.auth.getSession();
           const adminId = session?.session?.user?.id || 'admin';
           
-          const { error } = await supabase.from('students').delete().eq('student_id', studentStudentId || id);
+          const matchQuery = s.supabaseId ? supabase.from('students').update({ status: 'deleted', application_status: 'DELETED' }).eq('id', s.supabaseId) : supabase.from('students').update({ status: 'deleted', application_status: 'DELETED' }).eq('student_id', studentStudentId || id);
+          const { error } = await matchQuery;
           if (error) {
             console.error('[Admin Action] Failed: Supabase delete error:', error.message);
             showToast('Delete failed in cloud – retry', 'error');
