@@ -429,7 +429,17 @@
         if (!window.getExamStatus) {
            window.getExamStatus = function(examDate, startTime, durationMinutes) {
                if (!examDate || !startTime) return 'NOT_STARTED';
-               const start = new Date(`${examDate}T${startTime}`);
+               let start;
+               try {
+                  const parts = examDate.split('-');
+                  const timeParts = startTime.split(':');
+                  if (parts.length === 3 && timeParts.length >= 2) {
+                     start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+                  } else {
+                     start = new Date(`${examDate}T${startTime}`);
+                  }
+               } catch(e) { start = new Date(`${examDate}T${startTime}`); }
+               
                const end = new Date(start.getTime() + (durationMinutes * 60000));
                const now = new Date();
                if (now < start) return 'NOT_STARTED';
@@ -618,7 +628,14 @@
          let startBtnHtml = '';
 
          if (config && config.examDate && config.startTime) {
-            const start = new Date(`${config.examDate}T${config.startTime}`);
+            let start;
+            try {
+               const parts = config.examDate.split('-');
+               const timeParts = config.startTime.split(':');
+               if (parts.length === 3 && timeParts.length >= 2) {
+                  start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+               } else { start = new Date(`${config.examDate}T${config.startTime}`); }
+            } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
             const duration = config.durationMinutes || 60;
             const end = new Date(start.getTime() + (duration * 60000));
             const now = new Date();
@@ -817,7 +834,14 @@
         return;
       }
 
-      const start = new Date(`${config.examDate}T${config.startTime}`);
+      let start;
+      try {
+         const parts = config.examDate.split('-');
+         const timeParts = config.startTime.split(':');
+         if (parts.length === 3 && timeParts.length >= 2) {
+            start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+         } else { start = new Date(`${config.examDate}T${config.startTime}`); }
+      } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
       const end = new Date(start.getTime() + (config.durationMinutes * 60000));
       const reportingTime = new Date(start.getTime() - 15 * 60000);
       const now = new Date();

@@ -99,9 +99,20 @@ export async function fetchExamConfig() {
 export function getExamStatus(examDate, startTime, durationMinutes) {
    if (!examDate || !startTime) return 'NOT_STARTED';
    
-   // Parse safely using explicit local timezone handling if needed, 
-   // but standard Date parsing works for matching timezones.
-   const start = new Date(`${examDate}T${startTime}`);
+   // Parse safely for Mobile Safari which fails on standard Date parsing without seconds
+   let start;
+   try {
+      const parts = examDate.split('-');
+      const timeParts = startTime.split(':');
+      if (parts.length === 3 && timeParts.length >= 2) {
+         start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+      } else {
+         start = new Date(`${examDate}T${startTime}`);
+      }
+   } catch(e) {
+      start = new Date(`${examDate}T${startTime}`);
+   }
+   
    const end = new Date(start.getTime() + (durationMinutes * 60000));
    const now = new Date();
    

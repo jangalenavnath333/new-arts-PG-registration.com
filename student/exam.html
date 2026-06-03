@@ -294,7 +294,14 @@
            if(status === 'ENDED') {
              alert('Exam time is over.'); window.location.replace('dashboard.html'); return;
            }
-           const start = new Date(`${examConfig.examDate}T${examConfig.startTime}`);
+           let start;
+           try {
+              const parts = examConfig.examDate.split('-');
+              const timeParts = examConfig.startTime.split(':');
+              if (parts.length === 3 && timeParts.length >= 2) {
+                 start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+              } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
+           } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
            const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
            const now = new Date();
            examTimeLeft = Math.floor((end - now) / 1000);
