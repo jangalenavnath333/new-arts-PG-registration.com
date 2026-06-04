@@ -469,12 +469,24 @@
             student.applicationStatus = data.application_status;
             student.examStatus = data.exam_status;
             student.status = data.status;
+            student.paymentStatus = data.payment_status || student.paymentStatus;
             student.studentId = data.student_id || student.studentId;
             student.hasAttempted = data.has_attempted;
             
             // Persist the freshest data
             DB.addStudent(student);
             localStorage.setItem('studentData', JSON.stringify(student));
+            
+            // CRITICAL FIX: Also update allStudentApps so renderOverview uses live data
+            let allApps = [];
+            try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
+            const appIndex = allApps.findIndex(a => a.email === student.email && a.courseApplied === student.courseApplied);
+            if (appIndex !== -1) {
+                allApps[appIndex] = { ...allApps[appIndex], ...student };
+            } else {
+                allApps = [student];
+            }
+            localStorage.setItem('allStudentApps', JSON.stringify(allApps));
           }
         }
       } catch (e) {
@@ -483,9 +495,10 @@
            window.getExamStatus = function(examDate, startTime, durationMinutes) {
                if (!examDate || !startTime) return 'NOT_STARTED';
                const start = new Date(`${examDate}T${startTime}`);
+               const preStart = new Date(start.getTime() - (60 * 60000)); // Allow 60 mins early access
                const end = new Date(start.getTime() + (durationMinutes * 60000));
                const now = new Date();
-               if (now < start) return 'NOT_STARTED';
+               if (now < preStart) return 'NOT_STARTED';
                if (now > end) return 'ENDED';
                return 'LIVE';
            };
