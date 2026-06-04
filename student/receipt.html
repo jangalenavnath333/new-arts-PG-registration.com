@@ -110,40 +110,24 @@
     }
     
     /* ── Print / PDF Styles ───────────────────────────────────────── */
-    @media print {
-      body {
-        background: white !important;
-        color: black !important;
-        padding: 0;
-      }
-      .no-print {
-        display: none !important;
-      }
-      .receipt-box {
-        border: 1px solid #000 !important;
-        box-shadow: none !important;
-        max-width: 100%;
-        width: 100% !important;
-        border-radius: 0;
-      }
-      .receipt-header {
-        background: transparent !important;
-        border-bottom: 2px solid #ccc;
-        color: black !important;
-      }
-      .receipt-header h2, .receipt-header p, .badge {
-        color: black !important;
-      }
-      .info-item {
-        background: transparent !important;
-        border: 1px solid #ddd !important;
-      }
-      .info-label { color: #555 !important; }
-      .info-value, .receipt-section-title { color: black !important; }
-      * {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+    .pdf-mode, @media print {
+      body { background: white !important; color: black !important; padding: 0; }
+      .no-print { display: none !important; }
+      .receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; }
+      .receipt-header { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: black !important; }
+      .receipt-header h2, .receipt-header p { color: black !important; }
+      .badge { color: black !important; background: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; }
+      .info-item { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
+      .info-label { color: #475569 !important; font-weight: 600; }
+      .info-value { color: #0f172a !important; font-weight: 700; }
+      .receipt-section-title { color: #1e293b !important; border-bottom: 2px solid #e2e8f0 !important; }
+      #r_app_status, #r_pay_status { background: #dcfce7 !important; color: #166534 !important; border-color: #bbf7d0 !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    
+    .pdf-mode {
+      background: white !important;
+      color: black !important;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -308,9 +292,10 @@
       
       if(buttons) buttons.style.display = 'none';
       noPrintElements.forEach(el => el.style.display = 'none');
+      element.classList.add('pdf-mode'); // Enable crisp light mode for PDF
       
       // Force render logic before capture to ensure images/fonts load and containers expand
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const opt = {
         margin:       [10, 10, 10, 10], // Margin in mm (A4 size)
@@ -350,6 +335,7 @@
         window.print(); // Fallback to HTML print
       } finally {
         // Restore UI
+        element.classList.remove('pdf-mode');
         if(buttons) buttons.style.display = 'flex';
         noPrintElements.forEach(el => el.style.display = '');
         btn.innerHTML = originalText;
