@@ -1064,24 +1064,27 @@
       return true;
     }
 
+    window.isSubmittingForm = false;
     document.getElementById('applyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      if (window.isSubmittingForm) return;
+      
       const btn = document.getElementById('submitBtn');
       const banner = document.getElementById('paymentStatusBanner');
 
       const fail = (step) => {
         showStep(step);
-        // validateStep already calls showAlert with the specific missing field
-
         const oldHtml = btn.innerHTML;
         btn.innerHTML = '⚠ Check missing fields above';
         btn.style.background = '#ef4444';
-        setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = ''; }, 3000);
+        setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = ''; window.isSubmittingForm = false; }, 3000);
       };
 
       if (!validateStep(1)) { fail(1); return; }
       if (!validateStep(2)) { fail(2); return; }
       if (!validateStep(3)) { fail(3); return; }
+
+      window.isSubmittingForm = true;
 
       const email = document.getElementById('email').value.trim().toLowerCase();
       const course = document.getElementById('courseApplied').value;
@@ -1092,6 +1095,7 @@
          showAlert('You have already submitted an application for this course.', 'danger');
          btn.disabled = false;
          btn.innerHTML = 'Submit Payment & Apply';
+         window.isSubmittingForm = false;
          return;
       }
 
@@ -1393,11 +1397,20 @@
         
         // --- NEW: SAVE DOCUMENTS PROPERLY ---
         // Save documents in a dedicated storage key to prevent QuotaExceeded errors on main lists
+        // Save documents in a dedicated storage key securely to prevent QuotaExceeded errors
         try {
           let cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
-          cetDocs[appId] = fileDataMap;
+          const safeFileDataMap = {};
+          for (const key in fileDataMap) {
+            if (fileDataMap[key] && fileDataMap[key].startsWith('http')) {
+               safeFileDataMap[key] = fileDataMap[key];
+            } else {
+               safeFileDataMap[key] = 'Uploaded to cloud securely'; 
+            }
+          }
+          cetDocs[appId] = safeFileDataMap;
           localStorage.setItem('cetDocuments', JSON.stringify(cetDocs));
-          console.log('[Docs] Successfully saved documents for admin preview');
+          console.log('[Docs] Successfully saved secure document references');
         } catch(e) {
           console.warn('[Docs] Failed to save local documents due to quota limit');
         }
@@ -1541,6 +1554,7 @@
       } catch (e) {
         btn.disabled = false;
         btn.innerHTML = 'Submit Payment & Apply';
+        window.isSubmittingForm = false;
         console.error(e);
         window.proceedWithSubmission = proceedWithSubmission;
         if (e.message && (e.message.includes('quota') || e.message.includes('storage'))) {
