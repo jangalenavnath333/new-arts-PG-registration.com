@@ -210,7 +210,7 @@
       <div class="grid-info">
         <div class="info-item"><div class="info-label">Transaction ID / UTR</div><div class="info-value" id="r_txn">—</div></div>
         <div class="info-item"><div class="info-label">Payment Proof File</div><div class="info-value" id="r_proof">—</div></div>
-        <div class="info-item"><div class="info-label">Amount Paid</div><div class="info-value">₹1.00</div></div>
+        <div class="info-item"><div class="info-label">Amount Paid</div><div class="info-value" id="r_amount">₹500.00</div></div>
         <div class="info-item"><div class="info-label">Date Submitted</div><div class="info-value" id="r_date">—</div></div>
       </div>
 
@@ -271,6 +271,12 @@
           // Payment & Status
           document.getElementById('r_txn').textContent = data.transactionId || '—';
           document.getElementById('r_proof').textContent = data.paymentProof || '—';
+          if (data.paymentAmount) {
+              // Ensure we show currency format or use string directly
+              let amt = data.paymentAmount;
+              if (typeof amt === 'number') amt = '₹' + amt + '.00';
+              document.getElementById('r_amount').textContent = amt;
+          }
           
           if (data.applicationStatus) {
               document.getElementById('r_app_status').textContent = 'Application: ' + data.applicationStatus;
