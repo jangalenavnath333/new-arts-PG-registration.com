@@ -77,8 +77,8 @@
           const { isReady, getClient } = await import('../js/supabase-db.js');
           if (isReady()) {
             const supabase = getClient();
-            console.log('[Login] Querying Supabase for:', email);
-            const { data, error } = await supabase.from('students').select('*').eq('email', email);
+            console.log('[Login] Querying Supabase securely for:', email);
+            const { data, error } = await supabase.rpc('student_login', { p_email: email });
             
             if (data && data.length > 0 && !error) {
               const studentsData = data.map(d => ({
@@ -98,9 +98,9 @@
               }));
               student = studentsData;
               fromCloud = true;
-              console.log(`[Login] Loaded ${studentsData.length} profiles from Supabase for:`, email);
+              console.log(`[Login] Loaded ${studentsData.length} profiles from Supabase securely.`);
             } else if (error) {
-              console.log('[Login] Supabase error:', error.message);
+              console.log('[Login] Supabase RPC error:', error.message);
             }
           }
         } catch (supaErr) {

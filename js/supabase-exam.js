@@ -30,15 +30,11 @@ export function getClient() { return supabase; }
 export async function checkEligibility(studentId, email) {
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase
-      .from('students')
-      .select('id, student_id, full_name, email, status, application_status, exam_status, has_attempted, active_violations, course_applied, category')
-      .or(`student_id.eq.${studentId},email.eq.${email}`)
-      .limit(1)
-      .single();
+    const { data, error } = await supabase.rpc('check_eligibility', { p_identifier: email || studentId });
     if (error) { console.warn('[ExamSupa] Eligibility check error:', error.message); return null; }
-    console.log('[ExamSupa] ✅ Eligibility check:', data.status, data.exam_status);
-    return data;
+    if (!data || data.length === 0) return null;
+    console.log('[ExamSupa] ✅ Eligibility check:', data[0].status, data[0].exam_status);
+    return data[0];
   } catch (e) {
     console.warn('[ExamSupa] Eligibility fetch error:', e);
     return null;
@@ -71,24 +67,43 @@ export async function fetchActiveQuestionSet() {
 // =============================================
 // 2b. EXAM CONFIG: Fetch from Supabase
 // =============================================
-export async function fetchExamConfig() {
+export async function fetchExamConfig(course = null) {
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('exam_config')
       .select('*')
-      .eq('is_active', true)
-      .limit(1)
-      .single();
-    if (error) { console.warn('[ExamSupa] Exam config fetch error:', error.message); return null; }
-    console.log('[ExamSupa] ✅ Loaded exam config from cloud');
+      .eq('is_active', true);
+      
+    if (course) {
+      // First try to find a specific course config, if not fallback to the first active one
+      const { data, error } = await query.eq('course', course).limit(1).single();
+      if (!error && data) {
+         console.log(`[ExamSupa] ✅ Loaded exam config for ${course} from cloud`);
+         return {
+           examDate: data.exam_date,
+           startTime: data.start_time,
+           durationMinutes: data.duration_minutes,
+           isActive: data.is_active,
+           instructions: data.instructions,
+           rules: data.rules,
+           course: data.course
+         };
+      }
+    }
+    
+    // Fallback if course not provided or not found
+    const { data: fbData, error: fbError } = await supabase.from('exam_config').select('*').eq('is_active', true).limit(1).single();
+    if (fbError) { console.warn('[ExamSupa] Exam config fetch error:', fbError.message); return null; }
+    console.log('[ExamSupa] ✅ Loaded global exam config from cloud');
     return {
-      examDate: data.exam_date,
-      startTime: data.start_time,
-      durationMinutes: data.duration_minutes,
-      isActive: data.is_active,
-      instructions: data.instructions,
-      rules: data.rules
+      examDate: fbData.exam_date,
+      startTime: fbData.start_time,
+      durationMinutes: fbData.duration_minutes,
+      isActive: fbData.is_active,
+      instructions: fbData.instructions,
+      rules: fbData.rules,
+      course: fbData.course
     };
   } catch (e) {
     console.warn('[ExamSupa] Exam config fetch error:', e);
@@ -130,21 +145,13 @@ let _attemptId = null;
 export async function startExamAttempt(supabaseStudentUUID, cetStudentId, totalQuestions) {
   if (!supabase || !supabaseStudentUUID) return null;
   try {
-    // Upsert: if student already has an attempt row (resume), update it
-    const { data, error } = await supabase
-      .from('exam_attempts')
-      .upsert({
-        student_id: supabaseStudentUUID,
-        cet_student_id: cetStudentId,
-        started_at: new Date().toISOString(),
-        total_questions: totalQuestions,
-        answers: {},
-        violations: 0,
-      }, { onConflict: 'student_id' })
-      .select('id')
-      .single();
-    if (error) { console.warn('[ExamSupa] Start attempt error:', error.message); return null; }
-    _attemptId = data.id;
+    const { data, error } = await supabase.rpc('start_exam_attempt', {
+      p_student_uuid: supabaseStudentUUID,
+      p_cet_student_id: cetStudentId,
+      p_total_questions: totalQuestions
+    });
+    if (error || !data) { console.warn('[ExamSupa] Start attempt error:', error?.message); return null; }
+    _attemptId = data;
     console.log('[ExamSupa] ✅ Exam attempt started/resumed:', _attemptId);
     return _attemptId;
   } catch (e) {
@@ -173,14 +180,12 @@ export function scheduleAutosave(answersStore, timeLeft, violations) {
 async function flushAutosave() {
   if (!supabase || !_attemptId || !_pendingAnswers) return;
   try {
-    const { error } = await supabase
-      .from('exam_attempts')
-      .update({
-        answers: _pendingAnswers.answers,
-        time_left_secs: _pendingAnswers.time_left_secs,
-        violations: _pendingAnswers.violations,
-      })
-      .eq('id', _attemptId);
+    const { error } = await supabase.rpc('save_exam_progress', {
+      p_attempt_id: _attemptId,
+      p_answers: _pendingAnswers.answers,
+      p_time_left: _pendingAnswers.time_left_secs,
+      p_violations: _pendingAnswers.violations
+    });
     if (error) console.warn('[ExamSupa] Autosave error:', error.message);
     else console.log('[ExamSupa] ☁️ Answers autosaved to cloud');
   } catch (e) {
@@ -192,14 +197,12 @@ async function flushAutosave() {
 export async function forceAutosave(answersStore, timeLeft, violations) {
   if (!supabase || !_attemptId) return;
   try {
-    await supabase
-      .from('exam_attempts')
-      .update({
-        answers: answersStore,
-        time_left_secs: timeLeft,
-        violations: violations,
-      })
-      .eq('id', _attemptId);
+    await supabase.rpc('save_exam_progress', {
+      p_attempt_id: _attemptId,
+      p_answers: answersStore,
+      p_time_left: timeLeft,
+      p_violations: violations
+    });
     console.log('[ExamSupa] ☁️ Force-saved answers before submit');
   } catch (e) {
     console.warn('[ExamSupa] Force autosave error:', e);
@@ -212,57 +215,29 @@ export async function forceAutosave(answersStore, timeLeft, violations) {
 export async function submitExamResult(supabaseStudentUUID, cetStudentId, resultData) {
   if (!supabase) return null;
   try {
-    // 1. Update attempt as submitted
-    if (_attemptId) {
-      await supabase
-        .from('exam_attempts')
-        .update({
-          submitted_at: new Date().toISOString(),
-          score: resultData.score,
-          violations: resultData.violations,
-          submit_status: resultData.submitStatus,
-          is_auto_submit: resultData.isAuto,
-          answers: resultData.answers,
-          time_left_secs: 0,
-        })
-        .eq('id', _attemptId);
-    }
+    const { data, error } = await supabase.rpc('submit_final_exam', {
+      p_student_uuid: supabaseStudentUUID,
+      p_attempt_id: _attemptId,
+      p_cet_student_id: cetStudentId,
+      p_name: resultData.name,
+      p_score: resultData.score,
+      p_total: resultData.total,
+      p_correct: resultData.correctAnswers,
+      p_wrong: resultData.wrongAnswers,
+      p_unanswered: resultData.unanswered,
+      p_violations: resultData.violations,
+      p_time_used: resultData.timeUsed,
+      p_course: resultData.course,
+      p_category: resultData.category,
+      p_submit_status: resultData.submitStatus,
+      p_is_auto: resultData.isAuto,
+      p_answers: resultData.answers
+    });
 
-    // 2. Insert exam result
-    const { data, error } = await supabase
-      .from('exam_results')
-      .insert({
-        student_id: supabaseStudentUUID,
-        attempt_id: _attemptId,
-        cet_student_id: cetStudentId,
-        student_name: resultData.name,
-        score: resultData.score,
-        total: resultData.total,
-        correct_answers: resultData.correctAnswers,
-        wrong_answers: resultData.wrongAnswers,
-        unanswered: resultData.unanswered,
-        violations: resultData.violations,
-        time_used_secs: resultData.timeUsed,
-        course: resultData.course,
-        category: resultData.category,
-        submitted_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
+    if (error || !data) { console.warn('[ExamSupa] Result insert error:', error?.message); return null; }
 
-    if (error) { console.warn('[ExamSupa] Result insert error:', error.message); return null; }
-
-    // 3. Update student status
-    await supabase
-      .from('students')
-      .update({
-        has_attempted: true,
-        exam_status: resultData.submitStatus.includes('Terminated') ? 'TERMINATED' : 'COMPLETED',
-      })
-      .eq('id', supabaseStudentUUID);
-
-    console.log('[ExamSupa] ✅ Exam result submitted to cloud:', data.id);
-    return data.id;
+    console.log('[ExamSupa] ✅ Exam result submitted to cloud:', data);
+    return data;
   } catch (e) {
     console.warn('[ExamSupa] Submit result error:', e);
     return null;
@@ -296,33 +271,15 @@ export async function logSecurityToSupabase(supabaseStudentUUID, cetStudentId, s
 export async function lockExamInSupabase(supabaseStudentUUID, cetStudentId, studentName, course, warningCount, reason) {
   if (!supabase) return;
   try {
-    // Update student status
-    await supabase
-      .from('students')
-      .update({ exam_status: 'LOCKED', active_violations: warningCount })
-      .eq('id', supabaseStudentUUID);
-
-    // Upsert locked_exams record
-    await supabase
-      .from('locked_exams')
-      .upsert({
-        student_id: supabaseStudentUUID,
-        cet_student_id: cetStudentId,
-        student_name: studentName,
-        course: course,
-        warning_count: warningCount,
-        reason: reason,
-        locked_at: new Date().toISOString(),
-      }, { onConflict: 'cet_student_id' });
-
-    // Save remaining time in attempt
-    if (_attemptId) {
-      await supabase
-        .from('exam_attempts')
-        .update({ submit_status: 'LOCKED' })
-        .eq('id', _attemptId);
-    }
-
+    await supabase.rpc('lock_exam_procedure', {
+      p_student_uuid: supabaseStudentUUID,
+      p_cet_student_id: cetStudentId,
+      p_name: studentName,
+      p_course: course,
+      p_warnings: warningCount,
+      p_reason: reason,
+      p_attempt_id: _attemptId
+    });
     console.log('[ExamSupa] 🔒 Exam locked in cloud for:', cetStudentId);
   } catch (e) {
     console.warn('[ExamSupa] Lock exam error:', e);
@@ -336,13 +293,9 @@ export async function lockExamInSupabase(supabaseStudentUUID, cetStudentId, stud
 export async function pollExamStatus(supabaseStudentUUID) {
   if (!supabase || !supabaseStudentUUID) return null;
   try {
-    const { data, error } = await supabase
-      .from('students')
-      .select('exam_status')
-      .eq('id', supabaseStudentUUID)
-      .single();
+    const { data, error } = await supabase.rpc('get_exam_status', { p_student_uuid: supabaseStudentUUID });
     if (error) return null;
-    return data?.exam_status || null;
+    return data || null;
   } catch (e) {
     return null;
   }

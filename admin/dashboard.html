@@ -256,6 +256,11 @@
                 </div>
                 <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
               </div>
+              <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12">
+                <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
+                <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
+                <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">Word</button>
+              </div>
             </div>
           </div>
           
@@ -318,6 +323,11 @@
                   <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
                 <input type="text" id="docSearchInput" oninput="window.renderDocumentsTab()" placeholder="Search ID or Name..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
+              </div>
+              <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12">
+                <button onclick="downloadDocumentsReport('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
+                <button onclick="downloadDocumentsReport('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
+                <button onclick="downloadDocumentsReport('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">Word</button>
               </div>
             </div>
           </div>
@@ -717,8 +727,8 @@
               </select>
               <div class="flex border border-slate-200 rounded-lg overflow-hidden">
                 <button onclick="downloadPaymentReport('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
-                <button onclick="downloadPaymentReport('csv')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">CSV</button>
-                <button onclick="downloadPaymentReport('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">PDF</button>
+                <button onclick="downloadPaymentReport('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
+                <button onclick="downloadPaymentReport('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">Word</button>
               </div>
               <button type="button" onclick="renderPayments()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
                 <span>↻ Refresh</span>
@@ -1599,39 +1609,36 @@
 
     window.downloadPaymentReport = function(format) {
        const data = window._currentPaymentsData || [];
-       if (data.length === 0) {
-           alert('No data to export.');
-           return;
-       }
-
-       let csvContent = "data:text/csv;charset=utf-8,";
-       csvContent += "Student Name,Email,Course,Amount,Transaction ID,Status,Date\n";
-       
-       data.forEach(p => {
+       if (data.length === 0) { alert('No data to export.'); return; }
+       if (format === 'excel') {
+         if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+         const wsData = [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']];
+         data.forEach(p => {
            let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
-           let row = [
-               p.full_name,
-               p.email,
-               p.course_applied,
-               p.payment_amount,
-               p.payment_utr,
-               p.payment_status,
-               date
-           ].map(v => '"' + (v || '') + '"').join(",");
-           csvContent += row + "\n";
-       });
-
-       const encodedUri = encodeURI(csvContent);
-       const link = document.createElement("a");
-       link.setAttribute("href", encodedUri);
-       link.setAttribute("download", `payment_report_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xls' : 'csv'}`);
-       document.body.appendChild(link);
-       link.click();
-       document.body.removeChild(link);
-       
-       if (format === 'pdf') {
-          // Simply trigger print for PDF for now
-          window.print();
+           wsData.push([p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', date]);
+         });
+         const wb = XLSX.utils.book_new();
+         const ws = XLSX.utils.aoa_to_sheet(wsData);
+         XLSX.utils.book_append_sheet(wb, ws, 'Payments');
+         XLSX.writeFile(wb, `Payment_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+       } else if (format === 'pdf') {
+         if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
+         const { jsPDF } = window.jspdf || window;
+         const doc = new jsPDF({ orientation: 'landscape' });
+         doc.text('Payment Report', 14, 15);
+         const tableRows = data.map(p => [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--']);
+         doc.autoTable({ startY: 25, head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], body: tableRows });
+         doc.save(`Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+       } else if (format === 'word') {
+         let content = 'PAYMENT REPORT\n\nStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
+         data.forEach(p => {
+           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           content += `${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||''}\t${p.payment_status||''}\t${date}\n`;
+         });
+         const blob = new Blob([content], { type: 'application/msword' });
+         const url = URL.createObjectURL(blob);
+         const a = document.createElement('a'); a.href = url; a.download = `Payment_Report_${new Date().toISOString().split('T')[0]}.doc`; a.click();
+         URL.revokeObjectURL(url);
        }
     };
 
@@ -1849,6 +1856,7 @@
       }
 
       apps = apps.slice().reverse();
+      window._currentDocumentsData = apps; // Cache for export
       const grid = document.getElementById('documentsGrid');
       const noData = document.getElementById('noDocuments');
 
@@ -2165,6 +2173,7 @@
       }
 
       apps = apps.slice().reverse();
+      window._currentApplicationsData = apps; // Cache for export
       const tbody = document.getElementById('applicationsTableBody');
       const noData = document.getElementById('noApplications');
 
@@ -3036,8 +3045,8 @@
       localStorage.setItem('cetExamConfig', JSON.stringify(allConfigs));
       // Supabase dual-write: save to exam_config table
       if (supabase) {
-        supabase.from('exam_config').select('id').limit(1).then(({ data }) => {
-          const row = { exam_date: date, start_time: time, duration_minutes: duration, is_active: true };
+        supabase.from('exam_config').select('id').eq('course', course).limit(1).then(({ data }) => {
+          const row = { exam_date: date, start_time: time, duration_minutes: duration, is_active: true, course: course };
           if (data && data.length > 0) {
             supabase.from('exam_config').update(row).eq('id', data[0].id)
               .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Exam config update error:', error.message); else console.log('[Admin Action] Success: Exam config saved to cloud'); });
@@ -4841,6 +4850,88 @@
         const a = document.createElement('a'); a.href = url; a.download = 'CET_Results.doc'; a.click();
         URL.revokeObjectURL(url);
       }
+    };
+
+    window.downloadApplications = function(format) {
+       const data = window._currentApplicationsData || [];
+       if (data.length === 0) { alert('No applications to export.'); return; }
+       if (format === 'excel') {
+         if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+         const wsData = [['Application ID', 'Student ID', 'Applicant Name', 'Email', 'Mobile', 'Course Applied', 'Category', 'Status', 'Payment Status', 'Applied On']];
+         data.forEach(a => {
+           const acad = a.academicDetails || {};
+           wsData.push([a.applicationId||'', a.studentId||'', a.fullName||a.name||'', a.email||'', a.mobile||'', a.courseApplied||acad.courseApplied||'', a.category||acad.casteCategory||'', a.applicationStatus||a.status||'', a.paymentStatus||'', a.submittedAt ? new Date(a.submittedAt).toLocaleDateString() : '']);
+         });
+         const wb = XLSX.utils.book_new();
+         const ws = XLSX.utils.aoa_to_sheet(wsData);
+         XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+         XLSX.writeFile(wb, `Applications_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+       } else if (format === 'pdf') {
+         if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
+         const { jsPDF } = window.jspdf || window;
+         const doc = new jsPDF({ orientation: 'landscape' });
+         doc.text('Applications Report', 14, 15);
+         const tableRows = data.map(a => {
+           const acad = a.academicDetails || {};
+           return [a.applicationId||'', a.fullName||a.name||'', a.email||'', a.mobile||'', a.courseApplied||acad.courseApplied||'', a.category||acad.casteCategory||'', a.applicationStatus||a.status||'', a.paymentStatus||''];
+         });
+         doc.autoTable({ startY: 25, head: [['Application ID', 'Applicant Name', 'Email', 'Mobile', 'Course', 'Category', 'App Status', 'Payment Status']], body: tableRows, styles: { fontSize: 8 } });
+         doc.save(`Applications_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+       } else if (format === 'word') {
+         let content = 'APPLICATIONS REPORT\n\nApplication ID\tApplicant Name\tEmail\tMobile\tCourse\tCategory\tApp Status\tPayment Status\tApplied On\n';
+         data.forEach(a => {
+           const acad = a.academicDetails || {};
+           content += `${a.applicationId||''}\t${a.fullName||a.name||''}\t${a.email||''}\t${a.mobile||''}\t${a.courseApplied||acad.courseApplied||''}\t${a.category||acad.casteCategory||''}\t${a.applicationStatus||a.status||''}\t${a.paymentStatus||''}\t${a.submittedAt ? new Date(a.submittedAt).toLocaleDateString() : ''}\n`;
+         });
+         const blob = new Blob([content], { type: 'application/msword' });
+         const url = URL.createObjectURL(blob);
+         const link = document.createElement('a'); link.href = url; link.download = `Applications_Report_${new Date().toISOString().split('T')[0]}.doc`; link.click();
+         URL.revokeObjectURL(url);
+       }
+    };
+
+    window.downloadDocumentsReport = function(format) {
+       const data = window._currentDocumentsData || [];
+       if (data.length === 0) { alert('No document data to export.'); return; }
+       
+       const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+       
+       const getDocCount = (s) => {
+         // This is a naive count based on local storage fallback as real cloud docs requires async fetch
+         let docs = cetDocs[s.applicationId] || cetDocs[s.studentId] || null;
+         if (!docs) docs = s.uploadedFiles || {};
+         const docKeys = Object.keys(docs).filter(k => docs[k] && docs[k].startsWith('data:'));
+         return docKeys.length;
+       };
+
+       if (format === 'excel') {
+         if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+         const wsData = [['Application ID', 'Student ID', 'Applicant Name', 'Course', 'Category', 'Status', 'Docs Count']];
+         data.forEach(s => {
+           wsData.push([s.applicationId||'', s.studentId||'', s.fullName||s.name||'', s.courseApplied||'', s.category||'', s.applicationStatus||'', getDocCount(s)]);
+         });
+         const wb = XLSX.utils.book_new();
+         const ws = XLSX.utils.aoa_to_sheet(wsData);
+         XLSX.utils.book_append_sheet(wb, ws, 'Documents');
+         XLSX.writeFile(wb, `Documents_Verification_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+       } else if (format === 'pdf') {
+         if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
+         const { jsPDF } = window.jspdf || window;
+         const doc = new jsPDF({ orientation: 'portrait' });
+         doc.text('Documents Verification Report', 14, 15);
+         const tableRows = data.map(s => [s.applicationId||'', s.fullName||s.name||'', s.courseApplied||'', s.category||'', getDocCount(s)]);
+         doc.autoTable({ startY: 25, head: [['App ID', 'Applicant Name', 'Course', 'Category', 'Docs Count']], body: tableRows });
+         doc.save(`Documents_Verification_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+       } else if (format === 'word') {
+         let content = 'DOCUMENTS VERIFICATION REPORT\n\nApplication ID\tApplicant Name\tCourse\tCategory\tStatus\tDocs Count\n';
+         data.forEach(s => {
+           content += `${s.applicationId||''}\t${s.fullName||s.name||''}\t${s.courseApplied||''}\t${s.category||''}\t${s.applicationStatus||''}\t${getDocCount(s)}\n`;
+         });
+         const blob = new Blob([content], { type: 'application/msword' });
+         const url = URL.createObjectURL(blob);
+         const link = document.createElement('a'); link.href = url; link.download = `Documents_Verification_Report_${new Date().toISOString().split('T')[0]}.doc`; link.click();
+         URL.revokeObjectURL(url);
+       }
     };
   </script>
 

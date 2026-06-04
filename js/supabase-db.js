@@ -126,7 +126,6 @@ export async function saveStudentApplication(appData, fileDataMap) {
       return null;
     }
 
-    // 1. Upsert student record FIRST to get the strict UUID
     const studentRow = {
       student_id:         appData.studentId,
       full_name:          appData.fullName,
@@ -138,37 +137,18 @@ export async function saveStudentApplication(appData, fileDataMap) {
       status:             appData.status || 'pending',
       application_status: appData.applicationStatus || 'PENDING_APPROVAL',
       exam_status:        appData.examStatus || 'NOT_SCHEDULED',
-      has_attempted:      false,
       payment_status:     appData.paymentStatus || 'PAID_DEMO',
       payment_utr:        appData.paymentUtr || appData.transactionId,
-      payment_date:       appData.paymentDate || null,
       payment_amount:     appData.paymentAmount || 'Rs.1',
       transaction_id:     appData.transactionId,
       course_applied:     appData.courseApplied,
       stream:             appData.stream,
       academic_details:   appData.academicDetails,
-      password_hash:      appData.password,  // Will be replaced with proper auth in Phase 3
-      submitted_at:       appData.submittedAt || null,
-      applied_at:         appData.appliedAt || null,
+      password_hash:      appData.password
     };
 
-    console.log('[SupaDB] Upserting studentRow payload:', studentRow);
-    const { data: studentData, error: studentError } = await supabase
-      .from('students')
-      .upsert(studentRow, { onConflict: 'email,course_applied' })
-      .select('id')
-      .single();
-    
-    if (studentError || !studentData || !studentData.id) {
-      console.error('[SupaDB] Student upsert error or missing UUID:', studentError?.message || 'No ID returned');
-      return null;
-    }
-
-    const supabaseStudentId = studentData.id;
-    console.log('[SupaDB] Student saved with exact UUID:', supabaseStudentId);
-
-    // 2. Upload files to Storage using text-based application ID for folder naming
-    const studentFolder = appData.applicationId; // Keep folder naming based on APP ID
+    // 1. Upload files to Storage
+    const studentFolder = appData.applicationId;
     const docUrls = {};
     const uploadTasks = [];
 
@@ -180,7 +160,6 @@ export async function saveStudentApplication(appData, fileDataMap) {
       { key: 'paymentScreenshot', bucket: 'payment-screenshots', name: 'payment_proof' },
     ];
 
-    // Add caste-specific documents
     const casteDocKeys = Object.keys(fileDataMap).filter(k =>
       !fileMapping.some(m => m.key === k) && fileDataMap[k]
     );
@@ -202,7 +181,6 @@ export async function saveStudentApplication(appData, fileDataMap) {
       }
       
       const ext = getExtFromDataUrl(dataUrl);
-      // Append timestamp to ensure a unique file name, making it an INSERT and bypassing RLS UPDATE restrictions
       const path = `${studentFolder}/${fm.name}_${Date.now()}.${ext}`;
       uploadTasks.push(
         uploadFile(fm.bucket, path, dataUrl).then(url => {
@@ -213,43 +191,20 @@ export async function saveStudentApplication(appData, fileDataMap) {
       );
     }
 
-    // Wait for all uploads (parallel)
     await Promise.allSettled(uploadTasks);
-    console.log('[SupaDB] Uploaded files:', Object.keys(docUrls));
-
-    // 3. Save document references
+    
+    // 2. Prepare Docs Payload
+    let docRows = [];
     if (Object.keys(docUrls).length > 0) {
-      const docRows = Object.entries(docUrls).map(([key, info]) => ({
-        student_id: supabaseStudentId,
+      docRows = Object.entries(docUrls).map(([key, info]) => ({
         doc_type:   key,
         file_url:   info.url,
         file_name:  info.path.split('/').pop(),
       }));
-
-      // Delete old docs for this student first (re-submission)
-      console.log('[SupaDB] Deleting old docs for student_id:', supabaseStudentId);
-      const { error: delError } = await supabase
-        .from('student_documents')
-        .delete()
-        .eq('student_id', supabaseStudentId);
-      console.log('[SupaDB] Delete docs error object:', delError);
-
-      console.log('[SupaDB] Inserting docRows payload:', docRows);
-      const { error: docError } = await supabase
-        .from('student_documents')
-        .insert(docRows);
-      console.log('[SupaDB] Insert docs error object:', docError);
-
-      if (docError) {
-        console.warn('[SupaDB] Document refs save error:', docError.message);
-      } else {
-        console.log('[SupaDB] Saved', docRows.length, 'document references');
-      }
     }
 
-    // 4. Save payment record
+    // 3. Prepare Payment Payload
     const paymentRow = {
-      student_id:     supabaseStudentId,
       application_id: appData.applicationId,
       cet_student_id: appData.studentId,
       full_name:      appData.fullName,
@@ -258,27 +213,27 @@ export async function saveStudentApplication(appData, fileDataMap) {
       payment_status: appData.paymentStatus || 'PAID_DEMO',
       payment_amount: appData.paymentAmount || 'Rs.1',
       payment_utr:    appData.paymentUtr || appData.transactionId,
-      payment_date:   appData.paymentDate,
       screenshot_url: docUrls['paymentScreenshot']?.url || null,
-      submitted_at:   appData.submittedAt,
     };
 
-    console.log('[SupaDB] Inserting paymentRow payload:', paymentRow);
-    const { error: payError } = await supabase
-      .from('payments')
-      .insert(paymentRow);
-    console.log('[SupaDB] Insert payment error object:', payError);
+    console.log('[SupaDB] Submitting application via RPC...');
+    const { data: supabaseStudentId, error: rpcError } = await supabase.rpc('submit_student_application', {
+      p_student_row: studentRow,
+      p_doc_rows: docRows.length ? docRows : null,
+      p_payment_row: paymentRow
+    });
 
-    if (payError) {
-      console.warn('[SupaDB] Payment save error:', payError.message);
+    if (rpcError || !supabaseStudentId) {
+      console.error('[SupaDB] Application RPC error:', rpcError?.message || 'No UUID returned');
+      return null;
     }
 
-    console.log('[SupaDB] ✅ Full application saved to Supabase successfully!');
+    console.log('[SupaDB] ✅ Full application saved securely! UUID:', supabaseStudentId);
     return { studentId: appData.studentId, supabaseId: supabaseStudentId };
 
   } catch (e) {
     console.error('[SupaDB] Unexpected error during save:', e);
-    return null;  // Never break the flow
+    return null; 
   }
 }
 

@@ -416,11 +416,24 @@
         
         // Sync Exam Config from Supabase
         if (ExamSupa.isReady()) {
-           const dbConfig = await ExamSupa.fetchExamConfig();
+           const dbConfig = await ExamSupa.fetchExamConfig(student.courseApplied);
            if (dbConfig) {
              window.examConfig = dbConfig;
-             localStorage.setItem('cetExamConfig', JSON.stringify(dbConfig));
-             console.log('[Dashboard] Synced exam config from Supabase');
+             
+             // Update the specific course configuration in localStorage safely
+             let allConfigs = {};
+             try { allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; } catch(e){}
+             if (allConfigs.examDate !== undefined) {
+                 // Convert old format to new format if necessary
+                 const old = {...allConfigs};
+                 allConfigs = {};
+                 allConfigs['M.Sc. Computer Science'] = old;
+             }
+             const courseKey = student.courseApplied || dbConfig.course || 'Global';
+             allConfigs[courseKey] = dbConfig;
+             localStorage.setItem('cetExamConfig', JSON.stringify(allConfigs));
+             
+             console.log(`[Dashboard] Synced exam config from Supabase for ${courseKey}`);
            }
            window.getExamStatus = ExamSupa.getExamStatus;
         }
