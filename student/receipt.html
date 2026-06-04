@@ -110,10 +110,22 @@
     }
     
     /* ── Print / PDF Styles ───────────────────────────────────────── */
-    .pdf-mode, @media print {
+    .pdf-mode { background: white !important; color: black !important; padding: 0; }
+    .pdf-mode .no-print { display: none !important; }
+    .pdf-mode.receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; margin:0;}
+    .pdf-mode .receipt-header { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: black !important; }
+    .pdf-mode .receipt-header h2, .pdf-mode .receipt-header p { color: black !important; }
+    .pdf-mode .badge { color: black !important; background: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; }
+    .pdf-mode .info-item { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
+    .pdf-mode .info-label { color: #475569 !important; font-weight: 600; }
+    .pdf-mode .info-value { color: #0f172a !important; font-weight: 700; }
+    .pdf-mode .receipt-section-title { color: #1e293b !important; border-bottom: 2px solid #e2e8f0 !important; }
+    .pdf-mode #r_app_status, .pdf-mode #r_pay_status { background: #dcfce7 !important; color: #166534 !important; border-color: #bbf7d0 !important; }
+
+    @media print {
       body { background: white !important; color: black !important; padding: 0; }
       .no-print { display: none !important; }
-      .receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; }
+      .receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; margin: 0; }
       .receipt-header { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: black !important; }
       .receipt-header h2, .receipt-header p { color: black !important; }
       .badge { color: black !important; background: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; }
@@ -123,11 +135,6 @@
       .receipt-section-title { color: #1e293b !important; border-bottom: 2px solid #e2e8f0 !important; }
       #r_app_status, #r_pay_status { background: #dcfce7 !important; color: #166534 !important; border-color: #bbf7d0 !important; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-    
-    .pdf-mode {
-      background: white !important;
-      color: black !important;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
