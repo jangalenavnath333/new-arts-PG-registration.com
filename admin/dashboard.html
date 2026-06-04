@@ -2739,11 +2739,17 @@
       // Read from localStorage first
       let students = [];
       try { students = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
-      students = students.filter(s => s.applicationStatus === 'Approved' || s.status === 'approved');
+      students = students.filter(s => {
+          const stat = (s.applicationStatus || s.status || '').toUpperCase();
+          return stat === 'APPROVED';
+      });
 
       // If Supabase cache has approved students, merge/replace
       if (_supabaseFetched && _supabaseAppsCache) {
-        const supaApproved = _supabaseAppsCache.filter(s => s.status === 'approved' || s.applicationStatus === 'Approved');
+        const supaApproved = _supabaseAppsCache.filter(s => {
+            const stat = (s.applicationStatus || s.status || '').toUpperCase();
+            return stat === 'APPROVED';
+        });
         if (supaApproved.length > 0) students = supaApproved;
       }
 
