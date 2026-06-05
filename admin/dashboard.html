@@ -1651,7 +1651,7 @@
     // APPLICATION LOGIC (Robust Fixes Implemented)
     // ============================================
     window.renderOverview = function() {
-      const studs = DB.getStudents() || [];
+      const studs = window.getApplications() || [];
       const pending = studs.filter(s => s.status === 'pending').length;
       const approved = studs.filter(s => s.status === 'approved').length;
       const rejected = studs.filter(s => s.status === 'rejected').length;
