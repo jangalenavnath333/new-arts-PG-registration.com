@@ -25,13 +25,16 @@
     window.getNow = function() { return new Date(Date.now() + window.timeOffset); };
     async function syncGlobalTime() {
        try {
-          const res = await fetch('http://worldtimeapi.org/api/timezone/Asia/Kolkata');
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
+          const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { signal: controller.signal });
+          clearTimeout(timeoutId);
           const data = await res.json();
           const serverTime = new Date(data.datetime).getTime();
           window.timeOffset = serverTime - Date.now();
           console.log('[TimeSync] Offset applied:', window.timeOffset, 'ms');
        } catch(e) {
-          console.warn('[TimeSync] Failed to sync global time:', e);
+          console.warn('[TimeSync] Failed to sync global time:', e.message);
        }
     }
     syncGlobalTime();
