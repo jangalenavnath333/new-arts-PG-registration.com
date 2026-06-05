@@ -1482,21 +1482,21 @@
       const totalApps = filtered.length;
       const expectedCollection = totalApps * 500;
       
-      const paidRecords = filtered.filter(p => p.payment_status === 'PAID' || p.payment_status === 'VERIFIED');
-      const pendingRecords = filtered.filter(p => p.payment_status === 'PENDING' || p.payment_status === 'PENDING_VERIFICATION');
+      const paidRecords = filtered.filter(p => ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes(p.payment_status));
+      const pendingRecords = filtered.filter(p => ['PENDING', 'PENDING_VERIFICATION'].includes(p.payment_status));
       const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
       
       let collectedAmount = 0;
       paidRecords.forEach(p => {
-         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(amt)) collectedAmount += parseFloat(amt);
+         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(parseFloat(amt))) collectedAmount += parseFloat(amt);
          else collectedAmount += 500; // default assumption if empty
       });
       
       let pendingAmount = 0;
       pendingRecords.forEach(p => {
-         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(amt)) pendingAmount += parseFloat(amt);
+         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(parseFloat(amt))) pendingAmount += parseFloat(amt);
          else pendingAmount += 500;
       });
       
@@ -1504,9 +1504,10 @@
       let todayCollected = 0;
       const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
       paidRecords.forEach(p => {
-         if (p.payment_date && new Date(p.payment_date).toLocaleDateString('en-CA') === todayDate) {
-             let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-             if (amt && !isNaN(amt)) todayCollected += parseFloat(amt);
+         const dateStr = p.payment_date || p.submitted_at || p.created_at;
+         if (dateStr && new Date(dateStr).toLocaleDateString('en-CA') === todayDate) {
+             let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+             if (amt && !isNaN(parseFloat(amt))) todayCollected += parseFloat(amt);
              else todayCollected += 500;
          }
       });
@@ -1537,9 +1538,9 @@
         let statusColor = 'bg-slate-100 text-slate-600 border-slate-200';
         const st = p.payment_status || 'PENDING';
         if (st === 'VERIFIED') statusColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        else if (st === 'PAID') statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+        else if (['PAID', 'SUCCESS', 'PAID_DEMO'].includes(st)) statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
         else if (st === 'REJECTED') statusColor = 'bg-red-100 text-red-700 border-red-200';
-        else if (st === 'PENDING' || st === 'PENDING_VERIFICATION') statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
+        else if (['PENDING', 'PENDING_VERIFICATION'].includes(st)) statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
         else if (st === 'REFUNDED') statusColor = 'bg-purple-100 text-purple-700 border-purple-200';
         
         const statusBadge = `<span class="${statusColor} text-[10px] font-bold px-2.5 py-1 rounded-full border">${st}</span>`;
