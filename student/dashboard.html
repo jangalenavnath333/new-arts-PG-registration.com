@@ -878,6 +878,22 @@
       let config = null;
       try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){}
       
+      // Override with student's personal rescheduled date/time if exists (from cloud or local)
+      let customDate = student.rescheduleDate;
+      let customTime = student.rescheduleTime;
+      if (student.examDate && student.examDate.includes('|')) {
+          const parts = student.examDate.split('|');
+          customDate = parts[0];
+          customTime = parts[1];
+      }
+
+      if (customDate && customTime) {
+         config = config || { durationMinutes: 60 }; // fallback if no global config
+         config.examDate = customDate;
+         config.startTime = customTime;
+         console.log('Using personal rescheduled time:', config);
+      }
+
       if (!config || !config.examDate || !config.startTime) {
         document.getElementById('scheduleContent').innerHTML = `
           <div class="empty-state">
