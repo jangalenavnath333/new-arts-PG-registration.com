@@ -1352,6 +1352,31 @@
         window.renderStudents();
         if (supabase) {
           fetchApplicationsFromSupabase().then(() => { window.renderStudents(); });
+          supabase.from('exam_results').select('*').then(({data}) => {
+             if(data) {
+                let localRes = []; try { localRes = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
+                const merged = data.map(r => ({
+                  id: r.id, studentId: r.cet_student_id, name: r.student_name,
+                  course: r.course, category: r.category, score: r.score, total: r.total,
+                  correctAnswers: r.correct_answers, wrongAnswers: r.wrong_answers,
+                  unanswered: r.unanswered, violations: r.violations,
+                  status: 'Completed', submittedAt: r.submitted_at, answers: r.answers || {}
+                }));
+                localRes.forEach(lr => { if (!merged.find(sr => sr.studentId === lr.studentId)) merged.push(lr); });
+                localStorage.setItem('cetExamResults', JSON.stringify(merged));
+                window.renderStudents();
+             }
+          });
+          supabase.from('security_logs').select('*').then(({data}) => {
+             if(data) {
+                const merged = data.map(l => ({
+                   studentId: l.cet_student_id || l.student_id, name: l.student_name,
+                   type: l.event_type, message: l.message, timestamp: l.created_at
+                }));
+                localStorage.setItem('cetExamSecurityLogs', JSON.stringify(merged));
+                window.renderStudents();
+             }
+          });
         }
       }
       if (tab === 'questions') window.renderQuestions();
@@ -4277,9 +4302,23 @@
     }
     window.closeStudentModal = function(id) { hideModal(id); }
 
+    function getStudentForModal(id) {
+       let s = DB.getStudentById(id);
+       if (!s) {
+         let approved = [];
+         try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e){}
+         s = approved.find(a => a.id === id || a.studentId === id || a.applicationId === id);
+       }
+       if (!s) {
+         let apps = window.getApplications ? window.getApplications() : [];
+         s = apps.find(a => a.id === id || a.studentId === id || a.applicationId === id);
+       }
+       return s;
+    }
+
     window.openStudentDetailsModal = function(id) {
       console.log('[Details] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       if (!s) { console.warn('Student not found for id:', id); return; }
       const examStatus = s.hasAttempted ? 'Completed' : (s.examStatus || 'Pending Exam');
       document.getElementById('studentDetailsContent').innerHTML = `
@@ -4299,9 +4338,9 @@
 
     window.openDocumentsModal = function(id) {
       console.log('[Docs] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       const apps = window.getApplications();
-      const app = apps.find(a => a.email === s?.email);
+      const app = apps.find(a => a.email === s?.email || a.studentId === s?.studentId || a.id === s?.id);
       let content = '';
 
       const docList = ['SY Marksheet', 'TY Marksheet', '10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
@@ -4335,7 +4374,7 @@
 
     window.openAnswersModal = function(id) {
       console.log('[Answers] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       const res = DB.getResults().find(r => r.studentId === id || r.studentId === s?.studentId);
 
       const dummyAnswers = [
@@ -4484,13 +4523,13 @@
     window.deleteApprovedStudent = function(id) {
       console.log('[Admin Action] Start: Open delete modal', id);
       document.getElementById('deleteStudentConfirmId').value = id;
-      document.getElementById('deleteStudentName').textContent = DB.getStudentById(id)?.fullName || 'this student';
+      document.getElementById('deleteStudentName').textContent = getStudentForModal(id)?.fullName || 'this student';
       showModal('deleteStudentModal');
     }
 
     window.confirmDeleteStudent = async function() {
       const id = document.getElementById('deleteStudentConfirmId').value;
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       
       const confirmation = prompt(`To delete this student, type "DELETE" below:\n\nStudent Name: ${s?.fullName || 'this student'}`);
       if(confirmation !== "DELETE") {
