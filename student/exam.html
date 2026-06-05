@@ -53,11 +53,27 @@
       .bg-slate-800.p-4 { padding: 10px !important; flex-wrap: wrap; justify-content: center; gap: 8px; }
       .bg-slate-800.p-4 button { padding: 8px 12px !important; font-size: 12px !important; flex: 1; min-width: 30%; }
       
-      /* Modals */
+    /* Modals */
       #setupOverlay .bg-slate-800 { padding: 20px !important; max-width: 90% !important; }
       #setupOverlay h2 { font-size: 20px !important; }
     }
   </style>
+  <script>
+    window.timeOffset = 0;
+    window.getNow = function() { return new Date(Date.now() + window.timeOffset); };
+    async function syncGlobalTime() {
+       try {
+          const res = await fetch('http://worldtimeapi.org/api/timezone/Asia/Kolkata');
+          const data = await res.json();
+          const serverTime = new Date(data.datetime).getTime();
+          window.timeOffset = serverTime - Date.now();
+          console.log('[TimeSync] Offset applied:', window.timeOffset, 'ms');
+       } catch(e) {
+          console.warn('[TimeSync] Failed to sync global time:', e);
+       }
+    }
+    syncGlobalTime();
+  </script>
 </head>
 <body class="flex flex-col h-screen w-screen relative">
 
@@ -303,7 +319,7 @@
               } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
            } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
            const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
-           const now = new Date();
+           const now = window.getNow ? window.getNow() : new Date();
            examTimeLeft = Math.floor((end - now) / 1000);
         }
       }
@@ -468,7 +484,7 @@
       if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
          examTimeLeft = currentStudent.examTimeLeft;
       } else {
-         const now = new Date();
+         const now = window.getNow ? window.getNow() : new Date();
          const end = new Date(new Date(`${examConfig.examDate}T${examConfig.startTime}`).getTime() + (examConfig.durationMinutes * 60000));
          examTimeLeft = Math.floor((end - now) / 1000);
       }

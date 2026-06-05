@@ -20,6 +20,22 @@
       border: none !important;
     }
   </style>
+  <script>
+    window.timeOffset = 0;
+    window.getNow = function() { return new Date(Date.now() + window.timeOffset); };
+    async function syncGlobalTime() {
+       try {
+          const res = await fetch('http://worldtimeapi.org/api/timezone/Asia/Kolkata');
+          const data = await res.json();
+          const serverTime = new Date(data.datetime).getTime();
+          window.timeOffset = serverTime - Date.now();
+          console.log('[TimeSync] Offset applied:', window.timeOffset, 'ms');
+       } catch(e) {
+          console.warn('[TimeSync] Failed to sync global time:', e);
+       }
+    }
+    syncGlobalTime();
+  </script>
 </head>
 <body>
   <div class="bg-particles"></div>
@@ -882,7 +898,7 @@
       } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
       const end = new Date(start.getTime() + (config.durationMinutes * 60000));
       const reportingTime = new Date(start.getTime() - 15 * 60000);
-      const now = new Date();
+      const now = window.getNow();
       
       let countdown = '';
       if (student.examStatus === 'COMPLETED' || student.examStatus === 'Submitted') {

@@ -130,7 +130,7 @@ export function getExamStatus(examDate, startTime, durationMinutes) {
    
    const preStart = new Date(start.getTime() - (60 * 60000)); // Allow 60 mins early access
    const end = new Date(start.getTime() + (durationMinutes * 60000));
-   const now = new Date();
+   const now = window.getNow ? window.getNow() : new Date();
    
    if (now < preStart) return 'NOT_STARTED';
    if (now > end) return 'ENDED';
