@@ -1652,10 +1652,10 @@
     // ============================================
     window.renderOverview = function() {
       const studs = window.getApplications() || [];
-      const pending = studs.filter(s => s.status === 'pending').length;
-      const approved = studs.filter(s => s.status === 'approved').length;
-      const rejected = studs.filter(s => s.status === 'rejected').length;
-      const attempted = studs.filter(s => s.hasAttempted).length;
+      const pending = studs.filter(s => (s.status || '').toLowerCase() === 'pending' || (s.applicationStatus || '').toLowerCase() === 'pending').length;
+      const approved = studs.filter(s => (s.status || '').toLowerCase() === 'approved' || (s.applicationStatus || '').toLowerCase() === 'approved').length;
+      const rejected = studs.filter(s => (s.status || '').toLowerCase() === 'rejected' || (s.applicationStatus || '').toLowerCase() === 'rejected').length;
+      const attempted = studs.filter(s => s.hasAttempted || (s.examStatus || '').toLowerCase() === 'completed').length;
 
       document.getElementById('s-total').textContent = studs.length;
       document.getElementById('s-pending').textContent = pending;
