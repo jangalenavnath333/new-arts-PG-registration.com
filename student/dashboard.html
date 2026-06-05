@@ -711,6 +711,15 @@
          }
 
          html += `
+          ${isApproved ? `
+          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;">
+            <div style="background: #10b981; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 0 15px rgba(16,185,129,0.5);">✓</div>
+            <div>
+              <h4 style="color: #10b981; font-size: 18px; font-weight: 800; margin-bottom: 4px;">Application Approved!</h4>
+              <p style="color: var(--light); font-size: 14px; margin: 0;">Your application has been verified and approved by the admin. Your Student ID is <strong style="color: #fff; font-family: monospace;">${app.studentId || 'Assigned'}</strong>.</p>
+            </div>
+          </div>
+          ` : ''}
           <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.05)); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px;">
               
@@ -775,9 +784,12 @@
       const isApproved = appStatus.toLowerCase() === 'approved' || student.status === 'approved';
       const isRejected = appStatus.toLowerCase() === 'rejected' || student.status === 'rejected';
 
+      const paymentDone = student.paymentStatus === 'SUCCESS' || student.paymentStatus === 'PAID_DEMO' || student.paymentStatus === 'PAID' || isApproved;
+      const paymentDesc = student.paymentStatus === 'PAID_DEMO' ? 'PAID_DEMO — Rs.1 verified' : (paymentDone ? 'Payment Verified Successfully' : (student.paymentStatus || 'Pending'));
+
       const steps = [
         { label: 'Application Submitted',  desc: student.appliedAt ? new Date(student.appliedAt).toLocaleString('en-IN') : 'Submitted', done: true },
-        { label: 'Payment Received',        desc: student.paymentStatus === 'PAID_DEMO' ? 'PAID_DEMO — Rs.1 verified' : (student.paymentStatus || 'Pending'), done: !!student.paymentStatus },
+        { label: 'Payment Received',        desc: paymentDesc, done: paymentDone },
         { label: 'Under Admin Review',      desc: 'Admin is reviewing your application', done: !isPending, active: isPending },
         { label: isRejected ? 'Application Rejected' : 'Application Approved', desc: isApproved ? ('Student ID: ' + (student.studentId || 'Assigned')) : isRejected ? (student.rejectionReason || 'Not approved') : 'Awaiting admin decision', done: isApproved, active: isRejected },
         { label: 'Exam Scheduled',          desc: student.examDate ? ('Exam on ' + new Date(student.examDate).toLocaleDateString('en-IN')) : 'Exam date will be shared', done: isApproved && !!student.examDate },
