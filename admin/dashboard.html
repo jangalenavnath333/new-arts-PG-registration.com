@@ -4336,22 +4336,53 @@
       showModal('studentDetailsModal');
     }
 
-    window.openDocumentsModal = function(id) {
+    window.openDocumentsModal = async function(id) {
       console.log('[Docs] clicked, student id:', id);
       const s = getStudentForModal(id);
       const apps = window.getApplications();
       const app = apps.find(a => a.email === s?.email || a.studentId === s?.studentId || a.id === s?.id);
-      let content = '';
+      
+      document.getElementById('documentsContent').innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">Fetching documents from secure cloud...</p>';
+      showModal('documentsModal');
 
+      const targetId = s?.supabaseId || s?.id || id;
+      let supaDocs = [];
+      if (supabase) {
+         try {
+            const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', targetId);
+            if (data && !error) supaDocs = data;
+         } catch(e) {}
+      }
+      
+      let finalDocs = {};
+      
+      // 1. Load from Supabase
+      if (supaDocs.length > 0) {
+         supaDocs.forEach(d => { finalDocs[d.doc_type] = d.file_url; });
+      } 
+      // 2. Load from localStorage cetDocuments
+      else {
+         const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+         let localD = cetDocs[app?.applicationId] || cetDocs[app?.studentId] || cetDocs[targetId];
+         if (localD) {
+            finalDocs = localD;
+         } else if (app && app.uploadedFiles) {
+            finalDocs = app.uploadedFiles;
+         }
+      }
+
+      let content = '';
       const docList = ['SY Marksheet', 'TY Marksheet', '10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
-      if (app && app.uploadedFiles && Object.keys(app.uploadedFiles).length > 0) {
-        content = Object.entries(app.uploadedFiles).map(([key, data]) => {
-          const isImage = data && data.startsWith('data:image');
+      
+      if (Object.keys(finalDocs).length > 0) {
+        content = Object.entries(finalDocs).map(([key, data]) => {
+          if(!data) return '';
+          const isImage = data.startsWith('data:image') || data.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || data.includes('student-photos') || data.includes('payment-screenshots');
           return `<div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;">
-            <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">${key}</p>
-            ${isImage ? `<img src="${data}" style="max-height:120px;border-radius:6px;display:block;margin-bottom:8px;" />` : ''}
+            <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">${key.replace(/File$/, '')}</p>
+            ${isImage ? `<img src="${data}" style="max-height:120px;border-radius:6px;display:block;margin-bottom:8px;background:#f8fafc;" />` : ''}
             <div style="display:flex;gap:8px;">
-              ${isImage ? `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>` : `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>`}
+              <a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>
               <a href="${data}" download="${key}" style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Download</a>
             </div>
           </div>`;
@@ -4369,7 +4400,6 @@
         content = `<p style="color:#94a3b8;font-size:12px;margin-bottom:10px;">No documents uploaded. Expected documents:</p>` + content;
       }
       document.getElementById('documentsContent').innerHTML = content;
-      showModal('documentsModal');
     }
 
     window.openAnswersModal = function(id) {
