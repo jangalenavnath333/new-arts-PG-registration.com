@@ -4744,12 +4744,60 @@
             <p style="font-weight:800;font-size:1rem;color:${passing === 'PASS' ? '#059669' : '#dc2626'};margin:0;">${passing}</p>
           </div>
         </div>
-        <div style="margin-top:16px;text-align:right;">
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
+          <button type="button" onclick="editResultScore(${idx})" style="background:#f59e0b;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ Edit Score</button>
           <button type="button" onclick="document.getElementById('resultDetailModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;">Close</button>
         </div>
       `;
       document.getElementById('resultDetailModal').style.display = 'flex';
-    };
+    }
+    
+    window.editResultScore = async function(idx) {
+       const r = window._allResults && window._allResults[idx];
+       if (!r) return;
+       
+       let newScore = prompt(`Edit Score for ${r.name || r.studentName} (${r.studentId}):\nCurrent Score: ${r.score} / ${r.total || r.totalQuestions}`, r.score);
+       if (newScore === null) return; // user cancelled
+       
+       newScore = parseFloat(newScore);
+       if (isNaN(newScore)) {
+          alert('Invalid score entered.');
+          return;
+       }
+       
+       // Update Local Array
+       r.score = newScore;
+       
+       // Reflect in main cetExamResults array
+       let allRes = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       let mainIdx = allRes.findIndex(x => x.id === r.id || (x.studentId === r.studentId && x.course === r.course));
+       if (mainIdx !== -1) {
+          allRes[mainIdx].score = newScore;
+          localStorage.setItem('cetExamResults', JSON.stringify(allRes));
+       }
+       
+       // Update Supabase Database
+       try {
+          const SupaDB = (await import('../js/supabase-db.js')).default;
+          if (SupaDB.supabase) {
+             const { error } = await SupaDB.supabase
+                 .from('exam_results')
+                 .update({ score: newScore })
+                 .eq('student_id', r.studentId);
+             
+             if (error) throw error;
+             console.log('[Supabase] Result updated successfully');
+          }
+       } catch (err) {
+          console.error('Failed to update result on cloud:', err);
+          alert('Note: Score updated locally, but failed to sync to cloud. Error: ' + err.message);
+       }
+       
+       // Refresh UI
+       document.getElementById('resultDetailModal').style.display = 'none';
+       window.renderResults();
+       alert(`Score successfully updated to ${newScore}.`);
+    };;
 
     window.viewAnswersModal = function(idx) {
       const r = window._allResults && window._allResults[idx];
