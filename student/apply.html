@@ -617,6 +617,7 @@
   </div>
 
   <script type="module">
+    import DB from '../js/db.js';
     import { saveStudentApplication, isReady as isSupabaseReady, uploadFile, getClient } from '../js/supabase-db.js';
     window.isSupabaseReady = isSupabaseReady;
     window.saveStudentApplication = saveStudentApplication;
