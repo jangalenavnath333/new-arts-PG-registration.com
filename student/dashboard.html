@@ -666,6 +666,21 @@
             config = allConfigs[app.courseApplied] || allConfigs; // fallback
          } catch(e){}
 
+         // Override with student's personal rescheduled date/time if exists (from cloud or local)
+         let customDate = app.rescheduleDate;
+         let customTime = app.rescheduleTime;
+         if (app.examDate && app.examDate.includes('|')) {
+             const parts = app.examDate.split('|');
+             customDate = parts[0];
+             customTime = parts[1];
+         }
+         
+         if (customDate && customTime) {
+            config = config || { durationMinutes: 60 };
+            config.examDate = customDate;
+            config.startTime = customTime;
+         }
+
          let examDateText = 'TBD';
          let examTimeText = 'TBD';
          let countdownHtml = '--:--:--';
