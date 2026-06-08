@@ -1039,10 +1039,19 @@
       <div class="flex-1 overflow-y-auto p-6" id="categoryReportContent">
         <!-- JS will render table here -->
       </div>
-      <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
-        <button onclick="downloadCategoryReportExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold transition shadow shadow-emerald-500/20">
-          ⬇️ Download as Excel
-        </button>
+      <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+        <div class="text-sm font-bold text-slate-500">Download Detailed Students List:</div>
+        <div class="flex gap-2">
+            <button onclick="downloadDetailedCategoryMeritList('excel')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-emerald-500/20">
+              Excel
+            </button>
+            <button onclick="downloadDetailedCategoryMeritList('pdf')" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-rose-500/20">
+              PDF
+            </button>
+            <button onclick="downloadDetailedCategoryMeritList('word')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-blue-500/20">
+              Word
+            </button>
+        </div>
       </div>
     </div>
   </div>
@@ -5033,41 +5042,106 @@
        document.getElementById('categoryReportModal').style.display = 'flex';
     };
 
-    window.downloadCategoryReportExcel = function() {
-       if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
-       if (!window._categoryStatsData) return;
+    window.downloadDetailedCategoryMeritList = function(format) {
+       const apps = window.getApplications ? window.getApplications() : [];
+       if (!apps || apps.length === 0) { alert('No applications to export.'); return; }
        
-       const { stats, courses, categories } = window._categoryStatsData;
-       
-       // Build worksheet data array
-       const wsData = [];
-       
-       // Header row
-       const headerRow = ['Course', ...categories, 'Total Applications'];
-       wsData.push(headerRow);
-       
-       // Data rows
-       courses.forEach(course => {
-           const row = [course];
-           categories.forEach(c => {
-               row.push(stats[course][c] || 0);
-           });
-           row.push(stats[course]['Total']);
-           wsData.push(row);
+       // Group students by Caste Category
+       const groupedByCaste = {};
+       apps.forEach(app => {
+           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown Category';
+           if (!groupedByCaste[category]) groupedByCaste[category] = [];
+           groupedByCaste[category].push(app);
        });
        
-       // Create workbook and export
-       const wb = XLSX.utils.book_new();
-       const ws = XLSX.utils.aoa_to_sheet(wsData);
+       const categories = Object.keys(groupedByCaste).sort();
        
-       // Auto-size columns slightly
-       const wscols = [{wch: 35}];
-       categories.forEach(() => wscols.push({wch: 15}));
-       wscols.push({wch: 20});
-       ws['!cols'] = wscols;
-       
-       XLSX.utils.book_append_sheet(wb, ws, 'Category Report');
-       XLSX.writeFile(wb, `Category_Merit_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+       if (format === 'excel') {
+          if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+          const wb = XLSX.utils.book_new();
+          
+          categories.forEach(caste => {
+             const wsData = [['Application ID', 'Student ID', 'Applicant Name', 'Course Applied', 'Mobile', 'Email', 'Status']];
+             groupedByCaste[caste].forEach(a => {
+                const acad = a.academicDetails || {};
+                wsData.push([
+                   a.applicationId || '',
+                   a.studentId || '',
+                   a.fullName || a.name || '',
+                   a.courseApplied || acad.courseApplied || '',
+                   a.mobile || '',
+                   a.email || '',
+                   a.applicationStatus || a.status || ''
+                ]);
+             });
+             const ws = XLSX.utils.aoa_to_sheet(wsData);
+             // Ensure sheet name is valid (max 31 chars, no special chars)
+             let sheetName = caste.replace(/[\\\/\?\*\[\]]/g, '').substring(0, 31);
+             if(!sheetName) sheetName = "Category";
+             XLSX.utils.book_append_sheet(wb, ws, sheetName);
+          });
+          
+          XLSX.writeFile(wb, `Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.xlsx`);
+       } 
+       else if (format === 'pdf') {
+          if (typeof jspdf === 'undefined') { alert('PDF library still loading, please retry.'); return; }
+          const doc = new jspdf.jsPDF();
+          let currentY = 15;
+          
+          doc.setFontSize(16);
+          doc.text('Category-wise Merit List', 14, currentY);
+          currentY += 10;
+          
+          categories.forEach(caste => {
+             doc.setFontSize(14);
+             doc.setTextColor(79, 70, 229); // Indigo
+             doc.text(`Category: ${caste} (${groupedByCaste[caste].length} Students)`, 14, currentY);
+             currentY += 5;
+             
+             const tableData = groupedByCaste[caste].map(a => {
+                const acad = a.academicDetails || {};
+                return [
+                   a.applicationId || '',
+                   a.fullName || a.name || '',
+                   a.courseApplied || acad.courseApplied || '',
+                   a.mobile || ''
+                ];
+             });
+             
+             doc.autoTable({
+                startY: currentY,
+                head: [['App ID', 'Applicant Name', 'Course', 'Mobile']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] },
+                margin: { left: 14, right: 14 }
+             });
+             
+             currentY = doc.lastAutoTable.finalY + 15;
+             if (currentY > 270) { doc.addPage(); currentY = 15; }
+          });
+          
+          doc.save(`Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.pdf`);
+       }
+       else if (format === 'word') {
+          let content = 'CATEGORY-WISE DETAILED MERIT LIST\n\n';
+          categories.forEach(caste => {
+             content += `========================================================\n`;
+             content += `CATEGORY: ${caste} (Total: ${groupedByCaste[caste].length} Students)\n`;
+             content += `========================================================\n`;
+             content += `App ID\tName\tCourse\tMobile\tEmail\n`;
+             groupedByCaste[caste].forEach(a => {
+                const acad = a.academicDetails || {};
+                content += `${a.applicationId||''}\t${a.fullName||a.name||''}\t${a.courseApplied||acad.courseApplied||''}\t${a.mobile||''}\t${a.email||''}\n`;
+             });
+             content += `\n\n`;
+          });
+          
+          const blob = new Blob([content], { type: 'application/msword' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.doc`; a.click();
+          URL.revokeObjectURL(url);
+       }
     };
 
     window.downloadApplications = function(format) {
