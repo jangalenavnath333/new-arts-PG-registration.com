@@ -617,8 +617,11 @@
   </div>
 
   <script type="module">
-    import DB from '../js/db.js';
-    import { saveStudentApplication, isReady as isSupabaseReady, uploadFile } from '../js/supabase-db.js';
+    import { saveStudentApplication, isReady as isSupabaseReady, uploadFile, getClient } from '../js/supabase-db.js';
+    window.isSupabaseReady = isSupabaseReady;
+    window.saveStudentApplication = saveStudentApplication;
+    window.supabaseUploadFile = uploadFile;
+    window.supabaseGetClient = getClient;
     window.supabaseUploadFile = uploadFile;
     window.isSupabaseReady = isSupabaseReady;
 
@@ -1114,9 +1117,8 @@
       } catch(e) { console.error("Failed to save draft", e); }
 
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('admin_bypass') === 'newarts_admin_secret') {
-          console.log("[Admin] Bypassing payment...");
+        if (window.isAdminLoggedIn) {
+          console.log("[Admin] Bypassing payment securely...");
           btn.innerHTML = '✅ Admin Manual Submission...';
           const result = await proceedWithSubmission({
             razorpayOrderId: 'MANUAL_ADMIN_ADD',
@@ -1674,7 +1676,32 @@
     }
 
     // ── Initialization ──────────────────────────────────────
-    window.addEventListener('DOMContentLoaded', () => {
+    window.isAdminLoggedIn = false;
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Check Admin Auth securely
+      const client = typeof window.supabaseGetClient === 'function' ? window.supabaseGetClient() : null;
+      if (client) {
+         try {
+           const { data } = await client.auth.getUser();
+           if (data && data.user && data.user.email === 'admin@newarts-casas-pgcet.in') {
+              window.isAdminLoggedIn = true;
+              const btn = document.getElementById('submitBtn');
+              if (btn) {
+                btn.innerHTML = 'Submit Application (Admin Bypass)';
+                btn.style.background = '#10b981';
+              }
+              const priceDisplay = document.querySelector('.price-tag');
+              if (priceDisplay) priceDisplay.innerHTML = '₹0 <span style="font-size:12px;opacity:0.8;">(Admin Manual Entry)</span>';
+              
+              // Add a banner at the top of the form
+              const banner = document.createElement('div');
+              banner.style.cssText = 'background:#10b981;color:white;padding:12px;text-align:center;font-weight:bold;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 12px rgba(16,185,129,0.3);';
+              banner.innerHTML = '🛡️ ADMIN MODE ACTIVE: You are adding a student manually. Payment will be skipped.';
+              document.getElementById('step1').prepend(banner);
+           }
+         } catch(e) { console.error(e); }
+      }
+
       const params = new URLSearchParams(window.location.search);
       const stepParam = parseInt(params.get('step'));
       if (stepParam && stepParam >= 1 && stepParam <= 3) {
@@ -1694,16 +1721,6 @@
            courseEl.innerHTML = `<option value="${courseName}" selected>${courseName}</option>`;
            courseEl.disabled = false;
         }
-      }
-      
-      if (params.get('admin_bypass') === 'newarts_admin_secret') {
-         const btn = document.getElementById('submitBtn');
-         if (btn) {
-           btn.innerHTML = 'Submit Application (Admin Bypass)';
-           btn.style.background = '#10b981';
-         }
-         const priceDisplay = document.querySelector('.price-tag');
-         if (priceDisplay) priceDisplay.innerHTML = '₹0 <span style="font-size:12px;opacity:0.8;">(Admin Manual Entry)</span>';
       }
     });
 
