@@ -4580,8 +4580,8 @@
         }).eq('student_id', studentIdStr)
         .then(({ error }) => { if (error) console.warn('[Admin Action] Failed Reschedule update:', error); });
         
-        // 2. Delete old cloud results
-        await supabase.from('exam_results').delete().eq('student_id', studentIdStr);
+        // 2. Delete old cloud results (Column in exam_results is cet_student_id)
+        await supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr);
         await supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr);
       }
 
@@ -4599,6 +4599,11 @@
       showToast('Exam rescheduled to ' + date + ' at ' + time, 'success');
       console.log('[Admin Action] Success: Exam rescheduled', id);
       renderStudents();
+      
+      // Force Supabase refresh immediately so UI cache drops the old 'Completed' state
+      if (supabase && typeof window.fetchApplicationsFromSupabase === 'function') {
+         window.fetchApplicationsFromSupabase().then(() => window.renderStudents());
+      }
     }
 
     window.resumeExam = async function(id) {
