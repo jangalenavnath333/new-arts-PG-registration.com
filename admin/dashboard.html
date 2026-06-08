@@ -256,6 +256,9 @@
                 </div>
                 <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
               </div>
+              <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12 mr-2">
+                <button onclick="openCategoryReportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 text-sm font-bold transition flex items-center gap-2">📊 Category Merit List</button>
+              </div>
               <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12">
                 <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
                 <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
@@ -1020,6 +1023,27 @@
         <button type="button" onclick="closeStudentModal('studentDetailsModal')" class="text-slate-400 hover:text-red-500 font-bold text-2xl leading-none">&times;</button>
       </div>
       <div class="flex-1 overflow-y-auto p-6 bg-slate-50" id="studentDetailsContent"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY REPORT MODAL -->
+  <div id="categoryReportModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50">
+        <div>
+          <h3 class="text-xl font-bold text-slate-800">Category & Course Wise Merit Report</h3>
+          <p class="text-sm text-slate-500">Live statistics of submitted applications by caste</p>
+        </div>
+        <button type="button" onclick="document.getElementById('categoryReportModal').style.display='none'" class="text-slate-400 hover:text-red-500 font-bold text-3xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6" id="categoryReportContent">
+        <!-- JS will render table here -->
+      </div>
+      <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button onclick="downloadCategoryReportExcel()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg font-bold transition shadow shadow-emerald-500/20">
+          ⬇️ Download as Excel
+        </button>
+      </div>
     </div>
   </div>
 
@@ -4945,6 +4969,105 @@
         const a = document.createElement('a'); a.href = url; a.download = 'CET_Results.doc'; a.click();
         URL.revokeObjectURL(url);
       }
+    };
+
+    window.openCategoryReportModal = function() {
+       const apps = window.getApplications ? window.getApplications() : [];
+       if (!apps || apps.length === 0) {
+           alert("No applications found to generate report.");
+           return;
+       }
+
+       // Calculate statistics
+       // Group by Course -> Category
+       const stats = {};
+       const allCategories = new Set();
+       const allCourses = new Set();
+       
+       apps.forEach(app => {
+           let course = app.courseApplied || (app.academicDetails && app.academicDetails.courseApplied) || 'Unknown Course';
+           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown Category';
+           
+           allCourses.add(course);
+           allCategories.add(category);
+           
+           if (!stats[course]) stats[course] = {};
+           if (!stats[course][category]) stats[course][category] = 0;
+           if (!stats[course]['Total']) stats[course]['Total'] = 0;
+           
+           stats[course][category]++;
+           stats[course]['Total']++;
+       });
+       
+       const categoriesArray = Array.from(allCategories).sort();
+       window._categoryStatsData = { stats, courses: Array.from(allCourses).sort(), categories: categoriesArray };
+
+       let html = `<table class="w-full text-left border-collapse border border-slate-200">
+          <thead>
+            <tr class="bg-indigo-50 text-indigo-900 text-xs uppercase tracking-wider font-bold">
+              <th class="p-3 border border-slate-200">Course</th>`;
+              
+       categoriesArray.forEach(c => {
+           html += `<th class="p-3 border border-slate-200 text-center">${c}</th>`;
+       });
+       
+       html += `<th class="p-3 border border-slate-200 text-center bg-indigo-100">Total</th>
+            </tr>
+          </thead>
+          <tbody>`;
+          
+       window._categoryStatsData.courses.forEach(course => {
+           html += `<tr class="hover:bg-slate-50">
+             <td class="p-3 border border-slate-200 font-bold text-slate-800">${course}</td>`;
+           categoriesArray.forEach(c => {
+               const count = stats[course][c] || 0;
+               html += `<td class="p-3 border border-slate-200 text-center text-slate-600">${count > 0 ? count : '-'}</td>`;
+           });
+           html += `<td class="p-3 border border-slate-200 text-center font-bold text-indigo-700 bg-indigo-50/50">${stats[course]['Total']}</td>
+           </tr>`;
+       });
+       
+       html += `</tbody></table>`;
+       
+       document.getElementById('categoryReportContent').innerHTML = html;
+       document.getElementById('categoryReportModal').style.display = 'flex';
+    };
+
+    window.downloadCategoryReportExcel = function() {
+       if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+       if (!window._categoryStatsData) return;
+       
+       const { stats, courses, categories } = window._categoryStatsData;
+       
+       // Build worksheet data array
+       const wsData = [];
+       
+       // Header row
+       const headerRow = ['Course', ...categories, 'Total Applications'];
+       wsData.push(headerRow);
+       
+       // Data rows
+       courses.forEach(course => {
+           const row = [course];
+           categories.forEach(c => {
+               row.push(stats[course][c] || 0);
+           });
+           row.push(stats[course]['Total']);
+           wsData.push(row);
+       });
+       
+       // Create workbook and export
+       const wb = XLSX.utils.book_new();
+       const ws = XLSX.utils.aoa_to_sheet(wsData);
+       
+       // Auto-size columns slightly
+       const wscols = [{wch: 35}];
+       categories.forEach(() => wscols.push({wch: 15}));
+       wscols.push({wch: 20});
+       ws['!cols'] = wscols;
+       
+       XLSX.utils.book_append_sheet(wb, ws, 'Category Report');
+       XLSX.writeFile(wb, `Category_Merit_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     window.downloadApplications = function(format) {
