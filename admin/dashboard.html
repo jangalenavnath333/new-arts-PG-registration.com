@@ -5061,21 +5061,33 @@
           const wb = XLSX.utils.book_new();
           
           categories.forEach(caste => {
-             const wsData = [['Application ID', 'Student ID', 'Applicant Name', 'Course Applied', 'Mobile', 'Email', 'Status']];
+             const wsData = [];
+             
+             // Group by Course within caste
+             const courseGroups = {};
              groupedByCaste[caste].forEach(a => {
-                const acad = a.academicDetails || {};
-                wsData.push([
-                   a.applicationId || '',
-                   a.studentId || '',
-                   a.fullName || a.name || '',
-                   a.courseApplied || acad.courseApplied || '',
-                   a.mobile || '',
-                   a.email || '',
-                   a.applicationStatus || a.status || ''
-                ]);
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
              });
+             
+             Object.keys(courseGroups).sort().forEach(course => {
+                wsData.push([`COURSE: ${course} (Category: ${caste}) - Total: ${courseGroups[course].length}`]);
+                wsData.push(['Application ID', 'Student ID', 'Applicant Name', 'Mobile', 'Email', 'Status']);
+                courseGroups[course].forEach(a => {
+                   wsData.push([
+                      a.applicationId || '',
+                      a.studentId || '',
+                      a.fullName || a.name || '',
+                      a.mobile || '',
+                      a.email || '',
+                      a.applicationStatus || a.status || ''
+                   ]);
+                });
+                wsData.push([]); // Empty row spacing
+             });
+             
              const ws = XLSX.utils.aoa_to_sheet(wsData);
-             // Ensure sheet name is valid (max 31 chars, no special chars)
              let sheetName = caste.replace(/[\\\/\?\*\[\]]/g, '').substring(0, 31);
              if(!sheetName) sheetName = "Category";
              XLSX.utils.book_append_sheet(wb, ws, sheetName);
@@ -5089,52 +5101,85 @@
           let currentY = 15;
           
           doc.setFontSize(16);
-          doc.text('Category-wise Merit List', 14, currentY);
+          doc.text('Category & Course Wise Merit List', 14, currentY);
           currentY += 10;
           
           categories.forEach(caste => {
-             doc.setFontSize(14);
-             doc.setTextColor(79, 70, 229); // Indigo
-             doc.text(`Category: ${caste} (${groupedByCaste[caste].length} Students)`, 14, currentY);
-             currentY += 5;
+             // Check page bounds for main category header
+             if (currentY > 260) { doc.addPage(); currentY = 15; }
              
-             const tableData = groupedByCaste[caste].map(a => {
-                const acad = a.academicDetails || {};
-                return [
-                   a.applicationId || '',
-                   a.fullName || a.name || '',
-                   a.courseApplied || acad.courseApplied || '',
-                   a.mobile || ''
-                ];
+             doc.setFontSize(15);
+             doc.setTextColor(255, 255, 255);
+             doc.setFillColor(79, 70, 229); // Indigo background
+             doc.rect(14, currentY, 182, 8, 'F');
+             doc.text(`CATEGORY: ${caste} (Total: ${groupedByCaste[caste].length})`, 16, currentY + 6);
+             currentY += 14;
+             
+             // Group by Course within caste
+             const courseGroups = {};
+             groupedByCaste[caste].forEach(a => {
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
              });
              
-             doc.autoTable({
-                startY: currentY,
-                head: [['App ID', 'Applicant Name', 'Course', 'Mobile']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229] },
-                margin: { left: 14, right: 14 }
+             Object.keys(courseGroups).sort().forEach(course => {
+                 if (currentY > 260) { doc.addPage(); currentY = 15; }
+                 
+                 doc.setFontSize(12);
+                 doc.setTextColor(51, 65, 85); // Slate 700
+                 doc.text(`Course: ${course} (${courseGroups[course].length} Students)`, 14, currentY);
+                 currentY += 4;
+                 
+                 const tableData = courseGroups[course].map(a => {
+                    return [
+                       a.applicationId || '',
+                       a.fullName || a.name || '',
+                       a.mobile || '',
+                       a.applicationStatus || a.status || ''
+                    ];
+                 });
+                 
+                 doc.autoTable({
+                    startY: currentY,
+                    head: [['App ID', 'Applicant Name', 'Mobile', 'App Status']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [148, 163, 184] }, // Slate 400
+                    margin: { left: 14, right: 14 }
+                 });
+                 
+                 currentY = doc.lastAutoTable.finalY + 10;
              });
              
-             currentY = doc.lastAutoTable.finalY + 15;
-             if (currentY > 270) { doc.addPage(); currentY = 15; }
+             currentY += 5; // Extra spacing between categories
           });
           
           doc.save(`Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.pdf`);
        }
        else if (format === 'word') {
-          let content = 'CATEGORY-WISE DETAILED MERIT LIST\n\n';
+          let content = 'CATEGORY & COURSE WISE DETAILED MERIT LIST\n\n';
           categories.forEach(caste => {
              content += `========================================================\n`;
              content += `CATEGORY: ${caste} (Total: ${groupedByCaste[caste].length} Students)\n`;
-             content += `========================================================\n`;
-             content += `App ID\tName\tCourse\tMobile\tEmail\n`;
+             content += `========================================================\n\n`;
+             
+             const courseGroups = {};
              groupedByCaste[caste].forEach(a => {
-                const acad = a.academicDetails || {};
-                content += `${a.applicationId||''}\t${a.fullName||a.name||''}\t${a.courseApplied||acad.courseApplied||''}\t${a.mobile||''}\t${a.email||''}\n`;
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
              });
-             content += `\n\n`;
+             
+             Object.keys(courseGroups).sort().forEach(course => {
+                 content += `--- COURSE: ${course} (${courseGroups[course].length} Students) ---\n`;
+                 content += `App ID\tName\tMobile\tEmail\n`;
+                 courseGroups[course].forEach(a => {
+                    content += `${a.applicationId||''}\t${a.fullName||a.name||''}\t${a.mobile||''}\t${a.email||''}\n`;
+                 });
+                 content += `\n`;
+             });
+             content += `\n`;
           });
           
           const blob = new Blob([content], { type: 'application/msword' });
