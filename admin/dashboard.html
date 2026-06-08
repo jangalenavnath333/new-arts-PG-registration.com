@@ -4571,20 +4571,28 @@
         const studentIdStr = s.studentId || id;
         const customExamDateStr = date + '|' + time;
         
-        // 1. Reset Student Table - try both student_id and email
-        supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('email', s.email).then();
-        supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('student_id', studentIdStr).then();
-        
-        // 2. Delete old cloud results - try both cet_student_id and student_id
-        supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr).then();
-        supabase.from('exam_results').delete().eq('student_id', studentIdStr).then();
-        
-        supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr).then();
-        supabase.from('locked_exams').delete().eq('student_id', studentIdStr).then();
-        
-        // 3. Clear security logs from cloud so they don't sync back
-        supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr).then();
-        supabase.from('security_logs').delete().eq('student_id', studentIdStr).then();
+        // Wait for all cloud updates to finish before refetching
+        try {
+          await Promise.all([
+            // 1. Reset Student Table - try both student_id and email
+            supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('email', s.email),
+            supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('student_id', studentIdStr),
+            
+            // 2. Delete old cloud results - try both cet_student_id and student_id
+            supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr),
+            supabase.from('exam_results').delete().eq('student_id', studentIdStr),
+            
+            supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr),
+            supabase.from('locked_exams').delete().eq('student_id', studentIdStr),
+            
+            // 3. Clear security logs from cloud so they don't sync back
+            supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr),
+            supabase.from('security_logs').delete().eq('student_id', studentIdStr)
+          ]);
+          console.log('[Admin Action] Successfully completed all cloud updates for reschedule');
+        } catch (err) {
+          console.warn('[Admin Action] Error during cloud updates:', err);
+        }
       }
 
       // Email Notification
