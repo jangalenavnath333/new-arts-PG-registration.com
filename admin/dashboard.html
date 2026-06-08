@@ -4550,13 +4550,39 @@
           localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
         }
       } catch(e) {}
+      
+      // Wipe old results locally so the student gets a fresh attempt
+      try {
+        let allResults = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+        allResults = allResults.filter(r => r.studentId !== id && r.studentId !== (s?.studentId));
+        localStorage.setItem('cetExamResults', JSON.stringify(allResults));
+        
+        let allAnswers = JSON.parse(localStorage.getItem('allStudentAnswers')) || [];
+        allAnswers = allAnswers.filter(ans => ans.studentId !== id && ans.studentId !== (s?.studentId));
+        localStorage.setItem('allStudentAnswers', JSON.stringify(allAnswers));
+        
+        let secLogs = JSON.parse(localStorage.getItem('cetExamSecurityLogs')) || [];
+        secLogs = secLogs.filter(l => l.studentId !== id && l.studentId !== (s?.studentId));
+        localStorage.setItem('cetExamSecurityLogs', JSON.stringify(secLogs));
+      } catch(e) {}
 
       // Supabase dual-write
       if (supabase && s) {
-        // Save both date and time in exam_date separated by '|' so the student client can parse it
+        const studentIdStr = s.studentId || id;
         const customExamDateStr = date + '|' + time;
-        await supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr }).eq('student_id', s.studentId || id)
-          .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Reschedule error:', error.message); else console.log('[Admin Action] Success: Exam rescheduled in cloud'); });
+        
+        // 1. Reset Student Table
+        await supabase.from('students').update({ 
+           exam_status: 'SCHEDULED', 
+           has_attempted: false, 
+           exam_date: customExamDateStr,
+           active_violations: 0 
+        }).eq('student_id', studentIdStr)
+        .then(({ error }) => { if (error) console.warn('[Admin Action] Failed Reschedule update:', error); });
+        
+        // 2. Delete old cloud results
+        await supabase.from('exam_results').delete().eq('student_id', studentIdStr);
+        await supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr);
       }
 
       // Email Notification

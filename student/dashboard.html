@@ -491,6 +491,7 @@
             student.paymentStatus = data.payment_status || student.paymentStatus;
             student.studentId = data.student_id || student.studentId;
             student.hasAttempted = data.has_attempted;
+            student.examDate = data.exam_date || student.examDate;
             
             // Persist the freshest data
             DB.addStudent(student);
