@@ -4845,7 +4845,7 @@
           </tbody>
         </table>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
-          <p style="font-weight:700;color:#0f172a;margin:0;">Total Score: <span style="color:#4f46e5;">${totalMarks} / ${answers.length}</span></p>
+          <p style="font-weight:700;color:#0f172a;margin:0;">Final Saved Score: <span style="color:#4f46e5;font-size:1.1rem;">${r.score !== undefined ? r.score : totalMarks} / ${r.total || r.totalQuestions || answers.length}</span> <span style="font-size:10px;color:#64748b;font-weight:500;margin-left:8px;">(Auto-evaluated: ${totalMarks})</span></p>
           <button type="button" onclick="document.getElementById('resultAnswersModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 20px;border-radius:8px;border:none;cursor:pointer;">Close</button>
         </div>
       `;
