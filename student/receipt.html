@@ -301,7 +301,8 @@
       noPrintElements.forEach(el => el.style.display = 'none');
       element.classList.add('pdf-mode'); // Enable crisp light mode for PDF
       
-      // Force render logic before capture to ensure images/fonts load and containers expand
+      // Force render logic and scroll to top before capture to ensure images load and prevent blank pages on mobile
+      window.scrollTo(0, 0);
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const opt = {
@@ -311,7 +312,7 @@
         html2canvas:  { 
           scale: 2, 
           useCORS: true, 
-          windowWidth: 800, // Force desktop width so mobile doesn't crush the layout
+          scrollX: 0,
           scrollY: 0
         },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -319,23 +320,9 @@
       };
 
       try {
-        // Ensure mobile compatibility by generating a blob URL and forcing a download
-        const worker = html2pdf().set(opt).from(element);
-        const blob = await worker.outputPdf('blob');
-        
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = opt.filename;
-        
-        // Append, click, and cleanup
-        document.body.appendChild(a);
-        a.click();
-        
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
+        // Remove manual Blob generation which fails/causes blank PDFs on mobile browsers (Safari/Chrome Mobile)
+        // Instead, use html2pdf's built-in .save() which uses FileSaver.js to safely download
+        await html2pdf().set(opt).from(element).save();
       } catch(err) {
         console.error("PDF Generation Error:", err);
         alert("Could not generate PDF. Please use the Print Receipt button instead.");
