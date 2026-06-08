@@ -1114,6 +1114,23 @@
       } catch(e) { console.error("Failed to save draft", e); }
 
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin_bypass') === 'newarts_admin_secret') {
+          console.log("[Admin] Bypassing payment...");
+          btn.innerHTML = '✅ Admin Manual Submission...';
+          const result = await proceedWithSubmission({
+            razorpayOrderId: 'MANUAL_ADMIN_ADD',
+            razorpayPaymentId: 'MANUAL_ADMIN_ADD'
+          });
+          if (result && result.success) {
+            window.location.href = `/student/receipt.html?id=${result.id}`;
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = 'Submit (Admin Bypass)';
+          }
+          return;
+        }
+
         let orderData = window.prefetchedOrderData;
         if (!orderData || orderData.error) {
           // Fallback if pre-fetch failed
@@ -1437,7 +1454,7 @@
           console.log('[Supabase] Starting cloud sync...');
           try {
             const supabasePromise = saveStudentApplication(applicationData, fileDataMap);
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 15000));
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 60000));
             const result = await Promise.race([supabasePromise, timeoutPromise]);
             if (result) {
               console.log('[Supabase] ✅ Synced! ID:', result.supabaseId);
@@ -1677,6 +1694,16 @@
            courseEl.innerHTML = `<option value="${courseName}" selected>${courseName}</option>`;
            courseEl.disabled = false;
         }
+      }
+      
+      if (params.get('admin_bypass') === 'newarts_admin_secret') {
+         const btn = document.getElementById('submitBtn');
+         if (btn) {
+           btn.innerHTML = 'Submit Application (Admin Bypass)';
+           btn.style.background = '#10b981';
+         }
+         const priceDisplay = document.querySelector('.price-tag');
+         if (priceDisplay) priceDisplay.innerHTML = '₹0 <span style="font-size:12px;opacity:0.8;">(Admin Manual Entry)</span>';
       }
     });
 
