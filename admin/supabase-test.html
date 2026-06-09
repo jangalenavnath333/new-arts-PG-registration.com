@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Supabase Connection Test | CET Portal</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background: #0f172a;
@@ -17,29 +23,33 @@
       justify-content: center;
       padding: 24px;
     }
+
     .test-card {
       background: linear-gradient(145deg, #1e293b, #0f172a);
-      border: 1px solid rgba(99,102,241,0.3);
+      border: 1px solid rgba(99, 102, 241, 0.3);
       border-radius: 20px;
       padding: 36px;
       max-width: 620px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     }
+
     .test-card h1 {
       font-size: 24px;
       font-weight: 800;
       color: #fff;
       margin-bottom: 6px;
     }
+
     .test-card p.sub {
       font-size: 13px;
       color: #94a3b8;
       margin-bottom: 24px;
     }
+
     .env-box {
-      background: rgba(99,102,241,0.08);
-      border: 1px solid rgba(99,102,241,0.25);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
       border-radius: 12px;
       padding: 14px 18px;
       margin-bottom: 24px;
@@ -48,9 +58,19 @@
       word-break: break-all;
       line-height: 1.8;
     }
-    .env-box strong { color: #a5b4fc; }
-    .env-box .val { color: #34d399; }
-    .env-box .missing { color: #f87171; }
+
+    .env-box strong {
+      color: #a5b4fc;
+    }
+
+    .env-box .val {
+      color: #34d399;
+    }
+
+    .env-box .missing {
+      color: #f87171;
+    }
+
     .test-row {
       display: flex;
       align-items: center;
@@ -58,19 +78,51 @@
       padding: 14px 16px;
       border-radius: 12px;
       margin-bottom: 8px;
-      background: rgba(30,41,59,0.8);
-      border: 1px solid rgba(51,65,85,0.5);
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.5);
       font-size: 14px;
       transition: border-color 0.3s;
     }
-    .test-row.ok { border-color: rgba(16,185,129,0.4); }
-    .test-row.fail { border-color: rgba(239,68,68,0.4); }
-    .test-row .icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
-    .test-row .label { flex: 1; font-weight: 500; }
-    .test-row .status { font-weight: 700; font-size: 12px; text-align: right; min-width: 100px; }
-    .pending { color: #f59e0b; }
-    .ok-text { color: #10b981; }
-    .fail-text { color: #ef4444; }
+
+    .test-row.ok {
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .test-row.fail {
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .test-row .icon {
+      font-size: 20px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .test-row .label {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .test-row .status {
+      font-weight: 700;
+      font-size: 12px;
+      text-align: right;
+      min-width: 100px;
+    }
+
+    .pending {
+      color: #f59e0b;
+    }
+
+    .ok-text {
+      color: #10b981;
+    }
+
+    .fail-text {
+      color: #ef4444;
+    }
+
     #runBtn {
       width: 100%;
       padding: 16px;
@@ -85,8 +137,18 @@
       transition: opacity 0.2s, transform 0.1s;
       letter-spacing: 0.3px;
     }
-    #runBtn:hover { opacity: 0.92; transform: translateY(-1px); }
-    #runBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    #runBtn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    #runBtn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     #finalMsg {
       text-align: center;
       margin-top: 18px;
@@ -95,6 +157,7 @@
       min-height: 24px;
       font-weight: 500;
     }
+
     .back-link {
       display: block;
       text-align: center;
@@ -103,9 +166,13 @@
       color: #64748b;
       text-decoration: none;
     }
-    .back-link:hover { color: #a5b4fc; }
+
+    .back-link:hover {
+      color: #a5b4fc;
+    }
   </style>
 </head>
+
 <body>
   <div class="test-card">
     <h1>🔌 Supabase Connection Test</h1>
@@ -174,7 +241,7 @@
       row.className = 'test-row ' + (ok ? 'ok' : 'fail');
     }
 
-    document.getElementById('runBtn').addEventListener('click', async function() {
+    document.getElementById('runBtn').addEventListener('click', async function () {
       const btn = this;
       btn.disabled = true;
       btn.textContent = '⏳ Running tests...';
@@ -250,4 +317,5 @@
     });
   </script>
 </body>
+
 </html>

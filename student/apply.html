@@ -1638,7 +1638,10 @@
       if (client) {
          try {
            const { data } = await client.auth.getUser();
-           if (data && data.user && data.user.email === 'admin@newarts-casas-pgcet.in') {
+           const urlParams = new URLSearchParams(window.location.search);
+           const wantsBypass = urlParams.get('admin_bypass') === 'true';
+
+           if (data && data.user && data.user.email === 'admin@newarts-casas-pgcet.in' && wantsBypass) {
               window.isAdminLoggedIn = true;
               const btn = document.getElementById('submitBtn');
               if (btn) {
