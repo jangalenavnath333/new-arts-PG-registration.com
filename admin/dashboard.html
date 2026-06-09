@@ -2494,10 +2494,73 @@
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Done')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Payment Done</button>
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Pending Verification')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Pending</button>
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Rejected</button>
+        <div style="flex-grow: 1;"></div>
+        <button onclick="adminDownloadReceipt('${app.applicationId || app.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">📄 Download Form</button>
+        <button onclick="adminResendEmail('${app.applicationId || app.id}')" id="btnResendEmail_${app.applicationId || app.id}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">📧 Resend Email</button>
       `;
       
       document.getElementById('previewModal').classList.remove('hidden');
     }
+    
+    window.adminDownloadReceipt = function(appId) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
+      if(!app) {
+         let dbApp = DB.getStudentById(appId);
+         if (dbApp) app = dbApp;
+         else return alert('Application not found');
+      }
+      
+      // Store in localStorage so receipt.html can read it
+      localStorage.setItem('cetApplication', JSON.stringify(app));
+      
+      // Open receipt page in a new tab
+      window.open('../student/receipt.html', '_blank');
+    };
+
+    window.adminResendEmail = async function(appId) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
+      if(!app) {
+         let dbApp = DB.getStudentById(appId);
+         if (dbApp) app = dbApp;
+         else return alert('Application not found');
+      }
+      
+      if (!app.email) return alert('No email address found for this application.');
+      if (!confirm('Are you sure you want to resend the application confirmation email to ' + app.email + '?')) return;
+      
+      const btn = document.getElementById('btnResendEmail_' + appId);
+      if(btn) { btn.disabled = true; btn.innerHTML = '⏳ Sending...'; }
+      
+      try {
+        const EmailSvc = (await import('../js/email-service.js')).default;
+        const emailTemplate = EmailSvc.EmailTemplates.applicationSubmitted(app.fullName, app.applicationId || app.studentId || app.id, app.paymentStatus || 'Pending');
+        
+        const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3000/api/send-email' 
+            : '/api/send-email';
+            
+        const mailRes = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: app.email,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html
+          })
+        });
+        
+        if (!mailRes.ok) throw new Error(await mailRes.text());
+        
+        alert('Email sent successfully to ' + app.email);
+      } catch(err) {
+        console.error('Email send error:', err);
+        alert('Failed to send email: ' + err.message);
+      } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = '📧 Resend Email'; }
+      }
+    };
     
     window.updatePaymentStatus = async function(appId, status) {
       console.log('[Admin Action] Start: Update payment status', appId, status);
