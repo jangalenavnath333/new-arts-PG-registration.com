@@ -2535,7 +2535,16 @@
       
       try {
         const EmailSvc = (await import('../js/email-service.js')).default;
-        const emailTemplate = EmailSvc.EmailTemplates.applicationSubmitted(app.fullName, app.applicationId || app.studentId || app.id, app.paymentStatus || 'Pending');
+        const loginUrl = window.location.origin + '/student/login.html';
+        const emailTemplate = EmailSvc.EmailTemplates.pendingApproval(
+          app.fullName, 
+          app.applicationId || app.studentId || app.id, 
+          app.email,
+          app.mobile || app.password,
+          loginUrl,
+          app.courseApplied || (app.academicDetails ? app.academicDetails.courseApplied : 'N/A'),
+          app.paymentStatus || 'Pending'
+        );
         
         const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? 'http://localhost:3000/api/send-email' 
