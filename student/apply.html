@@ -619,6 +619,7 @@
   <script type="module">
     import DB from '../js/db.js';
     import { saveStudentApplication, isReady as isSupabaseReady, uploadFile, getClient } from '../js/supabase-db.js';
+    import EmailSvc from '../js/email-service.js';
     window.isSupabaseReady = isSupabaseReady;
     window.saveStudentApplication = saveStudentApplication;
     window.supabaseUploadFile = uploadFile;
@@ -1475,69 +1476,9 @@
         // Send Email Notification with Login Credentials
         try {
           console.log('[EmailService] Triggering confirmation email...');
-          
-          // Generate raw HTML body directly to avoid module import issues on Vercel
-          const loginUrl = window.location.origin + '/student/login.html';
-          const emailHtml = `
-            <!DOCTYPE html><html><head><meta charset="UTF-8" /></head>
-            <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif;">
-              <div style="max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
-                <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #1e40af 100%); padding: 32px 20px; text-align: center;">
-                  <h1 style="margin: 0; color: #ffffff; font-size: 18px;">Department of Computer Science</h1>
-                  <p style="margin: 4px 0 0; color: #bfdbfe; font-size: 13px;">CET Examination Cell</p>
-                </div>
-                <div style="padding: 28px;">
-                  <h2 style="margin: 0 0 16px; color: #1e3a5f; font-size: 20px;">📩 Application Received Successfully</h2>
-                  <p style="color: #334155; font-size: 14px; line-height: 1.7;">Dear <strong>${applicationData.fullName}</strong>,</p>
-                  <p style="color: #334155; font-size: 14px; line-height: 1.7;">Your CET application has been submitted and your payment of Rs.${window.APPLICATION_FEE} is successful.</p>
-                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin: 20px 0;">
-                    <p><strong>CET ID:</strong> ${applicationData.studentId}</p>
-                    <p><strong>Course:</strong> ${applicationData.courseApplied}</p>
-                    <p><strong>Mobile:</strong> ${applicationData.mobile}</p>
-                  </div>
-                  <div style="background: #eff6ff; padding: 16px; border-radius: 8px; border-left: 4px solid #2563eb;">
-                    <h3 style="margin: 0 0 8px; font-size: 14px;">Your Login Credentials</h3>
-                    <p style="margin: 0;"><strong>URL:</strong> <a href="${loginUrl}">${loginUrl}</a></p>
-                    <p style="margin: 4px 0;"><strong>Email:</strong> ${applicationData.email}</p>
-                    <p style="margin: 0;"><strong>Password:</strong> ${applicationData.mobile}</p>
-                  </div>
-
-                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-                  
-                  <div style="background: #ecfdf5; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
-                    <h3 style="margin: 0 0 8px; font-size: 14px; color: #047857;">🎉 WhatsApp Community</h3>
-                    <p style="color: #065f46; font-size: 13px; line-height: 1.6; margin: 0 0 12px 0;">
-                      For all future updates, announcements, merit lists, document verification schedules, admission notices, and important information, please join our official WhatsApp group:
-                    </p>
-                    <a href="https://chat.whatsapp.com/HgoOmUNbRRL5iohnuwNgpJ?s=cl&p=i&ilr=4" style="display: inline-block; background: #10b981; color: #ffffff; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; font-size: 13px;">Join WhatsApp Group</a>
-                    <p style="color: #065f46; font-size: 12px; margin: 12px 0 0 0;">
-                      Please join the group to stay updated with all admission-related notifications.<br><br>Thank you.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </body></html>
-          `;
-
-          const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3000/api/send-email' 
-            : '/api/send-email';
-
-          const mailRes = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: applicationData.email,
-              subject: '📩 Application Received – CET Exam Portal | Your Login Credentials',
-              html: emailHtml
-            })
-          });
-          
-          if (!mailRes.ok) {
-            console.error('[EmailService] API Error:', await mailRes.text());
-          } else {
-            console.log('[EmailService] Confirmation email sent successfully!');
-          }
+          applicationData.studentId = appId;
+          applicationData.password = applicationData.mobile;
+          await EmailSvc.sendConfirmationEmail(applicationData);
         } catch (emailErr) {
           console.error('[EmailService] ❌ Failed to send application email:', emailErr);
         }

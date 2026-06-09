@@ -5,69 +5,51 @@
 // Official College Branding
 // ============================================
 
-export async function sendEmail(to, subject, html) {
-  try {
-    console.log(`[Email Service] Sending email to: ${to}`);
-    console.log(`[Email Service] Subject: ${subject}`);
-    const payloadSize = html ? html.length : 0;
-    console.log(`[Email Service] Request payload size: ${payloadSize} characters`);
-    
-    const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? 'http://localhost:3000/api/send-email' 
-      : '/api/send-email';
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ to, subject, html }),
-    });
-
-    const status = response.status;
-    console.log(`[Email Service] API response status code: ${status}`);
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      let errData = {};
-      try { errData = JSON.parse(errBody); } catch(e) {}
+export async function sendEmail(to, subject, html, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[Email Service] Sending email to: ${to} (Attempt ${attempt}/${maxRetries})`);
+      const payloadSize = html ? html.length : 0;
       
-      console.error(`[Email Service] API Error Body:`, errBody);
-      
-      console.log(`\n========== Email Diagnostic Report ==========`);
-      console.log(`- Recipient: ${to}`);
-      console.log(`- Provider: Internal SMTP API`);
-      console.log(`- Response Status: ${status}`);
-      console.log(`- Delivery Result: FAILED`);
-      console.log(`- Error Message: ${errData.details || errData.error || errBody || 'Unknown API Error'}`);
-      console.log(`===========================================\n`);
-      
-      throw new Error(`Email API failed (${status}): ${errData.details || errData.error || 'Unknown'}`);
+      const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:3000/api/send-email' 
+        : '/api/send-email';
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, subject, html }),
+      });
+
+      const status = response.status;
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        let errData = {};
+        try { errData = JSON.parse(errBody); } catch(e) {}
+        throw new Error(`API failed (${status}): ${errData.details || errData.error || 'Unknown'}`);
+      }
+
+      const data = await response.json();
+      let isSuccess = data && (data.success === true || data.messageId);
+
+      if (isSuccess) {
+        console.log("[Email Service] Email sent successfully on attempt " + attempt);
+        return true;
+      } else {
+        throw new Error("Success returned without delivery verification from API.");
+      }
+    } catch (error) {
+      console.error(`[Email Service] Exception on attempt ${attempt}:`, error.message);
+      if (attempt === maxRetries) {
+        console.error(`[Email Service] All ${maxRetries} attempts failed. Giving up.`);
+        return false; // Fail silently so app flow doesn't break
+      }
+      // Wait before retrying (exponential backoff)
+      const waitTime = attempt * 1500;
+      console.log(`[Email Service] Waiting ${waitTime}ms before retry...`);
+      await new Promise(res => setTimeout(res, waitTime));
     }
-
-    const data = await response.json();
-    console.log(`[Email Service] API Response Body:`, data);
-    
-    let isSuccess = data && (data.success === true || data.messageId);
-    
-    console.log(`\n========== Email Diagnostic Report ==========`);
-    console.log(`- Recipient: ${to}`);
-    console.log(`- Provider: Internal SMTP API`);
-    console.log(`- Response Status: ${status}`);
-    console.log(`- Delivery Result: ${isSuccess ? 'SUCCESS' : 'FAILED'}`);
-    console.log(`- Error Message: ${isSuccess ? 'None' : (data.error || 'Failed to verify success flag')}`);
-    console.log(`===========================================\n`);
-
-    if (isSuccess) {
-      console.log("Email sent successfully");
-      return true;
-    } else {
-      console.error("[Email Service] Success returned without delivery verification from API.");
-      return false;
-    }
-  } catch (error) {
-    console.error(`[Email Service] Exception caught:`, error);
-    return false; // Fail silently so app flow doesn't break
   }
 }
 

@@ -2546,21 +2546,9 @@
           app.paymentStatus || 'Pending'
         );
         
-        const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:3000/api/send-email' 
-            : '/api/send-email';
-            
-        const mailRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: app.email,
-            subject: emailTemplate.subject,
-            html: emailTemplate.html
-          })
-        });
+        const success = await EmailSvc.sendEmail(app.email, emailTemplate.subject, emailTemplate.html);
         
-        if (!mailRes.ok) throw new Error(await mailRes.text());
+        if (!success) throw new Error("Failed to send email after retries. Check console for details.");
         
         alert('Email sent successfully to ' + app.email);
       } catch(err) {
