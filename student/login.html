@@ -46,6 +46,7 @@
 
   <script type="module">
     import DB from '../js/db.js';
+    import { isReady, getClient } from '../js/supabase-db.js';
     
     window.showAlert = function(msg, type) {
       document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
@@ -61,7 +62,7 @@
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const email = document.getElementById('email').value.trim().toLowerCase();
-      const pwd = document.getElementById('password').value.trim();
+      const pwd = document.getElementById('password').value.trim().replace(/\s/g, '');
       const btn = document.getElementById('loginBtn');
 
       if (!email || !pwd) { showAlert('⚠ Please fill all fields.', 'warning'); return; }
@@ -74,7 +75,6 @@
         let fromCloud = false;
         
         try {
-          const { isReady, getClient } = await import('../js/supabase-db.js');
           if (isReady()) {
             const supabase = getClient();
             console.log('[Login] Querying Supabase securely for:', email);
