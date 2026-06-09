@@ -1228,20 +1228,33 @@
             contact: getFieldValue('mobileNumber')
           },
           theme: { color: "#4f46e5" },
-          method: {
-            upi: true,
-            card: true,
-            netbanking: true,
-            wallet: true
+          config: {
+            display: {
+              blocks: {
+                upi: {
+                  name: "Pay via UPI",
+                  instruments: [
+                    { method: "upi" }
+                  ]
+                },
+                other: {
+                  name: "Other Payment Modes",
+                  instruments: [
+                    { method: "card" },
+                    { method: "netbanking" },
+                    { method: "wallet" }
+                  ]
+                }
+              },
+              sequence: ["block.upi", "block.other"],
+              preferences: {
+                show_default_blocks: false
+              }
+            }
           },
           retry: {
             enabled: true,
             max_count: 4
-          },
-          readonly: {
-            contact: true,
-            email: true,
-            name: true
           },
           modal: {
             ondismiss: function () {
