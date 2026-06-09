@@ -4620,6 +4620,10 @@
         allResults = allResults.filter(r => r.studentId !== id && r.studentId !== (s?.studentId));
         localStorage.setItem('cetExamResults', JSON.stringify(allResults));
         
+        let cetResults = JSON.parse(localStorage.getItem('cet_results')) || [];
+        cetResults = cetResults.filter(r => r.studentId !== id && r.studentCetId !== (s?.studentId));
+        localStorage.setItem('cet_results', JSON.stringify(cetResults));
+        
         let allAnswers = JSON.parse(localStorage.getItem('allStudentAnswers')) || [];
         allAnswers = allAnswers.filter(ans => ans.studentId !== id && ans.studentId !== (s?.studentId));
         localStorage.setItem('allStudentAnswers', JSON.stringify(allAnswers));
@@ -4627,6 +4631,19 @@
         let secLogs = JSON.parse(localStorage.getItem('cetExamSecurityLogs')) || [];
         secLogs = secLogs.filter(l => l.studentId !== id && l.studentId !== (s?.studentId));
         localStorage.setItem('cetExamSecurityLogs', JSON.stringify(secLogs));
+        
+        // Ensure cetApplications is also updated so dashboard doesn't pull stale state
+        let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+        const appIdx = apps.findIndex(a => a.id === id || a.studentId === (s?.studentId));
+        if (appIdx !== -1) {
+           apps[appIdx].rescheduleDate = date;
+           apps[appIdx].rescheduleTime = time;
+           apps[appIdx].examStatus = 'SCHEDULED';
+           apps[appIdx].hasAttempted = false;
+           apps[appIdx].examTimeLeft = null;
+           apps[appIdx].activeViolations = 0;
+           localStorage.setItem('cetApplications', JSON.stringify(apps));
+        }
       } catch(e) {}
 
       // Supabase dual-write
