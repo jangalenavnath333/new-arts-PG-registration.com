@@ -4651,24 +4651,40 @@
         const studentIdStr = s.studentId || id;
         const customExamDateStr = date + '|' + time;
         
+        // Helper to check if a string is a valid UUID
+        const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        
+        // Collect promises
+        const promises = [];
+        
+        // 1. Reset Student Table - by email (safest)
+        if (s.email) {
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0, lock_reason: null }).eq('email', s.email));
+        }
+        
+        // 2. Clear old attempts, results, locked, logs
+        // By cet_student_id
+        if (studentIdStr && !isUUID(studentIdStr)) {
+           promises.push(supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('exam_attempts').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0, lock_reason: null }).eq('student_id', studentIdStr));
+        }
+        
+        // By UUID (if we have it in s.id or id)
+        const validUuid = isUUID(s.id) ? s.id : (isUUID(id) ? id : null);
+        if (validUuid) {
+           promises.push(supabase.from('exam_results').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('locked_exams').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('security_logs').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('exam_attempts').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0, lock_reason: null }).eq('id', validUuid));
+        }
+        
         // Wait for all cloud updates to finish before refetching
         try {
-          await Promise.all([
-            // 1. Reset Student Table - try both student_id and email
-            supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('email', s.email),
-            supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, exam_date: customExamDateStr, active_violations: 0 }).eq('student_id', studentIdStr),
-            
-            // 2. Delete old cloud results - try both cet_student_id and student_id
-            supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr),
-            supabase.from('exam_results').delete().eq('student_id', studentIdStr),
-            
-            supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr),
-            supabase.from('locked_exams').delete().eq('student_id', studentIdStr),
-            
-            // 3. Clear security logs from cloud so they don't sync back
-            supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr),
-            supabase.from('security_logs').delete().eq('student_id', studentIdStr)
-          ]);
+          await Promise.all(promises);
           console.log('[Admin Action] Successfully completed all cloud updates for reschedule');
         } catch (err) {
           console.warn('[Admin Action] Error during cloud updates:', err);
