@@ -512,7 +512,7 @@
             }
             
             // Persist the freshest data
-            DB.addStudent(student);
+            DB.setCurrentStudent(student);
             localStorage.setItem('studentData', JSON.stringify(student));
             
             // CRITICAL FIX: Also update allStudentApps so renderOverview uses live data
@@ -1554,6 +1554,15 @@
        showTab('result');
        window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    // Export functions to window for HTML inline handlers to access since this is a module script
+    window.logout = logout;
+    window.startExam = startExam;
+    window.toggleStartBtn = toggleStartBtn;
+    window.closeExamRules = closeExamRules;
+    window.proceedToExam = proceedToExam;
+    window.downloadResultPDF = typeof downloadResultPDF !== 'undefined' ? downloadResultPDF : null;
+    window.downloadAdmitCard = typeof downloadAdmitCard !== 'undefined' ? downloadAdmitCard : null;
   </script>
 </body>
 </html>
