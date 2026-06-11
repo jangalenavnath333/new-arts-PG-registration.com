@@ -263,7 +263,7 @@
                 <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
                 <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
                 <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
-                <button onclick="copyWhatsAppNumbers()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Copy all WhatsApp Numbers">📱 WhatsApp</button>
+                <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 WhatsApp Contacts</button>
               </div>
               <div class="flex border border-indigo-500 rounded-lg overflow-hidden h-12 ml-2">
                 <a href="../student/apply.html?admin_bypass=true" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">➕ Add Student</a>
@@ -5479,7 +5479,7 @@
          URL.revokeObjectURL(url);
        }
     };
-    window.copyWhatsAppNumbers = function() {
+    window.downloadWhatsAppContacts = function() {
         const data = window._currentApplicationsData || [];
         if (data.length === 0) { 
             alert('No applications found.'); 
@@ -5497,15 +5497,29 @@
             return; 
         }
         
-        const textToCopy = uniqueNumbers.join(', ');
-        
-        // Copy to clipboard
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert(`✅ Successfully copied ${uniqueNumbers.length} WhatsApp numbers!\n\nYou can now paste them directly into WhatsApp or any text editor to create your group.`);
-        }).catch(err => {
-            alert('Failed to copy. Your browser might be blocking clipboard access.');
-            console.error(err);
+        // Generate VCF content
+        let vcfContent = '';
+        uniqueNumbers.forEach((num, index) => {
+            // Get student name if available, otherwise just use generic name
+            const student = data.find(a => a.mobile === num);
+            const rawName = student && (student.fullName || student.name) ? student.fullName || student.name : `Student ${index + 1}`;
+            // Remove any commas or newlines from the name to prevent VCF corruption
+            const cleanName = rawName.replace(/[\r\n,]/g, ' ').trim();
+            vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:CET ${cleanName}\nTEL;TYPE=CELL:${num}\nEND:VCARD\n`;
         });
+        
+        // Create and trigger download
+        const blob = new Blob([vcfContent], { type: 'text/vcard' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CET_WhatsApp_Contacts_${new Date().toISOString().split('T')[0]}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ Successfully downloaded ${uniqueNumbers.length} contacts!\n\nPlease open this .vcf file on your mobile phone to save all numbers instantly.`);
     };
   </script>
 
