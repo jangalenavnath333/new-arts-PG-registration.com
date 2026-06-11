@@ -26,15 +26,27 @@
     async function syncGlobalTime() {
        try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { signal: controller.signal });
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
+          
+          let serverTime;
+          try {
+             const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Kolkata', { signal: controller.signal });
+             if (!res.ok) throw new Error('API 1 failed');
+             const data = await res.json();
+             serverTime = new Date(data.datetime).getTime();
+          } catch(err1) {
+             console.warn('[TimeSync] Primary API failed, trying fallback...');
+             const res2 = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata');
+             if (!res2.ok) throw new Error('API 2 failed');
+             const data2 = await res2.json();
+             serverTime = new Date(data2.dateTime).getTime();
+          }
+          
           clearTimeout(timeoutId);
-          const data = await res.json();
-          const serverTime = new Date(data.datetime).getTime();
           window.timeOffset = serverTime - Date.now();
           console.log('[TimeSync] Offset applied:', window.timeOffset, 'ms');
        } catch(e) {
-          console.warn('[TimeSync] Failed to sync global time:', e.message);
+          console.warn('[TimeSync] All time sync APIs failed. Using local device time:', e.message);
        }
     }
     syncGlobalTime();
