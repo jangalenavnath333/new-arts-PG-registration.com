@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Contact Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-slate-800">
+  <div class="bg-white p-8 rounded-2xl shadow-lg border border-slate-100 max-w-lg w-full">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl">📱</div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">WhatsApp Group Helper</h1>
+        <p class="text-sm text-slate-500">Save 100+ numbers in 1 click!</p>
+      </div>
+    </div>
+    
+    <label class="block text-sm font-bold text-slate-700 mb-2">Paste all copied numbers here (comma separated):</label>
+    <textarea id="numbersInput" rows="5" class="w-full border border-slate-300 rounded-xl p-4 mb-4 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="e.g. 9876543210, 9988776655, 8877665544..."></textarea>
+    
+    <label class="block text-sm font-bold text-slate-700 mb-2">Save Contacts As:</label>
+    <input type="text" id="prefixInput" value="CET Student" class="w-full border border-slate-300 rounded-xl p-3 mb-6 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="CET Student">
+
+    <button onclick="generateVCF()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2">
+      <span>📥 Download Contacts File (.vcf)</span>
+    </button>
+    
+    <div class="mt-6 text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-200">
+      <p class="font-bold mb-2">How to use this?</p>
+      <ol class="list-decimal pl-4 space-y-1">
+        <li>Paste the numbers above and click Download.</li>
+        <li>Send the downloaded <b>.vcf file</b> to your mobile (via WhatsApp/Email).</li>
+        <li>Open the file on your mobile. It will instantly save all numbers!</li>
+        <li>Go to WhatsApp &rarr; New Group &rarr; Search "CET Student" &rarr; Select all and Done!</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    function generateVCF() {
+      const input = document.getElementById('numbersInput').value;
+      const prefix = document.getElementById('prefixInput').value || 'Student';
+      
+      if (!input.trim()) {
+        alert("Please paste the numbers first!");
+        return;
+      }
+      
+      const numbers = input.split(',').map(n => n.trim()).filter(n => n.length >= 10);
+      if (numbers.length === 0) {
+        alert("No valid phone numbers found!");
+        return;
+      }
+      
+      let vcfContent = '';
+      numbers.forEach((num, index) => {
+        const name = `${prefix} ${index + 1}`;
+        vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${num}\nEND:VCARD\n`;
+      });
+      
+      const blob = new Blob([vcfContent], { type: 'text/vcard' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'CET_Students_Contacts.vcf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
