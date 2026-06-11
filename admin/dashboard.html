@@ -5505,7 +5505,7 @@
             const rawName = student && (student.fullName || student.name) ? student.fullName || student.name : `Student ${index + 1}`;
             // Remove any commas or newlines from the name to prevent VCF corruption
             const cleanName = rawName.replace(/[\r\n,]/g, ' ').trim();
-            vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:CET ${cleanName}\nTEL;TYPE=CELL:${num}\nEND:VCARD\n`;
+            vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:CET MSC ${cleanName}\nTEL;TYPE=CELL:${num}\nEND:VCARD\n`;
         });
         
         // Create and trigger download
