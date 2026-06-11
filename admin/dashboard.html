@@ -5789,8 +5789,12 @@ window.sendMassWhatsAppEmail = async function() {
   if (!link) { alert('Please enter the WhatsApp Group Invite Link first!'); return; }
   
   const data = window._currentApplicationsData || [];
+  
+  // Load previously sent emails from localStorage to persist across reloads
+  const sentEmails = JSON.parse(localStorage.getItem('wa_invited_emails') || '[]');
+  
   // Only target students who haven't successfully received it yet
-  const studentsWithEmail = data.filter(s => s.email && !s.waInviteSent);
+  const studentsWithEmail = data.filter(s => s.email && !sentEmails.includes(s.email.toLowerCase()));
   
   if (studentsWithEmail.length === 0) { 
       alert('All students have already received the WhatsApp link successfully!'); 
@@ -5848,7 +5852,11 @@ window.sendMassWhatsAppEmail = async function() {
       });
       if (res.ok) {
          successCount++;
-         student.waInviteSent = true; // Mark as sent!
+         // Immediately save to localStorage to track successfully sent emails globally
+         if (student.email) {
+             sentEmails.push(student.email.toLowerCase());
+             localStorage.setItem('wa_invited_emails', JSON.stringify(sentEmails));
+         }
       } else {
          failedStudents.push(student.email);
       }
@@ -5858,14 +5866,6 @@ window.sendMassWhatsAppEmail = async function() {
     
     // Add a 1 second delay between emails to prevent Gmail Rate Limiting!
     await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  
-  // Save the updated statuses to LocalStorage
-  if(window.DB && window.DB.saveAll) {
-      // Assuming DB logic exists, or just manually update localStorage
-      localStorage.setItem('cet_students', JSON.stringify(data));
-  } else {
-      localStorage.setItem('cet_students', JSON.stringify(data));
   }
   
   document.getElementById('btnSendMassEmail').disabled = false;
