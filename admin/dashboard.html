@@ -5828,7 +5828,11 @@ window.sendMassWhatsAppEmail = async function() {
     `;
 
     try {
-      const res = await fetch('/api/send-email', {
+      const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:3000/api/send-email' 
+        : '/api/send-email';
+
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
