@@ -1551,7 +1551,12 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('submitted') === 'true') {
-       showTab('result');
+       setTimeout(() => {
+          const resEl = document.getElementById('resultContent');
+          if (resEl) {
+             resEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+       }, 500);
        window.history.replaceState({}, document.title, window.location.pathname);
     }
 
