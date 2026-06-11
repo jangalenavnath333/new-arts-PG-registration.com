@@ -5789,17 +5789,22 @@ window.sendMassWhatsAppEmail = async function() {
   if (!link) { alert('Please enter the WhatsApp Group Invite Link first!'); return; }
   
   const data = window._currentApplicationsData || [];
-  const studentsWithEmail = data.filter(s => s.email);
+  // Only target students who haven't successfully received it yet
+  const studentsWithEmail = data.filter(s => s.email && !s.waInviteSent);
   
-  if (studentsWithEmail.length === 0) { alert('No students found with email addresses.'); return; }
+  if (studentsWithEmail.length === 0) { 
+      alert('All students have already received the WhatsApp link successfully!'); 
+      document.getElementById('massEmailModal').style.display = 'none';
+      return; 
+  }
   
-  if (!confirm(`Are you sure you want to send this WhatsApp link to ${studentsWithEmail.length} students?`)) return;
+  if (!confirm(`Sending WhatsApp link to ${studentsWithEmail.length} students.\n(Students who already received it successfully are skipped.)\nDo you want to proceed?`)) return;
   
   document.getElementById('btnSendMassEmail').disabled = true;
   document.getElementById('emailProgressArea').classList.remove('hidden');
   
   let successCount = 0;
-  let failCount = 0;
+  let failedStudents = [];
   
   for (let i = 0; i < studentsWithEmail.length; i++) {
     const student = studentsWithEmail[i];
@@ -5843,23 +5848,37 @@ window.sendMassWhatsAppEmail = async function() {
       });
       if (res.ok) {
          successCount++;
+         student.waInviteSent = true; // Mark as sent!
       } else {
-         // Fallback to local EmailService mock if running locally without backend
-         if (window.EmailService && window.EmailService.sendEmail) {
-            await window.EmailService.sendEmail({ to: student.email, subject: 'WhatsApp Invitation' });
-            successCount++;
-         } else {
-            failCount++;
-         }
+         failedStudents.push(student.email);
       }
     } catch(e) {
-      failCount++;
+      failedStudents.push(student.email);
     }
+    
+    // Add a 1 second delay between emails to prevent Gmail Rate Limiting!
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  // Save the updated statuses to LocalStorage
+  if(window.DB && window.DB.saveAll) {
+      // Assuming DB logic exists, or just manually update localStorage
+      localStorage.setItem('cet_students', JSON.stringify(data));
+  } else {
+      localStorage.setItem('cet_students', JSON.stringify(data));
   }
   
   document.getElementById('btnSendMassEmail').disabled = false;
   document.getElementById('emailProgressArea').classList.add('hidden');
-  alert(`Email broadcast complete!\n\nSuccessfully sent: ${successCount}\nFailed: ${failCount}`);
+  
+  let finalMessage = `Email broadcast complete!\n\nSuccessfully sent: ${successCount}\nFailed: ${failedStudents.length}`;
+  if (failedStudents.length > 0) {
+      finalMessage += `\n\nFailed Emails:\n${failedStudents.slice(0, 10).join('\n')}`;
+      if (failedStudents.length > 10) finalMessage += `\n...and ${failedStudents.length - 10} more.`;
+      finalMessage += `\n\n(Click 'Mass Email' again to retry ONLY for these failed students!)`;
+  }
+  
+  alert(finalMessage);
   document.getElementById('massEmailModal').style.display = 'none';
 };
 </script>
