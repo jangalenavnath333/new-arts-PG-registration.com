@@ -435,7 +435,17 @@
         
         // Sync Exam Config from Supabase
         if (ExamSupa.isReady()) {
-           const dbConfig = await ExamSupa.fetchExamConfig(student.courseApplied);
+           let dbConfig = null;
+           
+           // Check for personalized reschedule config first
+           const { data: pConf } = await getClient().from('exam_config').select('*').eq('course', 'RESCHEDULE_' + student.studentId).eq('is_active', true).limit(1).single();
+           if (pConf) {
+               dbConfig = { examDate: pConf.exam_date, startTime: pConf.start_time, durationMinutes: pConf.duration_minutes, course: pConf.course, instructions: pConf.instructions, rules: pConf.rules };
+               console.log('[Dashboard] Found personalized reschedule config from cloud:', dbConfig);
+           } else {
+               dbConfig = await ExamSupa.fetchExamConfig(student.courseApplied);
+           }
+           
            if (dbConfig) {
              window.examConfig = dbConfig;
              
@@ -482,23 +492,23 @@
 
         if (isReady()) {
           const supabase = getClient();
-          const { data, error } = await supabase.from('students').select('*').eq('email', student.email).eq('course_applied', student.courseApplied).single();
-          if (data && !error) {
-            console.log('[Dashboard] Synced real-time status from Supabase');
-            student.applicationStatus = data.application_status;
-            student.examStatus = data.exam_status;
-            student.status = data.status;
-            student.paymentStatus = data.payment_status || student.paymentStatus;
-            student.studentId = data.student_id || student.studentId;
-            student.hasAttempted = data.has_attempted;
-            student.examDate = data.exam_date || student.examDate;
-            if (data.academic_details) {
-                const academicDetails = typeof data.academic_details === 'string' ? JSON.parse(data.academic_details) : data.academic_details;
-                student.rescheduleDate = academicDetails.rescheduleDate || student.rescheduleDate;
-                student.rescheduleTime = academicDetails.rescheduleTime || student.rescheduleTime;
-                if (academicDetails.rescheduleDate && academicDetails.rescheduleTime) {
-                    student.examDate = academicDetails.rescheduleDate + '|' + academicDetails.rescheduleTime;
-                }
+          // Use check_eligibility RPC to bypass RLS and fetch student status securely
+          const { data, error } = await supabase.rpc('check_eligibility', { p_identifier: student.email });
+          if (data && data.length > 0 && !error) {
+            const liveData = data[0];
+            console.log('[Dashboard] Synced real-time status from cloud securely');
+            student.applicationStatus = liveData.application_status;
+            student.examStatus = liveData.exam_status;
+            student.status = liveData.status;
+            student.studentId = liveData.student_id || student.studentId;
+            student.hasAttempted = liveData.has_attempted;
+            
+            // Note: check_eligibility does not return exam_date, so we rely on the personalized exam_config fetched above
+            // If the personalized config was found, we update local student.examDate
+            if (window.examConfig && window.examConfig.course && window.examConfig.course.startsWith('RESCHEDULE_')) {
+                student.rescheduleDate = window.examConfig.examDate;
+                student.rescheduleTime = window.examConfig.startTime;
+                student.examDate = window.examConfig.examDate + '|' + window.examConfig.startTime;
             }
             
             // Persist the freshest data
