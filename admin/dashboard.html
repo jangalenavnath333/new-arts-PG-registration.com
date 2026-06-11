@@ -235,41 +235,48 @@
               <p class="text-sm text-slate-500">Review pending admissions and verify payments.</p>
             </div>
             
-            <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              <select id="filterCourse" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">All Courses</option>
-                <option value="Science">M.Sc. Computer Science</option>
-                <option value="Application">M.Sc. Computer Application</option>
-              </select>
+            <div class="flex flex-col gap-4 w-full lg:w-auto">
+              <!-- Top Row: Filters & Search -->
+              <div class="flex flex-col sm:flex-row gap-4">
+                <select id="filterCourse" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">All Courses</option>
+                  <option value="Science">M.Sc. Computer Science</option>
+                  <option value="Application">M.Sc. Computer Application</option>
+                </select>
 
-              <select id="filterStatus" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">All Applications</option>
-                <option value="Submitted">Pending Review</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-              
-              <!-- Large White Search Bar -->
-              <div class="relative w-full sm:w-[320px]">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <select id="filterStatus" onchange="renderApplications()" class="bg-white border text-sm border-slate-200 rounded-lg px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">All Applications</option>
+                  <option value="Submitted">Pending Review</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                
+                <!-- Large White Search Bar -->
+                <div class="relative w-full sm:w-[320px]">
+                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  </div>
+                  <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
                 </div>
-                <input type="text" id="searchInput" oninput="renderApplications()" placeholder="Search applicants..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
               </div>
-              <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12 mr-2">
-                <button onclick="openCategoryReportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 text-sm font-bold transition flex items-center gap-2">📊 Category Merit List</button>
-              </div>
-              <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12">
-                <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
-                <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
-                <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
-                <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 WhatsApp Contacts</button>
-              </div>
-              <div class="flex border border-blue-500 rounded-lg overflow-hidden h-12 ml-2">
-                <button onclick="document.getElementById('massEmailModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">📢 Mass Email</button>
-              </div>
-              <div class="flex border border-indigo-500 rounded-lg overflow-hidden h-12 ml-2">
-                <a href="../student/apply.html?admin_bypass=true" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">➕ Add Student</a>
+
+              <!-- Bottom Row: Action Buttons -->
+              <div class="flex flex-wrap items-center justify-end gap-3 w-full">
+                <div class="flex border border-slate-200 rounded-lg overflow-hidden h-10">
+                  <button onclick="openCategoryReportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 text-sm font-bold transition flex items-center gap-2">📊 Category Merit List</button>
+                </div>
+                <div class="flex border border-slate-200 rounded-lg overflow-hidden h-10">
+                  <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
+                  <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
+                  <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
+                  <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 WhatsApp Contacts</button>
+                </div>
+                <div class="flex border border-blue-500 rounded-lg overflow-hidden h-10">
+                  <button onclick="document.getElementById('massEmailModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">📢 Mass Email</button>
+                </div>
+                <div class="flex border border-indigo-500 rounded-lg overflow-hidden h-10">
+                  <a href="../student/apply.html?admin_bypass=true" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">➕ Add Student</a>
+                </div>
               </div>
             </div>
           </div>
