@@ -4657,9 +4657,13 @@
         // Collect promises
         const promises = [];
         
+        // Prepare academic_details payload to store the rescheduled time without needing a new column
+        const existingDetails = typeof s.academicDetails === 'string' ? JSON.parse(s.academicDetails) : (s.academicDetails || {});
+        const newAcademicDetails = { ...existingDetails, rescheduleDate: date, rescheduleTime: time, examDate: customExamDateStr };
+        
         // 1. Reset Student Table - by email (safest)
         if (s.email) {
-           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null }).eq('email', s.email));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('email', s.email));
         }
         
         // 2. Clear old attempts, results, locked, logs
@@ -4669,7 +4673,7 @@
            promises.push(supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr));
            promises.push(supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr));
            promises.push(supabase.from('exam_attempts').delete().eq('cet_student_id', studentIdStr));
-           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null }).eq('student_id', studentIdStr));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('student_id', studentIdStr));
         }
         
         // By UUID (if we have it in s.id or id)
@@ -4679,7 +4683,7 @@
            promises.push(supabase.from('locked_exams').delete().eq('student_id', validUuid));
            promises.push(supabase.from('security_logs').delete().eq('student_id', validUuid));
            promises.push(supabase.from('exam_attempts').delete().eq('student_id', validUuid));
-           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null }).eq('id', validUuid));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('id', validUuid));
         }
         
         // Wait for all cloud updates to finish before refetching

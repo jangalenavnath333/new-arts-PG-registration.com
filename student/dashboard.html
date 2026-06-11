@@ -395,7 +395,7 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
     // ==============================================================
     // INLINE DIRECT DB LOGIC (Bypassing dynamic import / Fetch errors)
     // ==============================================================
@@ -492,6 +492,14 @@
             student.studentId = data.student_id || student.studentId;
             student.hasAttempted = data.has_attempted;
             student.examDate = data.exam_date || student.examDate;
+            if (data.academic_details) {
+                const academicDetails = typeof data.academic_details === 'string' ? JSON.parse(data.academic_details) : data.academic_details;
+                student.rescheduleDate = academicDetails.rescheduleDate || student.rescheduleDate;
+                student.rescheduleTime = academicDetails.rescheduleTime || student.rescheduleTime;
+                if (academicDetails.rescheduleDate && academicDetails.rescheduleTime) {
+                    student.examDate = academicDetails.rescheduleDate + '|' + academicDetails.rescheduleTime;
+                }
+            }
             
             // Persist the freshest data
             DB.addStudent(student);
