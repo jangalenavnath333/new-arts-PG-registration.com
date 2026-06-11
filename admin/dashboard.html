@@ -262,7 +262,8 @@
               <div class="flex border border-slate-200 rounded-lg overflow-hidden h-12">
                 <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
                 <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
-                <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold transition">Word</button>
+                <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
+                <button onclick="copyWhatsAppNumbers()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Copy all WhatsApp Numbers">📱 WhatsApp</button>
               </div>
               <div class="flex border border-indigo-500 rounded-lg overflow-hidden h-12 ml-2">
                 <a href="../student/apply.html?admin_bypass=true" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">➕ Add Student</a>
@@ -5477,6 +5478,34 @@
          const link = document.createElement('a'); link.href = url; link.download = `Documents_Verification_Report_${new Date().toISOString().split('T')[0]}.doc`; link.click();
          URL.revokeObjectURL(url);
        }
+    };
+    window.copyWhatsAppNumbers = function() {
+        const data = window._currentApplicationsData || [];
+        if (data.length === 0) { 
+            alert('No applications found.'); 
+            return; 
+        }
+        
+        // Extract mobile numbers from all valid applications
+        const numbers = data.map(a => a.mobile).filter(Boolean);
+        
+        // Remove duplicates and empty strings
+        const uniqueNumbers = [...new Set(numbers)];
+        
+        if (uniqueNumbers.length === 0) { 
+            alert('No mobile numbers found in the current list.'); 
+            return; 
+        }
+        
+        const textToCopy = uniqueNumbers.join(', ');
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert(`✅ Successfully copied ${uniqueNumbers.length} WhatsApp numbers!\n\nYou can now paste them directly into WhatsApp or any text editor to create your group.`);
+        }).catch(err => {
+            alert('Failed to copy. Your browser might be blocking clipboard access.');
+            console.error(err);
+        });
     };
   </script>
 
