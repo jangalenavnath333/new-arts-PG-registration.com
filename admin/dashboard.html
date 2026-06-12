@@ -5792,9 +5792,9 @@ window.sendMassWhatsAppEmail = async function() {
   
   // Fetch previously sent emails from Supabase to guarantee persistence across all devices
   let sentEmails = [];
-  if (supabase) {
+  if (typeof window.supabase !== 'undefined' && window.supabase) {
       try {
-          const { data: logData, error } = await supabase
+          const { data: logData, error } = await window.supabase
               .from('security_logs')
               .select('message')
               .eq('event_type', 'whatsapp_invite_email');
@@ -5880,8 +5880,8 @@ window.sendMassWhatsAppEmail = async function() {
              localStorage.setItem('wa_invited_emails', JSON.stringify(localSent));
              
              // 2. Save to Supabase for global cross-device tracking
-             if (supabase) {
-                 await supabase.from('security_logs').insert({
+             if (typeof window.supabase !== 'undefined' && window.supabase) {
+                 await window.supabase.from('security_logs').insert({
                      student_id: student.supabaseId || student.id || null,
                      cet_student_id: student.studentId || null,
                      student_name: student.fullName || student.name || null,
