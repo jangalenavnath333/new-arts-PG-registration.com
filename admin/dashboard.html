@@ -5790,24 +5790,26 @@ window.sendMassWhatsAppEmail = async function() {
   
   const data = window._currentApplicationsData || [];
   
-  // Fetch previously sent emails from Supabase to guarantee persistence across all devices
+  // Fetch previously sent emails from system_settings to guarantee persistence
   let sentEmails = [];
   if (typeof window.supabase !== 'undefined' && window.supabase) {
       try {
-          const { data: logData, error } = await window.supabase
-              .from('security_logs')
-              .select('message')
-              .eq('event_type', 'whatsapp_invite_email');
+          const { data: settingData, error } = await window.supabase
+              .from('system_settings')
+              .select('value')
+              .eq('key', 'whatsapp_invited_emails')
+              .maybeSingle();
               
-          if (!error && logData) {
-              sentEmails = logData.map(l => (l.message || '').toLowerCase());
+          if (!error && settingData && settingData.value) {
+              sentEmails = JSON.parse(settingData.value);
+              sentEmails = sentEmails.map(e => e.toLowerCase());
           }
       } catch (err) {
-          console.warn('Failed to fetch global email logs:', err);
+          console.warn('Failed to fetch global email settings:', err);
       }
   }
   
-  // Fallback to local storage if Supabase fetch failed or returned nothing
+  // Fallback to local storage
   const localSent = JSON.parse(localStorage.getItem('wa_invited_emails') || '[]');
   localSent.forEach(e => {
       if (!sentEmails.includes(e.toLowerCase())) sentEmails.push(e.toLowerCase());
@@ -5829,6 +5831,7 @@ window.sendMassWhatsAppEmail = async function() {
   
   let successCount = 0;
   let failedStudents = [];
+  let updatedSentEmails = [...sentEmails];
   
   for (let i = 0; i < studentsWithEmail.length; i++) {
     const student = studentsWithEmail[i];
@@ -5875,20 +5878,8 @@ window.sendMassWhatsAppEmail = async function() {
          
          if (student.email) {
              const emailStr = student.email.toLowerCase();
-             // 1. Save locally as immediate backup
-             localSent.push(emailStr);
-             localStorage.setItem('wa_invited_emails', JSON.stringify(localSent));
-             
-             // 2. Save to Supabase for global cross-device tracking
-             if (typeof window.supabase !== 'undefined' && window.supabase) {
-                 await window.supabase.from('security_logs').insert({
-                     student_id: student.supabaseId || student.id || null,
-                     cet_student_id: student.studentId || null,
-                     student_name: student.fullName || student.name || null,
-                     event_type: 'whatsapp_invite_email',
-                     message: emailStr
-                 });
-             }
+             updatedSentEmails.push(emailStr);
+             localStorage.setItem('wa_invited_emails', JSON.stringify(updatedSentEmails));
          }
       } else {
          failedStudents.push(student.email);
@@ -5896,9 +5887,19 @@ window.sendMassWhatsAppEmail = async function() {
     } catch(e) {
       failedStudents.push(student.email);
     }
-    
     // Add a 1 second delay between emails to prevent Gmail Rate Limiting!
     await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  // Save updated list back to system_settings at the very end
+  if (successCount > 0 && typeof window.supabase !== 'undefined' && window.supabase) {
+      try {
+          await window.supabase
+              .from('system_settings')
+              .upsert({ key: 'whatsapp_invited_emails', value: JSON.stringify(updatedSentEmails) }, { onConflict: 'key' });
+      } catch (err) {
+          console.warn('Failed to update system settings:', err);
+      }
   }
   
   document.getElementById('btnSendMassEmail').disabled = false;
