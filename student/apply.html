@@ -1421,51 +1421,67 @@
         } catch(e) {
           console.warn('[Docs] Failed to save local documents due to quota limit');
         }
-        const student = DB.addStudent(lightApp);
-        DB.updateStudent(student.id, {
-          status:            'pending',
-          studentId:         generatedStudentId,
-          paymentStatus:     'SUCCESS',
-          paymentUtr:        transactionId,
-          razorpayOrderId:   razorpayOrderId,
-          razorpayPaymentId: transactionId,
-          paymentDate:       paymentDate,
-          applicationStatus: 'SUBMITTED',
-          courseApplied:     course,
-          category:          caste,
-        });
+        try {
+          const student = DB.addStudent(lightApp);
+          DB.updateStudent(student.id, {
+            status:            'pending',
+            studentId:         generatedStudentId,
+            paymentStatus:     'SUCCESS',
+            paymentUtr:        transactionId,
+            razorpayOrderId:   razorpayOrderId,
+            razorpayPaymentId: transactionId,
+            paymentDate:       paymentDate,
+            applicationStatus: 'SUBMITTED',
+            courseApplied:     course,
+            category:          caste,
+          });
+        } catch (dbErr) {
+          console.warn('[Local DB] Failed to save student:', dbErr);
+        }
 
         // 2. Append to cetApplications (Admin -> Applications tab)
-        let cetApps = [];
-        try { cetApps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e) {}
-        cetApps = cetApps.filter(a => a.email !== applicationData.email || a.courseApplied !== course);
-        
-        cetApps.push(lightApp);
-        localStorage.setItem('cetApplications', JSON.stringify(cetApps));
+        try {
+          let cetApps = [];
+          try { cetApps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e) {}
+          cetApps = cetApps.filter(a => a.email !== applicationData.email || a.courseApplied !== course);
+          
+          cetApps.push(lightApp);
+          localStorage.setItem('cetApplications', JSON.stringify(cetApps));
+        } catch (e) {
+          console.warn('[Local DB] Failed to append to cetApplications:', e);
+        }
 
         // 3. cetApprovedStudents is populated ONLY when Admin clicks Approve (not here)
         // 4. Append to cetPayments (Admin -> Payment Verification tab)
-        let payments = [];
-        try { payments = JSON.parse(localStorage.getItem('cetPayments')) || []; } catch(e) {}
-        payments = payments.filter(p => p.email !== applicationData.email || p.courseApplied !== course);
-        payments.push({
-          applicationId: appId, studentId: generatedStudentId,
-          fullName: applicationData.fullName, email: applicationData.email,
-          courseApplied: course, paymentStatus: 'SUCCESS', paymentAmount: 'Rs.' + window.APPLICATION_FEE,
-          paymentUtr: transactionId, paymentDate: paymentDate,
-          razorpayOrderId: razorpayOrderId, razorpayPaymentId: transactionId,
-          // Omitting heavy screenshot here to save space; admin will fetch from DB
-          submittedAt: now,
-        });
-        localStorage.setItem('cetPayments', JSON.stringify(payments));
+        try {
+          let payments = [];
+          try { payments = JSON.parse(localStorage.getItem('cetPayments')) || []; } catch(e) {}
+          payments = payments.filter(p => p.email !== applicationData.email || p.courseApplied !== course);
+          payments.push({
+            applicationId: appId, studentId: generatedStudentId,
+            fullName: applicationData.fullName, email: applicationData.email,
+            courseApplied: course, paymentStatus: 'SUCCESS', paymentAmount: 'Rs.' + window.APPLICATION_FEE,
+            paymentUtr: transactionId, paymentDate: paymentDate,
+            razorpayOrderId: razorpayOrderId, razorpayPaymentId: transactionId,
+            // Omitting heavy screenshot here to save space; admin will fetch from DB
+            submittedAt: now,
+          });
+          localStorage.setItem('cetPayments', JSON.stringify(payments));
+        } catch (e) {
+          console.warn('[Local DB] Failed to append to cetPayments:', e);
+        }
 
         // 5. Keep cetApplication (singular) for receipt.html
         // We do NOT store photoFile to prevent Mobile Safari 5MB QuotaExceededError
-        let receiptApp = { ...lightApp };
-        localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
+        try {
+          let receiptApp = { ...lightApp };
+          localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
+        } catch (e) {
+          console.warn('[Local DB] Failed to set cetApplication:', e);
+        }
 
         // ── SUPABASE DUAL-WRITE (Phase 2) ──
-        // Await Supabase save before navigating. If it fails, halt the process.
+        // Await Supabase save before navigating.
         if (isSupabaseReady()) {
           btn.innerHTML = '☁️ Syncing to cloud...';
           console.log('[Supabase] Starting cloud sync...');
@@ -1476,14 +1492,14 @@
             if (result) {
               console.log('[Supabase] ✅ Synced! ID:', result.supabaseId);
             } else {
-              throw new Error('Supabase save returned null');
+              console.warn('[Supabase] Supabase save returned null (Network or RPC issue). Proceeding with local save.');
             }
           } catch (supaErr) {
             console.error('[Supabase] ❌ Cloud sync error:', supaErr);
-            throw new Error('Database save failed: ' + supaErr.message);
+            // Don't throw, proceed with local save
           }
         } else {
-          throw new Error('Database connection not available.');
+          console.warn('[Supabase] Database connection not available. Proceeding with local save.');
         }
 
         // Send Email Notification with Login Credentials
