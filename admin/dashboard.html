@@ -5790,8 +5790,28 @@ window.sendMassWhatsAppEmail = async function() {
   
   const data = window._currentApplicationsData || [];
   
-  // Load previously sent emails from localStorage to persist across reloads
-  const sentEmails = JSON.parse(localStorage.getItem('wa_invited_emails') || '[]');
+  // Fetch previously sent emails from Supabase to guarantee persistence across all devices
+  let sentEmails = [];
+  if (supabase) {
+      try {
+          const { data: logData, error } = await supabase
+              .from('security_logs')
+              .select('message')
+              .eq('event_type', 'whatsapp_invite_email');
+              
+          if (!error && logData) {
+              sentEmails = logData.map(l => (l.message || '').toLowerCase());
+          }
+      } catch (err) {
+          console.warn('Failed to fetch global email logs:', err);
+      }
+  }
+  
+  // Fallback to local storage if Supabase fetch failed or returned nothing
+  const localSent = JSON.parse(localStorage.getItem('wa_invited_emails') || '[]');
+  localSent.forEach(e => {
+      if (!sentEmails.includes(e.toLowerCase())) sentEmails.push(e.toLowerCase());
+  });
   
   // Only target students who haven't successfully received it yet
   const studentsWithEmail = data.filter(s => s.email && !sentEmails.includes(s.email.toLowerCase()));
@@ -5852,10 +5872,23 @@ window.sendMassWhatsAppEmail = async function() {
       });
       if (res.ok) {
          successCount++;
-         // Immediately save to localStorage to track successfully sent emails globally
+         
          if (student.email) {
-             sentEmails.push(student.email.toLowerCase());
-             localStorage.setItem('wa_invited_emails', JSON.stringify(sentEmails));
+             const emailStr = student.email.toLowerCase();
+             // 1. Save locally as immediate backup
+             localSent.push(emailStr);
+             localStorage.setItem('wa_invited_emails', JSON.stringify(localSent));
+             
+             // 2. Save to Supabase for global cross-device tracking
+             if (supabase) {
+                 await supabase.from('security_logs').insert({
+                     student_id: student.supabaseId || student.id || null,
+                     cet_student_id: student.studentId || null,
+                     student_name: student.fullName || student.name || null,
+                     event_type: 'whatsapp_invite_email',
+                     message: emailStr
+                 });
+             }
          }
       } else {
          failedStudents.push(student.email);
