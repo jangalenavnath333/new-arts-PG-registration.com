@@ -269,7 +269,8 @@
                   <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
                   <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
                   <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
-                  <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 WhatsApp Contacts</button>
+                  <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 Contacts</button>
+                  <button onclick="syncPendingFormsToSupabase()" id="btnSyncCloud" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Sync local forms to Supabase">☁️ Sync to Cloud</button>
                 </div>
                 <div class="flex border border-blue-500 rounded-lg overflow-hidden h-10">
                   <button onclick="openMassEmailModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">📢 Mass Email</button>
@@ -1904,6 +1905,77 @@
         return null;
       }
     }
+
+    // Expose sync function to global scope
+    window.syncPendingFormsToSupabase = async function() {
+       const btn = document.getElementById('btnSyncCloud');
+       if (!btn) return;
+       if (!supabase) { alert('Supabase client not initialized. Check your .env file.'); return; }
+       
+       const localApps = window.getApplications();
+       if (!localApps || localApps.length === 0) {
+          alert('No local applications found to sync.');
+          return;
+       }
+
+       // Ensure we have latest from Supabase to prevent duplicates
+       await window.fetchApplicationsFromSupabase();
+       const cloudApps = _supabaseAppsCache || [];
+       const cloudEmails = cloudApps.map(a => (a.email || '').toLowerCase());
+       const cloudStudentIds = cloudApps.map(a => a.studentId);
+
+       // Find apps that are in localStorage but NOT in Supabase (by email or studentId)
+       const missingApps = localApps.filter(app => {
+          const email = (app.email || '').toLowerCase();
+          return email && !cloudEmails.includes(email) && !cloudStudentIds.includes(app.studentId);
+       });
+
+       if (missingApps.length === 0) {
+          alert('All local forms are already synced with Supabase! 100% matched.');
+          return;
+       }
+
+       if (!confirm(`Found ${missingApps.length} local forms that are missing in Supabase. Do you want to sync them now? This might take a while if there are many documents.`)) return;
+
+       btn.disabled = true;
+       btn.innerHTML = `☁️ Syncing (0/${missingApps.length})...`;
+       
+       let syncedCount = 0;
+       let errorCount = 0;
+
+       for (let i = 0; i < missingApps.length; i++) {
+           const app = missingApps[i];
+           try {
+              btn.innerHTML = `☁️ Syncing (${i+1}/${missingApps.length})...`;
+              // Upload to Supabase via the exact same function apply.html uses
+              const fileDataMap = app.uploadedFiles || {};
+              const syncResult = await SupaDB.saveStudentApplication(app, fileDataMap);
+              if (syncResult && syncResult.supabaseId) {
+                 app.supabaseId = syncResult.supabaseId;
+                 syncedCount++;
+              } else {
+                 errorCount++;
+              }
+           } catch (err) {
+              console.error(`[Sync] Error syncing app ${app.studentId}:`, err);
+              errorCount++;
+           }
+       }
+
+       // Save back to localStorage with updated supabaseIds
+       saveApplications(localApps);
+       
+       // Invalidate cache and re-fetch to update dashboard
+       invalidateCache();
+       await fetchApplicationsFromSupabase();
+       renderApplications();
+       renderDashboardOverview();
+
+       btn.disabled = false;
+       btn.innerHTML = '☁️ Sync to Cloud';
+       
+       alert(`Sync Complete! Successfully synced ${syncedCount} forms. ${errorCount > 0 ? `Failed to sync ${errorCount} forms.` : ''}`);
+    };
 
     window.saveApplications = function(apps) {
       localStorage.setItem('cetApplications', JSON.stringify(apps));
