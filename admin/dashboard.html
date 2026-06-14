@@ -5040,9 +5040,8 @@
        
        // Update Supabase Database
        try {
-          const SupaDB = (await import('../js/supabase-db.js')).default;
-          if (SupaDB.supabase) {
-             const { error } = await SupaDB.supabase
+          if (supabase) {
+             const { error } = await supabase
                  .from('exam_results')
                  .update({ 
                      score: newScore,
@@ -5054,7 +5053,7 @@
              if (error) throw error;
              
              // Also update exam_attempts so everything matches perfectly
-             await SupaDB.supabase
+             await supabase
                  .from('exam_attempts')
                  .update({ score: newScore })
                  .eq('cet_student_id', r.studentId);
