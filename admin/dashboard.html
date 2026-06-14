@@ -1538,11 +1538,37 @@
           if (missing.length === 0) {
              alert('✅ No missing payments found! All students who paid in Razorpay are present in the system.');
           } else {
-             let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS:\n\n`;
-             missing.forEach((m, idx) => {
-                msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
-             });
-             alert(msg);
+             const wantDownload = confirm(`⚠️ FOUND ${missing.length} MISSING STUDENTS!\n\nDo you want to download an Excel sheet with their details?`);
+             
+             if (wantDownload) {
+                if (typeof XLSX === 'undefined') {
+                   // Fallback to CSV if XLSX is not loaded
+                   let csv = 'Email,Phone,Amount,Transaction ID,Payment ID,Date\n';
+                   missing.forEach(m => {
+                      csv += `${m.email},${m.contact},${m.amount},${m.order_id},${m.id},${new Date(m.created_at * 1000).toLocaleString()}\n`;
+                   });
+                   const blob = new Blob([csv], { type: 'text/csv' });
+                   const url = URL.createObjectURL(blob);
+                   const a = document.createElement('a'); a.href = url; a.download = `Missing_Students_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+                   URL.revokeObjectURL(url);
+                } else {
+                   const wsData = [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']];
+                   missing.forEach(m => {
+                      wsData.push([m.email, m.contact, m.amount, m.order_id, m.id, new Date(m.created_at * 1000).toLocaleString('en-IN')]);
+                   });
+                   const wb = XLSX.utils.book_new();
+                   const ws = XLSX.utils.aoa_to_sheet(wsData);
+                   XLSX.utils.book_append_sheet(wb, ws, 'Missing Students');
+                   XLSX.writeFile(wb, `Missing_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+                }
+             } else {
+                 let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS (Top 10):\n\n`;
+                 missing.slice(0, 10).forEach((m, idx) => {
+                    msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
+                 });
+                 if(missing.length > 10) msg += `...and ${missing.length - 10} more.`;
+                 alert(msg);
+             }
           }
        } catch (err) {
           console.error(err);
