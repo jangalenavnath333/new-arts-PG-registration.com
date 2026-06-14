@@ -1538,9 +1538,10 @@
           if (missing.length === 0) {
              alert('✅ No missing payments found! All students who paid in Razorpay are present in the system.');
           } else {
-             const wantDownload = confirm(`⚠️ FOUND ${missing.length} MISSING STUDENTS!\n\nDo you want to download an Excel sheet with their details?`);
+             const wantDownload = prompt(`⚠️ FOUND ${missing.length} MISSING STUDENTS!\n\nType "excel" to download an Excel sheet, "pdf" for a PDF report, or leave blank to just view them here:`);
+             const format = (wantDownload || '').trim().toLowerCase();
              
-             if (wantDownload) {
+             if (format === 'excel') {
                 if (typeof XLSX === 'undefined') {
                    // Fallback to CSV if XLSX is not loaded
                    let csv = 'Email,Phone,Amount,Transaction ID,Payment ID,Date\n';
@@ -1560,6 +1561,28 @@
                    const ws = XLSX.utils.aoa_to_sheet(wsData);
                    XLSX.utils.book_append_sheet(wb, ws, 'Missing Students');
                    XLSX.writeFile(wb, `Missing_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+                }
+             } else if (format === 'pdf') {
+                if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { 
+                    alert('PDF library loading... please retry.'); 
+                } else {
+                    const { jsPDF } = window.jspdf || window;
+                    const doc = new jsPDF({ orientation: 'landscape' });
+                    doc.text('Missing Students Report (Paid but no Form)', 14, 15);
+                    const tableRows = missing.map(m => [
+                       m.email || 'N/A', 
+                       m.contact || 'N/A', 
+                       `Rs.${m.amount}`, 
+                       m.order_id, 
+                       m.id, 
+                       new Date(m.created_at * 1000).toLocaleString('en-IN')
+                    ]);
+                    doc.autoTable({ 
+                       startY: 25, 
+                       head: [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']], 
+                       body: tableRows 
+                    });
+                    doc.save(`Missing_Students_${new Date().toISOString().split('T')[0]}.pdf`);
                 }
              } else {
                  let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS (Top 10):\n\n`;
