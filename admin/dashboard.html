@@ -1492,7 +1492,12 @@
             });
         }
       }
-      if (tab === 'locked') window.renderLockedExams();
+      if (tab === 'locked') {
+        window.renderLockedExams();
+        if (supabase && typeof fetchApplicationsFromSupabase === 'function') {
+           fetchApplicationsFromSupabase().then(() => window.renderLockedExams());
+        }
+      }
     }
 
     // ============================================
@@ -1897,6 +1902,24 @@
           console.log('[TRACE] Mapped Application', application);
           return application;
         });
+        // Fetch locked exams from Supabase to sync admin dashboard
+        try {
+           const { data: lockedData } = await supabase.from('locked_exams').select('*');
+           if (lockedData) {
+              const mappedLocks = lockedData.map(l => ({
+                 studentId: l.cet_student_id,
+                 name: l.student_name,
+                 course: l.course,
+                 warningCount: l.warning_count,
+                 reason: l.reason,
+                 lockedAt: l.locked_at
+              }));
+              localStorage.setItem('cetLockedExams', JSON.stringify(mappedLocks));
+           }
+        } catch(e) {
+           console.warn('[Supabase] Failed to fetch locked_exams', e);
+        }
+
         _supabaseFetched = true;
         console.log('[Supabase] Loaded', _supabaseAppsCache.length, 'applications from cloud');
         return _supabaseAppsCache;
