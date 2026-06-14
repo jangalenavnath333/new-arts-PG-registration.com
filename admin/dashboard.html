@@ -1515,11 +1515,24 @@
         if (data && !error) allPayments = data;
       }
       
+      // Get active applications to filter out deleted students' payments
+      const activeApps = typeof window.getApplications === 'function' ? window.getApplications() : [];
+      const activeEmails = new Set(activeApps.map(a => (a.email || '').toLowerCase()));
+      const activeStudentIds = new Set(activeApps.map(a => a.studentId));
+
       // Filter logic
       const filterCourse = document.getElementById('payFilterCourse')?.value || '';
       const filterStatus = document.getElementById('payFilterStatus')?.value || '';
       
       let filtered = allPayments.filter(p => {
+        const pEmail = (p.email || '').toLowerCase();
+        const pCetId = p.cet_student_id || p.student_id;
+        
+        // Ensure the payment belongs to an active student
+        if (activeApps.length > 0 && !activeEmails.has(pEmail) && (!pCetId || !activeStudentIds.has(pCetId))) {
+           return false;
+        }
+
         let matchCourse = true;
         if (filterCourse === 'Science') matchCourse = (p.course_applied || '').includes('Science');
         else if (filterCourse === 'Application') matchCourse = (p.course_applied || '').includes('Application');
