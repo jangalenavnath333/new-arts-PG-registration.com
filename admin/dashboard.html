@@ -751,6 +751,9 @@
               <button type="button" onclick="renderPayments()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
                 <span>↻ Refresh</span>
               </button>
+              <button type="button" onclick="findMissingPayments()" class="bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+                <span>⚠️ Find Missing</span>
+              </button>
             </div>
           </div>
 
@@ -1498,6 +1501,55 @@
            fetchApplicationsFromSupabase().then(() => window.renderLockedExams());
         }
       }
+    }
+
+    // ============================================
+    // FIND MISSING PAYMENTS
+    // ============================================
+    window.findMissingPayments = async function() {
+       const btn = document.querySelector('button[onclick="findMissingPayments()"]');
+       if (btn) btn.innerHTML = '<span>⏳ Searching...</span>';
+       
+       try {
+          // 1. Fetch Razorpay payments from secure API
+          const res = await fetch('/api/payment/get-razorpay-payments');
+          if (!res.ok) throw new Error('Failed to fetch from Razorpay API');
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error || 'Unknown error');
+          
+          const razorpayPayments = data.payments || [];
+          
+          // 2. Fetch active applications from local cache (already filtered for deleted)
+          const activeApps = typeof window.getApplications === 'function' ? window.getApplications() : [];
+          const activeEmails = new Set(activeApps.map(a => (a.email || '').toLowerCase()));
+          const activePhones = new Set(activeApps.map(a => a.mobile || ''));
+          
+          // 3. Find missing
+          const missing = [];
+          for (const p of razorpayPayments) {
+             const pEmail = p.email;
+             const pPhone = p.contact;
+             
+             if (!activeEmails.has(pEmail) && !activePhones.has(pPhone)) {
+                missing.push(p);
+             }
+          }
+          
+          if (missing.length === 0) {
+             alert('✅ No missing payments found! All students who paid in Razorpay are present in the system.');
+          } else {
+             let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS:\n\n`;
+             missing.forEach((m, idx) => {
+                msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
+             });
+             alert(msg);
+          }
+       } catch (err) {
+          console.error(err);
+          alert('Error finding missing payments: ' + err.message);
+       } finally {
+          if (btn) btn.innerHTML = '<span>⚠️ Find Missing</span>';
+       }
     }
 
     // ============================================
