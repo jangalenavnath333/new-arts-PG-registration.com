@@ -5022,11 +5022,19 @@
        // Update Local Array
        r.score = newScore;
        
+       const totalQ = r.total || r.totalQuestions || 15;
+       const correctAns = newScore;
+       const wrongAns = Math.max(0, totalQ - newScore);
+       r.correctAnswers = correctAns;
+       r.wrongAnswers = wrongAns;
+       
        // Reflect in main cetExamResults array
        let allRes = JSON.parse(localStorage.getItem('cetExamResults')) || [];
        let mainIdx = allRes.findIndex(x => x.id === r.id || (x.studentId === r.studentId && x.course === r.course));
        if (mainIdx !== -1) {
           allRes[mainIdx].score = newScore;
+          allRes[mainIdx].correctAnswers = correctAns;
+          allRes[mainIdx].wrongAnswers = wrongAns;
           localStorage.setItem('cetExamResults', JSON.stringify(allRes));
        }
        
@@ -5036,10 +5044,21 @@
           if (SupaDB.supabase) {
              const { error } = await SupaDB.supabase
                  .from('exam_results')
-                 .update({ score: newScore })
-                 .eq('student_id', r.studentId);
+                 .update({ 
+                     score: newScore,
+                     correct_answers: correctAns,
+                     wrong_answers: wrongAns
+                 })
+                 .eq('cet_student_id', r.studentId);
              
              if (error) throw error;
+             
+             // Also update exam_attempts so everything matches perfectly
+             await SupaDB.supabase
+                 .from('exam_attempts')
+                 .update({ score: newScore })
+                 .eq('cet_student_id', r.studentId);
+                 
              console.log('[Supabase] Result updated successfully');
           }
        } catch (err) {
