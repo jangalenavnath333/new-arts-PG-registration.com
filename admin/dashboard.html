@@ -3054,12 +3054,8 @@
       let lockedExams = [];
       try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
       
-      const students = DB.getStudents();
-      // Filter out those that are no longer locked in DB
-      const currentLocked = lockedExams.filter(lockObj => {
-         const st = students.find(s => s.studentId === lockObj.studentId);
-         return st && st.examStatus === 'LOCKED';
-      });
+      // Use the locked exams directly from storage (which is now synced from Supabase)
+      const currentLocked = lockedExams;
       
       document.getElementById('lockedBadge').textContent = currentLocked.length || '';
 
