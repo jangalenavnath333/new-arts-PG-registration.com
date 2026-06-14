@@ -1758,7 +1758,8 @@
          if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
          const wsData = [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']];
          data.forEach(p => {
-           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
            wsData.push([p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', date]);
          });
          const wb = XLSX.utils.book_new();
@@ -1770,13 +1771,17 @@
          const { jsPDF } = window.jspdf || window;
          const doc = new jsPDF({ orientation: 'landscape' });
          doc.text('Payment Report', 14, 15);
-         const tableRows = data.map(p => [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--']);
+         const tableRows = data.map(p => {
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           return [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
+         });
          doc.autoTable({ startY: 25, head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], body: tableRows });
          doc.save(`Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`);
        } else if (format === 'word') {
          let content = 'PAYMENT REPORT\n\nStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
          data.forEach(p => {
-           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
            content += `${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||''}\t${p.payment_status||''}\t${date}\n`;
          });
          const blob = new Blob([content], { type: 'application/msword' });
