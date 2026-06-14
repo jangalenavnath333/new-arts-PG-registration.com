@@ -736,8 +736,7 @@
             examTimeText = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 
             let status = 'NOT_STARTED';
-            const preStart = new Date(start.getTime() - (30 * 60000)); // 30 minutes early access
-            if (now < preStart) status = 'NOT_STARTED';
+            if (now < start) status = 'NOT_STARTED';
             else if (now > end) status = 'ENDED';
             else status = 'LIVE';
             
