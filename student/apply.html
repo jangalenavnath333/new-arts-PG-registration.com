@@ -1269,6 +1269,7 @@
                    btn.disabled = false;
                    btn.innerHTML = 'Retry Payment';
                  }
+                 window.isSubmittingForm = false;
               }
             }
           }
@@ -1278,6 +1279,7 @@
         rzp.on('payment.failed', function (response){
            btn.disabled = false;
            btn.innerHTML = 'Retry Payment';
+           window.isSubmittingForm = false;
            if (banner) {
              banner.style.display = 'block';
              banner.style.cssText = 'display:block;padding:16px;border-radius:12px;text-align:center;margin-bottom:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);';
@@ -1290,6 +1292,7 @@
         console.error(err);
         btn.disabled = false;
         btn.innerHTML = 'Pay Now';
+        window.isSubmittingForm = false;
         showAlert('Error initiating payment: ' + err.message, 'danger');
       }
     });
