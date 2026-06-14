@@ -317,7 +317,8 @@
       }
 
       if (customDate && customTime) {
-         examConfig = examConfig || { durationMinutes: 60 }; // fallback if no global config
+         examConfig = examConfig || {}; // fallback if no global config
+         examConfig.durationMinutes = examConfig.durationMinutes || 60;
          examConfig.examDate = customDate;
          examConfig.startTime = customTime;
          console.log('[Exam] Using personal rescheduled time:', examConfig);

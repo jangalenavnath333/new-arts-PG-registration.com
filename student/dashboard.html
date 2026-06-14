@@ -727,9 +727,10 @@
                   start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
                } else { start = new Date(`${config.examDate}T${config.startTime}`); }
             } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
-            const duration = config.durationMinutes || 60;
+            config.durationMinutes = config.durationMinutes || 60;
+            const duration = config.durationMinutes;
             const end = new Date(start.getTime() + (duration * 60000));
-            const now = new Date();
+            const now = window.getNow ? window.getNow() : new Date();
 
             examDateText = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
             examTimeText = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -1378,7 +1379,8 @@
             customTime = parts[1];
         }
         if (customDate && customTime) {
-           config = config || { durationMinutes: 60 };
+           config = config || {};
+           config.durationMinutes = config.durationMinutes || 60;
            config.examDate = customDate;
            config.startTime = customTime;
         }

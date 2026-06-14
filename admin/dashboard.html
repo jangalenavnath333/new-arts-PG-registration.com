@@ -4749,10 +4749,21 @@
            promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('email', s.email));
         }
         
-        // Ensure studentIdStr exists for personal config
+        // 2. Create personalized exam_config overlay (delete first to avoid missing unique constraint errors)
         if (studentIdStr && !isUUID(studentIdStr)) {
-           promises.push(supabase.from('exam_config').delete().eq('course', 'RESCHEDULE_' + studentIdStr));
-           promises.push(supabase.from('exam_config').insert({ course: 'RESCHEDULE_' + studentIdStr, is_active: true, exam_date: date, start_time: time, duration_minutes: 60 }));
+            promises.push(
+                supabase.from('exam_config').delete().eq('course', 'RESCHEDULE_' + studentIdStr).then(() => {
+                    return supabase.from('exam_config').insert({
+                        course: 'RESCHEDULE_' + studentIdStr,
+                        exam_date: date,
+                        start_time: time,
+                        duration_minutes: 60,
+                        is_active: true,
+                        instructions: 'Rescheduled custom exam',
+                        rules: 'Standard Rules'
+                    });
+                })
+            );
         }
         
         // 2. Clear old attempts, results, locked, logs
