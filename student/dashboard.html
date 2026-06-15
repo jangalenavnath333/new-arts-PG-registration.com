@@ -49,7 +49,7 @@
           console.warn('[TimeSync] All time sync APIs failed. Using local device time:', e.message);
        }
     }
-    syncGlobalTime();
+    window.timeSyncPromise = syncGlobalTime();
   </script>
 </head>
 <body>
@@ -433,6 +433,11 @@
     let student = null;
 
     async function init() {
+      // 0. Wait for time sync
+      if (window.timeSyncPromise) {
+        try { await window.timeSyncPromise; } catch(e) {}
+      }
+
       // 1. Recover full student from studentData to survive mobile clears
       let sessionData = null;
       try { sessionData = JSON.parse(localStorage.getItem('studentData')); } catch(e) {}

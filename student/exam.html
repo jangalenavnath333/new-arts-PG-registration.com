@@ -87,7 +87,7 @@
           console.warn('[TimeSync] All time sync APIs failed. Using local device time:', e.message);
        }
     }
-    syncGlobalTime();
+    window.timeSyncPromise = syncGlobalTime();
   </script>
 </head>
 <body class="flex flex-col h-screen w-screen relative">
@@ -250,6 +250,11 @@
     };
 
     window.addEventListener('DOMContentLoaded', async () => {
+      // 0. Wait for time sync to complete to prevent timezone bugs
+      if (window.timeSyncPromise) {
+        try { await window.timeSyncPromise; } catch(e) {}
+      }
+
       // 1. Fetch Session
       let session = null;
       try { session = JSON.parse(localStorage.getItem('studentData')); } catch(e) {}
@@ -517,7 +522,15 @@
          examTimeLeft = currentStudent.examTimeLeft;
       } else {
          const now = window.getNow ? window.getNow() : new Date();
-         const end = new Date(new Date(`${examConfig.examDate}T${examConfig.startTime}`).getTime() + (examConfig.durationMinutes * 60000));
+         let start;
+         try {
+            const parts = examConfig.examDate.split('-');
+            const timeParts = examConfig.startTime.split(':');
+            if (parts.length === 3 && timeParts.length >= 2) {
+               start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+            } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
+         } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
+         const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
          examTimeLeft = Math.floor((end - now) / 1000);
       }
       
