@@ -134,8 +134,13 @@
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1; position: relative; flex-wrap: wrap; gap: 24px;">
               <div style="flex: 1; min-width: 250px;">
-                <p style="color: var(--primary-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; margin-bottom: 8px;">CET Exam Portal</p>
-                <h1 style="font-size: 32px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin-bottom: 12px; color: var(--white); line-height: 1.2;">Welcome, <span id="headerStudentName" style="color: var(--primary-light);">Student</span></h1>
+                <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+                   <img id="headerStudentPhoto" src="https://ui-avatars.com/api/?name=Student&background=random" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary-light); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                   <div>
+                     <p style="color: var(--primary-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; margin-bottom: 4px;">CET Exam Portal</p>
+                     <h1 style="font-size: 32px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin: 0; color: var(--white); line-height: 1.2;">Welcome, <span id="headerStudentName" style="color: var(--primary-light);">Student</span></h1>
+                   </div>
+                </div>
                 
                 <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
                   <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
@@ -678,172 +683,132 @@
     }
 
     function renderOverview() {
-      document.getElementById('appSwitcherContainer').style.display = 'none'; // Hide the old app switcher
-
-      let allApps = [];
-      try { allApps = JSON.parse(localStorage.getItem('allStudentApps')) || []; } catch(e) {}
-      if (!allApps.length) {
-         if (student) allApps = [student]; // fallback
+      // Ensure app switcher is visible if there are multiple apps
+      const appSwitcher = document.getElementById('appSwitcherContainer');
+      if (appSwitcher && appSwitcher.children.length > 0) {
+          appSwitcher.style.display = 'block';
       }
-      
-      let html = `<h2 style="font-size: 24px; font-weight: 800; color: var(--white); margin-bottom: 24px;">My Exam Applications</h2>`;
 
-      allApps.forEach(app => {
-         const isApproved = app.status?.toLowerCase() === 'approved' || app.applicationStatus?.toLowerCase() === 'approved';
-         const appStatus = app.applicationStatus || (isApproved ? 'Approved' : 'PENDING_APPROVAL');
-         const displayStatus = appStatus.toUpperCase() === 'PENDING_APPROVAL' ? 'Under Review' : appStatus;
-         const badgeColors = { pending: 'bg-amber-500 text-white', approved: 'bg-emerald-500 text-white', rejected: 'bg-red-500 text-white' };
-         const statusColor = badgeColors[app.status?.toLowerCase()] || badgeColors.pending;
+      // We only update the UI for the CURRENT student application
+      const app = student;
+      if (!app) return;
 
-         // Resolve Course-specific Exam Config
-         let config = null;
-         try { 
-            const allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; 
-            config = allConfigs[app.courseApplied] || allConfigs; // fallback
-         } catch(e){}
+      const isApproved = app.status?.toLowerCase() === 'approved' || app.applicationStatus?.toLowerCase() === 'approved';
+      const appStatus = app.applicationStatus || (isApproved ? 'Approved' : 'PENDING_APPROVAL');
+      const displayStatus = appStatus.toUpperCase() === 'PENDING_APPROVAL' ? 'UNDER REVIEW' : appStatus.toUpperCase();
+      const badgeColors = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+      const statusColorClass = badgeColors[app.status?.toLowerCase()] || 'badge-pending';
 
-         // Override with student's personal rescheduled date/time if exists (from cloud or local)
-         let customDate = app.rescheduleDate;
-         let customTime = app.rescheduleTime;
-         if (app.examDate && app.examDate.includes('|')) {
-             const parts = app.examDate.split('|');
-             customDate = parts[0];
-             customTime = parts[1];
-         }
+      // Resolve Course-specific Exam Config
+      let config = null;
+      try { 
+         const allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')) || {}; 
+         config = allConfigs[app.courseApplied] || allConfigs; 
+      } catch(e){}
+
+      // Override with student's personal rescheduled date/time if exists
+      let customDate = app.rescheduleDate;
+      let customTime = app.rescheduleTime;
+      if (app.examDate && app.examDate.includes('|')) {
+          const parts = app.examDate.split('|');
+          customDate = parts[0];
+          customTime = parts[1];
+      }
+      if (customDate && customTime) {
+         config = config || { durationMinutes: 60 };
+         config.examDate = customDate;
+         config.startTime = customTime;
+      }
+
+      let examDateText = 'TBD';
+      let examTimeText = 'TBD';
+      let countdownHtml = '--:--:--';
+      let timerLabel = 'Waiting for Schedule';
+
+      if (config && config.examDate && config.startTime) {
+         let start;
+         try {
+            const parts = config.examDate.split('-');
+            const timeParts = config.startTime.split(':');
+            if (parts.length === 3 && timeParts.length >= 2) {
+               start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+            } else { start = new Date(`${config.examDate}T${config.startTime}`); }
+         } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
          
-         if (customDate && customTime) {
-            config = config || { durationMinutes: 60 };
-            config.examDate = customDate;
-            config.startTime = customTime;
+         config.durationMinutes = config.durationMinutes || 60;
+         const duration = config.durationMinutes;
+         const end = new Date(start.getTime() + (duration * 60000));
+         const now = window.getNow ? window.getNow() : new Date();
+
+         examDateText = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+         examTimeText = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+         let status = 'NOT_STARTED';
+         if (now < start) status = 'NOT_STARTED';
+         else if (now > end) status = 'ENDED';
+         else status = 'LIVE';
+         
+         if (app.examStatus === 'COMPLETED' || app.hasAttempted) {
+             countdownHtml = '<span style="color:var(--success);">COMPLETED</span>';
+             timerLabel = 'Exam Status';
+         } else if (app.examStatus === 'LOCKED') {
+             countdownHtml = '<span style="color:var(--warning);">LOCKED</span>';
+             timerLabel = 'Status';
+         } else if (status === 'NOT_STARTED') {
+             const diff = start - now;
+             const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+             const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+             const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+             countdownHtml = `<span style="color:var(--emerald-400);">${h}:${m}:${s}</span>`;
+             timerLabel = 'Starts In';
+         } else if (status === 'LIVE') {
+             countdownHtml = '<span style="color:var(--warning);">LIVE NOW</span>';
+             timerLabel = 'Exam is Active';
+         } else {
+             countdownHtml = '<span style="color:var(--danger);">ENDED</span>';
+             timerLabel = 'Status';
          }
+      }
 
-         let examDateText = 'TBD';
-         let examTimeText = 'TBD';
-         let countdownHtml = '--:--:--';
-         let timerLabel = 'Waiting for Schedule';
-         let startBtnHtml = '';
-
-         if (config && config.examDate && config.startTime) {
-            let start;
-            try {
-               const parts = config.examDate.split('-');
-               const timeParts = config.startTime.split(':');
-               if (parts.length === 3 && timeParts.length >= 2) {
-                  start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
-               } else { start = new Date(`${config.examDate}T${config.startTime}`); }
-            } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
-            config.durationMinutes = config.durationMinutes || 60;
-            const duration = config.durationMinutes;
-            const end = new Date(start.getTime() + (duration * 60000));
-            const now = window.getNow ? window.getNow() : new Date();
-
-            examDateText = start.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-            examTimeText = start.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-
-            let status = 'NOT_STARTED';
-            if (now < start) status = 'NOT_STARTED';
-            else if (now > end) status = 'ENDED';
-            else status = 'LIVE';
-            
-            if (app.examStatus === 'COMPLETED' || app.hasAttempted) {
-                countdownHtml = '<span style="color:var(--success);">COMPLETED</span>';
-                timerLabel = 'Exam Status';
-            } else if (app.examStatus === 'LOCKED') {
-                countdownHtml = '<span style="color:var(--warning);">LOCKED</span>';
-                timerLabel = 'Status';
-            } else if (status === 'NOT_STARTED') {
-                const diff = start - now;
-                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                countdownHtml = `<span style="color:var(--emerald-400);">${h}:${m}:${s}</span>`;
-                timerLabel = 'Starts In';
-            } else if (status === 'LIVE') {
-                countdownHtml = '<span style="color:var(--warning);">LIVE NOW</span>';
-                timerLabel = 'Exam is Active';
-                if (isApproved) {
-                    startBtnHtml = `<button onclick="startSpecificExam('${app.id}')" class="btn btn-solid pulse-active" style="width: 100%; padding: 14px; font-weight: 800; border-radius: 8px; margin-top: 16px;"><span style="margin-right: 8px;">🚀</span> START EXAM</button>`;
-                }
+      // Update DOM Elements
+      try {
+         document.getElementById('headerStudentName').textContent = app.fullName ? app.fullName.split(' ')[0] : 'Student';
+         document.getElementById('headerCourse').textContent = app.courseApplied || '--';
+         document.getElementById('headerCetId').textContent = app.studentId || 'Pending';
+         document.getElementById('headerStatus').innerHTML = `<span class="badge ${statusColorClass}">${displayStatus}</span>`;
+         document.getElementById('headerExamDate').textContent = examDateText;
+         document.getElementById('headerExamTime').textContent = examTimeText;
+         document.getElementById('headerTimerLabel').textContent = timerLabel;
+         document.getElementById('headerCountdown').innerHTML = countdownHtml;
+         
+         // Update Photo
+         const photoElem = document.getElementById('headerStudentPhoto');
+         if (photoElem) {
+            const photoData = app.photoData || app.passportPhotoUrl || localStorage.getItem('cet_student_photo_' + app.id);
+            if (photoData) {
+               photoElem.src = photoData;
             } else {
-                countdownHtml = '<span style="color:var(--danger);">ENDED</span>';
-                timerLabel = 'Status';
+               photoElem.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(app.fullName || 'Student')}&background=random`;
             }
          }
 
-         let admitCardBtn = '';
-         if (isApproved && config && config.examDate) {
-             admitCardBtn = `<button onclick="downloadAdmitCard('${app.id}')" class="btn" style="width: 100%; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 10px; font-weight: 600; border-radius: 8px; margin-top: 12px; transition: all 0.2s ease;">📄 Download Admit Card</button>`;
+         // Admit Card Button Logic
+         const admitBtn = document.getElementById('premiumAdmitCardBtn');
+         if (admitBtn) {
+            if (isApproved && config && config.examDate) {
+               admitBtn.style.display = 'block';
+               admitBtn.onclick = () => downloadAdmitCard(app.id || '');
+            } else {
+               admitBtn.style.display = 'none';
+            }
          }
+      } catch (e) {
+         console.warn('DOM update error in renderOverview', e);
+      }
 
-         if (!isApproved) {
-            startBtnHtml = `<div style="padding: 12px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; color: #fcd34d; font-size: 13px; text-align: center; margin-top: 16px;">Approve application to unlock exam</div>`;
-         } else if (!startBtnHtml && !countdownHtml.includes('COMPLETED') && !countdownHtml.includes('ENDED')) {
-            startBtnHtml = `<button disabled class="btn btn-solid" style="width: 100%; padding: 14px; font-weight: 800; border-radius: 8px; margin-top: 16px; opacity: 0.5; cursor: not-allowed;"><span style="margin-right: 8px;">⏳</span> WAITING FOR EXAM TIME</button>`;
-         }
+      // Call checkExamEligibility to update the Start Exam button state
+      checkExamEligibility();
 
-         html += `
-          ${isApproved ? `
-          <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;">
-            <div style="background: #10b981; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; box-shadow: 0 0 15px rgba(16,185,129,0.5);">✓</div>
-            <div>
-              <h4 style="color: #10b981; font-size: 18px; font-weight: 800; margin-bottom: 4px;">Application Approved!</h4>
-              <p style="color: var(--light); font-size: 14px; margin: 0;">Your application has been verified and approved by the admin. Your Student ID is <strong style="color: #fff; font-family: monospace;">${app.studentId || 'Assigned'}</strong>.</p>
-            </div>
-          </div>
-          ` : ''}
-          <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(16,185,129,0.05)); border: 1px solid var(--card-border); border-radius: 20px; padding: 24px; margin-bottom: 24px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px;">
-              
-              <div style="flex: 1; min-width: 250px;">
-                <h3 style="font-size: 20px; font-weight: 800; color: var(--white); margin-bottom: 12px;">${app.courseApplied}</h3>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                  <div>
-                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Application Status</p>
-                     <span class="px-2 py-1 text-[11px] font-bold uppercase rounded-full ${statusColor}">${displayStatus}</span>
-                  </div>
-                  <div>
-                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Payment Status</p>
-                     <span class="px-2 py-1 text-[11px] font-bold uppercase rounded-full bg-slate-700 text-slate-200">${app.paymentStatus || 'Pending'}</span>
-                  </div>
-                  <div>
-                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Student ID</p>
-                     <span style="font-size: 13px; font-family: monospace; color: var(--light); font-weight: bold;">${app.studentId || 'Pending'}</span>
-                  </div>
-                  <div>
-                     <p style="font-size: 11px; color: var(--mid); text-transform: uppercase;">Exam Status</p>
-                     <span style="font-size: 13px; font-weight: bold; color: var(--light);">${app.examStatus || 'NOT_SCHEDULED'}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div style="display: flex; flex-direction: column; gap: 12px; min-width: 280px; width: 100%; max-width: 350px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
-                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Date</p>
-                    <p style="font-size: 14px; font-weight: 700; color: var(--white);">${examDateText}</p>
-                  </div>
-                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
-                    <p style="font-size: 11px; color: var(--mid); text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Exam Time</p>
-                    <p style="font-size: 14px; font-weight: 700; color: var(--white);">${examTimeText}</p>
-                  </div>
-                </div>
-                
-                <div class="countdown-timer" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; padding: 12px; text-align: center;">
-                  <p style="font-size: 11px; color: var(--emerald-400); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">${timerLabel}</p>
-                  <p style="font-size: 20px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; letter-spacing: 1px;">${countdownHtml}</p>
-                </div>
-
-                ${isApproved ? (startBtnHtml + admitCardBtn) : startBtnHtml}
-              </div>
-              
-            </div>
-          </div>
-         `;
-      });
-
-      document.getElementById('section-overview').innerHTML = html;
-      
       // Auto-refresh timer loop
       if(window.examCountdownInterval) clearInterval(window.examCountdownInterval);
       window.examCountdownInterval = setInterval(renderOverview, 1000);
