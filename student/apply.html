@@ -1102,12 +1102,15 @@
 
       window.isSubmittingForm = true;
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const isBypass = urlParams.get('bypass') === 'waive_fee_2026';
+
       const email = document.getElementById('email').value.trim().toLowerCase();
       const course = document.getElementById('courseApplied').value;
       const existingApps = JSON.parse(localStorage.getItem('cetApplications')) || [];
       const hasDuplicate = existingApps.some(app => app.email && app.email.toLowerCase() === email && app.courseApplied === course);
       
-      if (hasDuplicate) {
+      if (hasDuplicate && !isBypass && !window.isAdminLoggedIn) {
          showAlert('You have already submitted an application for this course.', 'danger');
          btn.disabled = false;
          btn.innerHTML = 'Submit Payment & Apply';
@@ -1130,9 +1133,6 @@
       } catch(e) { console.error("Failed to save draft", e); }
 
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const isBypass = urlParams.get('bypass') === 'waive_fee_2026';
-        
         if (isBypass && !window.isAdminLoggedIn) {
           const authorizedEmails = [
             'rohitdiwate994@gmail.com',
