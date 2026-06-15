@@ -631,8 +631,19 @@
     window.pendingAppId = 'APP' + Date.now();
     
     document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isFeeWaived = urlParams.get('bypass') === 'waive_fee_2026';
+      
       const feeDisplay = document.getElementById('feeAmountDisplay');
-      if (feeDisplay) feeDisplay.textContent = '₹' + window.APPLICATION_FEE;
+      if (feeDisplay) {
+        if (isFeeWaived) {
+          feeDisplay.textContent = '₹0 (Already Paid)';
+          feeDisplay.style.color = '#34d399';
+          document.getElementById('submitBtn').innerHTML = 'Submit Application';
+        } else {
+          feeDisplay.textContent = '₹' + window.APPLICATION_FEE;
+        }
+      }
 
       if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         const warn = document.getElementById('mobileUpiWarning');
@@ -1119,9 +1130,28 @@
       } catch(e) { console.error("Failed to save draft", e); }
 
       try {
-        if (window.isAdminLoggedIn) {
-          console.log("[Admin] Bypassing payment securely...");
-          btn.innerHTML = '✅ Admin Manual Submission...';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isBypass = urlParams.get('bypass') === 'waive_fee_2026';
+        
+        if (isBypass && !window.isAdminLoggedIn) {
+          const authorizedEmails = [
+            'rohitdiwate994@gmail.com',
+            'rushibhagade3220@gmail.com',
+            'ajugunjal039@gmail.com',
+            'harshda6905@gmail.com'
+          ];
+          if (!authorizedEmails.includes(email)) {
+             showAlert('🚫 Unauthorized: This payment bypass link is only valid for authorized missing payments. Please submit payment or use the registered email.', 'danger');
+             btn.disabled = false;
+             btn.innerHTML = 'Submit Payment & Apply';
+             window.isSubmittingForm = false;
+             return;
+          }
+        }
+
+        if (window.isAdminLoggedIn || isBypass) {
+          console.log("[Admin/Bypass] Bypassing payment securely...");
+          btn.innerHTML = '✅ Processing Submission...';
           const result = await proceedWithSubmission({
             razorpayOrderId: 'MANUAL_ADMIN_ADD',
             razorpayPaymentId: 'MANUAL_ADMIN_ADD'
