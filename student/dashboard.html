@@ -1292,11 +1292,11 @@
       const status = window.getExamStatus ? window.getExamStatus(config.examDate, config.startTime, config.durationMinutes) : 'NOT_STARTED';
       
       if (status === 'NOT_STARTED') {
-        if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); }
+        if(pBtn) { pBtn.disabled = true; pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); }
       } else if (status === 'LIVE') {
-        if(pBtn) { pBtn.style.opacity = '1'; pBtn.style.cursor = 'pointer'; pBtn.classList.add('pulse-active'); }
+        if(pBtn) { pBtn.disabled = false; pBtn.style.opacity = '1'; pBtn.style.cursor = 'pointer'; pBtn.classList.add('pulse-active'); }
       } else {
-        if(pBtn) { pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); pBtn.innerHTML = 'EXAM ENDED'; }
+        if(pBtn) { pBtn.disabled = true; pBtn.style.opacity = '0.5'; pBtn.style.cursor = 'not-allowed'; pBtn.classList.remove('pulse-active'); pBtn.innerHTML = 'EXAM ENDED'; }
       }
     }
 
@@ -1337,7 +1337,16 @@
         }
 
         let config = window.examConfig || null;
-        if (!config) { try { config = JSON.parse(localStorage.getItem('cetExamConfig')); } catch(e){} }
+        if (!config) { 
+           try { 
+              const allConfigs = JSON.parse(localStorage.getItem('cetExamConfig')); 
+              if (allConfigs && allConfigs[student.courseApplied]) {
+                 config = allConfigs[student.courseApplied];
+              } else if (allConfigs && allConfigs.examDate) {
+                 config = allConfigs;
+              }
+           } catch(e){} 
+        }
 
         // Override with student's personal rescheduled date/time if exists
         let customDate = student.rescheduleDate;
