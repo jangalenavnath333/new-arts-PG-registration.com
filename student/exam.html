@@ -395,7 +395,17 @@
       setCheck('chk-status', true);
 
       try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+           throw new Error("Your browser does not support camera access. Please open this link in standard Google Chrome or Safari (not inside WhatsApp/Instagram).");
+        }
+
+        try {
+           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (audioErr) {
+           console.warn("Could not get audio, falling back to video only", audioErr);
+           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
+        
         document.getElementById('previewBox').style.display = 'block';
         document.getElementById('previewVideo').srcObject = mediaStream;
         setCheck('chk-media', true);
@@ -425,7 +435,17 @@
         setCheck('chk-media', false);
         btn.textContent = 'Retry Permissions';
         btn.disabled = false;
-        return errbox.textContent = "Camera permission required to start exam";
+        
+        let errMsg = e.message || e.name || "Unknown Error";
+        if (errMsg.includes("NotAllowedError") || errMsg.includes("Permission denied")) {
+           errMsg = "You denied camera access. Please check browser site settings and allow Camera.";
+        } else if (errMsg.includes("NotFoundError")) {
+           errMsg = "No camera found on your device.";
+        } else if (errMsg.includes("NotReadableError")) {
+           errMsg = "Camera is already in use by another app.";
+        }
+        
+        return errbox.innerHTML = `<span style="font-size:12px;">Camera Error: ${errMsg}<br/>Tip: Open in Chrome/Safari if using an in-app browser.</span>`;
       }
 
       try {
