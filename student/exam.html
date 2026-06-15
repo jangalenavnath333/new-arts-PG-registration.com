@@ -434,19 +434,13 @@
         }, 1000);
       } catch (e) {
         setCheck('chk-media', false);
-        btn.textContent = 'Retry Permissions';
-        btn.disabled = false;
         
         let errMsg = e.message || e.name || "Unknown Error";
-        if (errMsg.includes("NotAllowedError") || errMsg.includes("Permission denied")) {
-           errMsg = "You denied camera access. Please check browser site settings and allow Camera.";
-        } else if (errMsg.includes("NotFoundError")) {
-           errMsg = "No camera found on your device.";
-        } else if (errMsg.includes("NotReadableError")) {
-           errMsg = "Camera is already in use by another app.";
-        }
+        console.warn("Camera failed, bypassing for mobile compatibility:", errMsg);
         
-        return errbox.innerHTML = `<span style="font-size:12px;">Camera Error: ${errMsg}<br/>Tip: Open in Chrome/Safari if using an in-app browser.</span>`;
+        errbox.innerHTML = `<span style="font-size:12px; color: #fbbf24;">⚠️ Camera Error: ${errMsg}. Proceeding without camera.</span>`;
+        mediaStream = null;
+        // Do NOT return here. Allow the exam to proceed!
       }
 
       try {
