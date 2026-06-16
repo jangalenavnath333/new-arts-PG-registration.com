@@ -382,13 +382,7 @@
       btn.disabled = true;
       btn.textContent = 'Running Security Protocols...';
       errbox.textContent = '';
-
-      const isApproved = currentStudent.status?.toLowerCase() === 'approved' || 
-                         currentStudent.applicationStatus?.toLowerCase() === 'approved';
-
-      if(!isApproved) {
-        setCheck('chk-status', false); return errbox.textContent = "Your application is not approved yet!";
-      }
+      
       if(currentStudent.hasAttempted) {
         setCheck('chk-status', false); return errbox.textContent = "You have already completed this safely monitored exam.";
       }
@@ -396,14 +390,21 @@
 
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-           throw new Error("Your browser does not support camera access. Please open this link in standard Google Chrome or Safari (not inside WhatsApp/Instagram).");
+           throw new Error("Your browser does not support camera access. Please open this link in standard Google Chrome or Safari.");
         }
 
+        const getUserMediaWithTimeout = (constraints, ms = 10000) => {
+           return new Promise((resolve, reject) => {
+               const t = setTimeout(() => reject(new Error("Camera request timed out (Browser blocked or ignored request)")), ms);
+               navigator.mediaDevices.getUserMedia(constraints).then(res => { clearTimeout(t); resolve(res); }).catch(err => { clearTimeout(t); reject(err); });
+           });
+        };
+
         try {
-           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+           mediaStream = await getUserMediaWithTimeout({ video: true, audio: true }, 4000);
         } catch (audioErr) {
-           console.warn("Could not get audio, falling back to video only", audioErr);
-           mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+           console.warn("Could not get audio or timed out, falling back to video only", audioErr);
+           mediaStream = await getUserMediaWithTimeout({ video: true }, 3000);
         }
         
         document.getElementById('previewBox').style.display = 'block';
@@ -423,15 +424,17 @@
         }
 
         setTimeout(() => {
-          const cvs = document.createElement('canvas');
-          const vid = document.getElementById('previewVideo');
-          cvs.width = vid.videoWidth || 320; cvs.height = vid.videoHeight || 240;
-          cvs.getContext('2d').drawImage(vid, 0, 0);
-          
-          let students = LocalDB.get('cet_students') || [];
-          let obj = students.find(s=>s.id === currentStudent.id);
-          if(obj) { obj.examPhotoCapture = cvs.toDataURL('image/jpeg', 0.8); LocalDB.set('cet_students', students); }
-        }, 1000);
+          try {
+            const cvs = document.createElement('canvas');
+            const vid = document.getElementById('previewVideo');
+            cvs.width = vid.videoWidth || 320; cvs.height = vid.videoHeight || 240;
+            cvs.getContext('2d').drawImage(vid, 0, 0);
+            
+            let students = LocalDB.get('cet_students') || [];
+            let obj = students.find(s=>s.id === currentStudent.id);
+            if(obj) { obj.examPhotoCapture = cvs.toDataURL('image/jpeg', 0.8); LocalDB.set('cet_students', students); }
+          } catch(err) { console.warn("Failed to capture photo", err); }
+        }, 1500);
       } catch (e) {
         setCheck('chk-media', false);
         
@@ -444,10 +447,21 @@
       }
 
       try {
-        if (document.documentElement.requestFullscreen) {
-           await document.documentElement.requestFullscreen();
-        } else if (document.documentElement.webkitRequestFullscreen) {
-           await document.documentElement.webkitRequestFullscreen();
+        const reqFs = () => {
+          if (document.documentElement.requestFullscreen) {
+             return document.documentElement.requestFullscreen();
+          } else if (document.documentElement.webkitRequestFullscreen) {
+             return document.documentElement.webkitRequestFullscreen();
+          }
+          return null;
+        };
+        
+        const fsPromise = reqFs();
+        if (fsPromise) {
+           await Promise.race([
+             fsPromise,
+             new Promise((_, reject) => setTimeout(() => reject(new Error("Fullscreen request timed out")), 3000))
+           ]);
         }
         setCheck('chk-full', true);
       } catch (e) {
