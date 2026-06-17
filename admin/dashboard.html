@@ -673,13 +673,22 @@
               <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span> Live Exam Monitoring</h2>
               <p class="text-sm text-slate-500">Monitor active exam sessions and security violations in real-time.</p>
             </div>
-            <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
+            <div class="flex gap-3">
+               <button onclick="sendExamReminders()" class="btn btn-solid-sm bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                 ✉️ Send Reminders
+               </button>
+               <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
+            </div>
           </div>
 
           <div class="grid grid-cols-5 gap-4 mb-8">
             <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
-              <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Total Online</p>
-              <p class="text-3xl font-black text-indigo-900" id="mon-online">0</p>
+              <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Total Students</p>
+              <p class="text-3xl font-black text-indigo-900" id="mon-total">0</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+              <p class="text-xs font-bold text-slate-600 uppercase mb-1">Not Started</p>
+              <p class="text-3xl font-black text-slate-900" id="mon-notstarted">0</p>
             </div>
             <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-blue-600 uppercase mb-1">In Progress</p>
@@ -692,10 +701,6 @@
             <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-amber-600 uppercase mb-1">Warnings</p>
               <p class="text-3xl font-black text-amber-900" id="mon-warnings">0</p>
-            </div>
-            <div class="bg-red-50 border border-red-100 rounded-xl p-4 text-center">
-              <p class="text-xs font-bold text-red-600 uppercase mb-1">Locked</p>
-              <p class="text-3xl font-black text-red-900" id="mon-locked">0</p>
             </div>
           </div>
 
@@ -3935,21 +3940,38 @@
       }).join('') || '<p class="text-sm text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">No questions added yet. Use the form above.</p>';
     }
 
+    window._pendingReminderEmails = [];
+
+    window.sendExamReminders = function() {
+      if (window._pendingReminderEmails.length === 0) {
+         showToast('All students have started the exam! No reminders to send.', 'success');
+         return;
+      }
+      const bccList = window._pendingReminderEmails.join(',');
+      const subject = encodeURIComponent("URGENT: Start your CET Exam NOW!");
+      const loginUrl = "https://jangalenavnath333.github.io/new-arts-PG-registration.com/student/login.html";
+      const body = encodeURIComponent(`Dear Student,\n\nYour CET Exam has started. You have not logged in yet. Please click the link below to login and start your exam immediately:\n\n${loginUrl}\n\nFailure to start on time may result in your exam being cancelled.\n\nRegards,\nAdmin`);
+      
+      window.open(`mailto:?bcc=${bccList}&subject=${subject}&body=${body}`, '_blank');
+      showToast(`Reminder draft opened for ${window._pendingReminderEmails.length} students!`, 'success');
+    };
+
     window.renderMonitoring = async function() {
-      let stats = { online: 0, progress: 0, completed: 0, warnings: 0, locked: 0 };
+      let stats = { total: 0, notstarted: 0, progress: 0, completed: 0, warnings: 0, locked: 0 };
       let studentsList = [];
+      window._pendingReminderEmails = [];
 
       try {
         if (supabase) {
           // Fetch from Supabase
           const { data, error } = await supabase.from('students')
-            .select('student_id, full_name, exam_status, active_violations, has_attempted')
-            .not('exam_status', 'is', null);
+            .select('student_id, full_name, email, exam_status, active_violations, has_attempted');
             
           if (!error && data) {
              studentsList = data.map(s => ({
                 studentId: s.student_id,
                 name: s.full_name,
+                email: s.email,
                 status: s.exam_status || (s.has_attempted ? 'COMPLETED' : 'PENDING'),
                 violations: s.active_violations || 0
              }));
@@ -3959,9 +3981,10 @@
         // Fallback or combine with localStorage if empty
         if (studentsList.length === 0) {
           const localStudents = DB.getStudents() || [];
-          studentsList = localStudents.filter(s => s.examStatus || s.hasAttempted).map(s => ({
+          studentsList = localStudents.map(s => ({
             studentId: s.studentId,
             name: s.fullName,
+            email: s.email,
             status: s.examStatus || (s.hasAttempted ? 'COMPLETED' : 'PENDING'),
             violations: s.violations || 0
           }));
@@ -3969,7 +3992,13 @@
 
         let html = '';
         studentsList.forEach(s => {
-           stats.online++;
+           stats.total++;
+           
+           if (!s.status || s.status === 'PENDING' || s.status === 'NOT_STARTED') {
+               stats.notstarted++;
+               if (s.email) window._pendingReminderEmails.push(s.email);
+           }
+           
            if (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED') stats.progress++;
            if (s.status === 'COMPLETED') stats.completed++;
            if (s.status === 'LOCKED' || s.status === 'TERMINATED') stats.locked++;
@@ -3991,7 +4020,10 @@
                  ${s.violations > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-bold">${s.violations} Warnings</span>` : '<span class="text-slate-400 text-xs">None</span>'}
                </td>
                <td class="p-4">
-                 <span class="flex items-center gap-1 text-emerald-600 text-xs font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Active</span>
+                 <span class="flex items-center gap-1 ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'text-slate-400' : 'text-emerald-600'} text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'bg-slate-300' : 'bg-emerald-500 animate-pulse'}"></span> 
+                    ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'Offline' : 'Active'}
+                 </span>
                </td>
                <td class="p-4 text-right">
                  ${s.status === 'LOCKED' ? `<button onclick="unlockExam('${s.studentId}')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold px-3 py-1.5 rounded transition">Unlock</button>` : ''}
@@ -4004,11 +4036,11 @@
            html = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No active exam sessions found.</td></tr>';
         }
 
-        document.getElementById('mon-online').textContent = stats.online;
+        document.getElementById('mon-total').textContent = stats.total;
+        document.getElementById('mon-notstarted').textContent = stats.notstarted;
         document.getElementById('mon-progress').textContent = stats.progress;
         document.getElementById('mon-completed').textContent = stats.completed;
         document.getElementById('mon-warnings').textContent = stats.warnings;
-        document.getElementById('mon-locked').textContent = stats.locked;
         document.getElementById('monitoringTableBody').innerHTML = html;
 
       } catch(e) {
