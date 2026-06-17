@@ -805,6 +805,19 @@
           const btn = document.getElementById('submitBtn');
           if (btn) btn.innerHTML = 'Update & Resend Email';
           
+          if (app.uploadedFiles) {
+              setTimeout(() => {
+                  for (const [key, val] of Object.entries(app.uploadedFiles)) {
+                      if (val) {
+                          fileDataMap[key] = val;
+                          const nameId = key.replace('File', 'Name');
+                          const nameEl = document.getElementById(nameId);
+                          if (nameEl) nameEl.textContent = '✅ Existing document preserved';
+                      }
+                  }
+              }, 500);
+          }
+
           document.getElementById('termsCheck').checked = true;
           showAlert('📝 Edit Mode: Update the required fields and submit to send the corrected email.', 'info');
         }
