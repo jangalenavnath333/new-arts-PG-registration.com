@@ -183,6 +183,31 @@
         window.renderStudents();
         if (supabase) {
           fetchApplicationsFromSupabase().then(() => { window.renderStudents(); });
+          supabase.from('exam_results').select('*').then(({data}) => {
+             if(data) {
+                let localRes = []; try { localRes = JSON.parse(localStorage.getItem('cetExamResults')) || []; } catch(e){}
+                const merged = data.map(r => ({
+                  id: r.id, studentId: r.cet_student_id, name: r.student_name,
+                  course: r.course, category: r.category, score: r.score, total: r.total,
+                  correctAnswers: r.correct_answers, wrongAnswers: r.wrong_answers,
+                  unanswered: r.unanswered, violations: r.violations,
+                  status: 'Completed', submittedAt: r.submitted_at, answers: r.answers || {}
+                }));
+                localRes.forEach(lr => { if (!merged.find(sr => sr.studentId === lr.studentId)) merged.push(lr); });
+                localStorage.setItem('cetExamResults', JSON.stringify(merged));
+                window.renderStudents();
+             }
+          });
+          supabase.from('security_logs').select('*').then(({data}) => {
+             if(data) {
+                const merged = data.map(l => ({
+                   studentId: l.cet_student_id || l.student_id, name: l.student_name,
+                   type: l.event_type, message: l.message, timestamp: l.created_at
+                }));
+                localStorage.setItem('cetExamSecurityLogs', JSON.stringify(merged));
+                window.renderStudents();
+             }
+          });
         }
       }
       if (tab === 'questions') window.renderQuestions();
@@ -250,7 +275,110 @@
             });
         }
       }
-      if (tab === 'locked') window.renderLockedExams();
+      if (tab === 'locked') {
+        window.renderLockedExams();
+        if (supabase && typeof fetchApplicationsFromSupabase === 'function') {
+           fetchApplicationsFromSupabase().then(() => window.renderLockedExams());
+        }
+      }
+    }
+
+    // ============================================
+    // FIND MISSING PAYMENTS
+    // ============================================
+    window.findMissingPayments = async function() {
+       const btn = document.querySelector('button[onclick="findMissingPayments()"]');
+       if (btn) btn.innerHTML = '<span>⏳ Searching...</span>';
+       
+       try {
+          // 1. Fetch Razorpay payments from secure API
+          const res = await fetch('/api/payment/get-razorpay-payments');
+          if (!res.ok) throw new Error('Failed to fetch from Razorpay API');
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error || 'Unknown error');
+          
+          const razorpayPayments = data.payments || [];
+          
+          // 2. Fetch active applications from local cache (already filtered for deleted)
+          const activeApps = typeof window.getApplications === 'function' ? window.getApplications() : [];
+          const activeEmails = new Set(activeApps.map(a => (a.email || '').toLowerCase()));
+          const activePhones = new Set(activeApps.map(a => a.mobile || ''));
+          
+          // 3. Find missing
+          const missing = [];
+          for (const p of razorpayPayments) {
+             const pEmail = p.email;
+             const pPhone = p.contact;
+             
+             if (!activeEmails.has(pEmail) && !activePhones.has(pPhone)) {
+                missing.push(p);
+             }
+          }
+          
+          if (missing.length === 0) {
+             alert('✅ No missing payments found! All students who paid in Razorpay are present in the system.');
+          } else {
+             const wantDownload = prompt(`⚠️ FOUND ${missing.length} MISSING STUDENTS!\n\nType "excel" to download an Excel sheet, "pdf" for a PDF report, or leave blank to just view them here:`);
+             const format = (wantDownload || '').trim().toLowerCase();
+             
+             if (format === 'excel') {
+                if (typeof XLSX === 'undefined') {
+                   // Fallback to CSV if XLSX is not loaded
+                   let csv = 'Email,Phone,Amount,Transaction ID,Payment ID,Date\n';
+                   missing.forEach(m => {
+                      csv += `${m.email},${m.contact},${m.amount},${m.order_id},${m.id},${new Date(m.created_at * 1000).toLocaleString()}\n`;
+                   });
+                   const blob = new Blob([csv], { type: 'text/csv' });
+                   const url = URL.createObjectURL(blob);
+                   const a = document.createElement('a'); a.href = url; a.download = `Missing_Students_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+                   URL.revokeObjectURL(url);
+                } else {
+                   const wsData = [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']];
+                   missing.forEach(m => {
+                      wsData.push([m.email, m.contact, m.amount, m.order_id, m.id, new Date(m.created_at * 1000).toLocaleString('en-IN')]);
+                   });
+                   const wb = XLSX.utils.book_new();
+                   const ws = XLSX.utils.aoa_to_sheet(wsData);
+                   XLSX.utils.book_append_sheet(wb, ws, 'Missing Students');
+                   XLSX.writeFile(wb, `Missing_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+                }
+             } else if (format === 'pdf') {
+                if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { 
+                    alert('PDF library loading... please retry.'); 
+                } else {
+                    const { jsPDF } = window.jspdf || window;
+                    const doc = new jsPDF({ orientation: 'landscape' });
+                    doc.text('Missing Students Report (Paid but no Form)', 14, 15);
+                    const tableRows = missing.map(m => [
+                       m.email || 'N/A', 
+                       m.contact || 'N/A', 
+                       `Rs.${m.amount}`, 
+                       m.order_id, 
+                       m.id, 
+                       new Date(m.created_at * 1000).toLocaleString('en-IN')
+                    ]);
+                    doc.autoTable({ 
+                       startY: 25, 
+                       head: [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']], 
+                       body: tableRows 
+                    });
+                    doc.save(`Missing_Students_${new Date().toISOString().split('T')[0]}.pdf`);
+                }
+             } else {
+                 let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS (Top 10):\n\n`;
+                 missing.slice(0, 10).forEach((m, idx) => {
+                    msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
+                 });
+                 if(missing.length > 10) msg += `...and ${missing.length - 10} more.`;
+                 alert(msg);
+             }
+          }
+       } catch (err) {
+          console.error(err);
+          alert('Error finding missing payments: ' + err.message);
+       } finally {
+          if (btn) btn.innerHTML = '<span>⚠️ Find Missing</span>';
+       }
     }
 
     // ============================================
@@ -268,11 +396,24 @@
         if (data && !error) allPayments = data;
       }
       
+      // Get active applications to filter out deleted students' payments
+      const activeApps = typeof window.getApplications === 'function' ? window.getApplications() : [];
+      const activeEmails = new Set(activeApps.map(a => (a.email || '').toLowerCase()));
+      const activeStudentIds = new Set(activeApps.map(a => a.studentId));
+
       // Filter logic
       const filterCourse = document.getElementById('payFilterCourse')?.value || '';
       const filterStatus = document.getElementById('payFilterStatus')?.value || '';
       
       let filtered = allPayments.filter(p => {
+        const pEmail = (p.email || '').toLowerCase();
+        const pCetId = p.cet_student_id || p.student_id;
+        
+        // Ensure the payment belongs to an active student
+        if (activeApps.length > 0 && !activeEmails.has(pEmail) && (!pCetId || !activeStudentIds.has(pCetId))) {
+           return false;
+        }
+
         let matchCourse = true;
         if (filterCourse === 'Science') matchCourse = (p.course_applied || '').includes('Science');
         else if (filterCourse === 'Application') matchCourse = (p.course_applied || '').includes('Application');
@@ -288,21 +429,21 @@
       const totalApps = filtered.length;
       const expectedCollection = totalApps * 500;
       
-      const paidRecords = filtered.filter(p => p.payment_status === 'PAID' || p.payment_status === 'VERIFIED');
-      const pendingRecords = filtered.filter(p => p.payment_status === 'PENDING' || p.payment_status === 'PENDING_VERIFICATION');
+      const paidRecords = filtered.filter(p => ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes(p.payment_status));
+      const pendingRecords = filtered.filter(p => ['PENDING', 'PENDING_VERIFICATION'].includes(p.payment_status));
       const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
       
       let collectedAmount = 0;
       paidRecords.forEach(p => {
-         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(amt)) collectedAmount += parseFloat(amt);
+         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(parseFloat(amt))) collectedAmount += parseFloat(amt);
          else collectedAmount += 500; // default assumption if empty
       });
       
       let pendingAmount = 0;
       pendingRecords.forEach(p => {
-         let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(amt)) pendingAmount += parseFloat(amt);
+         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+         if (amt && !isNaN(parseFloat(amt))) pendingAmount += parseFloat(amt);
          else pendingAmount += 500;
       });
       
@@ -310,9 +451,10 @@
       let todayCollected = 0;
       const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
       paidRecords.forEach(p => {
-         if (p.payment_date && new Date(p.payment_date).toLocaleDateString('en-CA') === todayDate) {
-             let amt = String(p.payment_amount).replace(/[^0-9.]/g, '');
-             if (amt && !isNaN(amt)) todayCollected += parseFloat(amt);
+         const dateStr = p.payment_date || p.submitted_at || p.created_at;
+         if (dateStr && new Date(dateStr).toLocaleDateString('en-CA') === todayDate) {
+             let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+             if (amt && !isNaN(parseFloat(amt))) todayCollected += parseFloat(amt);
              else todayCollected += 500;
          }
       });
@@ -343,9 +485,9 @@
         let statusColor = 'bg-slate-100 text-slate-600 border-slate-200';
         const st = p.payment_status || 'PENDING';
         if (st === 'VERIFIED') statusColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        else if (st === 'PAID') statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+        else if (['PAID', 'SUCCESS', 'PAID_DEMO'].includes(st)) statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
         else if (st === 'REJECTED') statusColor = 'bg-red-100 text-red-700 border-red-200';
-        else if (st === 'PENDING' || st === 'PENDING_VERIFICATION') statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
+        else if (['PENDING', 'PENDING_VERIFICATION'].includes(st)) statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
         else if (st === 'REFUNDED') statusColor = 'bg-purple-100 text-purple-700 border-purple-200';
         
         const statusBadge = `<span class="${statusColor} text-[10px] font-bold px-2.5 py-1 rounded-full border">${st}</span>`;
@@ -445,7 +587,8 @@
          if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
          const wsData = [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']];
          data.forEach(p => {
-           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
            wsData.push([p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', date]);
          });
          const wb = XLSX.utils.book_new();
@@ -457,13 +600,17 @@
          const { jsPDF } = window.jspdf || window;
          const doc = new jsPDF({ orientation: 'landscape' });
          doc.text('Payment Report', 14, 15);
-         const tableRows = data.map(p => [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--']);
+         const tableRows = data.map(p => {
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           return [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
+         });
          doc.autoTable({ startY: 25, head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], body: tableRows });
          doc.save(`Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`);
        } else if (format === 'word') {
          let content = 'PAYMENT REPORT\n\nStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
          data.forEach(p => {
-           let date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN') : '--';
+           const dateStr = p.payment_date || p.submitted_at || p.created_at;
+           let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
            content += `${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||''}\t${p.payment_status||''}\t${date}\n`;
          });
          const blob = new Blob([content], { type: 'application/msword' });
@@ -482,11 +629,11 @@
     // APPLICATION LOGIC (Robust Fixes Implemented)
     // ============================================
     window.renderOverview = function() {
-      const studs = DB.getStudents() || [];
-      const pending = studs.filter(s => s.status === 'pending').length;
-      const approved = studs.filter(s => s.status === 'approved').length;
-      const rejected = studs.filter(s => s.status === 'rejected').length;
-      const attempted = studs.filter(s => s.hasAttempted).length;
+      const studs = window.getApplications() || [];
+      const pending = studs.filter(s => (s.status || '').toLowerCase() === 'pending' || (s.applicationStatus || '').toLowerCase() === 'pending').length;
+      const approved = studs.filter(s => (s.status || '').toLowerCase() === 'approved' || (s.applicationStatus || '').toLowerCase() === 'approved').length;
+      const rejected = studs.filter(s => (s.status || '').toLowerCase() === 'rejected' || (s.applicationStatus || '').toLowerCase() === 'rejected').length;
+      const attempted = studs.filter(s => s.hasAttempted || (s.examStatus || '').toLowerCase() === 'completed').length;
 
       document.getElementById('s-total').textContent = studs.length;
       document.getElementById('s-pending').textContent = pending;
@@ -654,6 +801,24 @@
           console.log('[TRACE] Mapped Application', application);
           return application;
         });
+        // Fetch locked exams from Supabase to sync admin dashboard
+        try {
+           const { data: lockedData } = await supabase.from('locked_exams').select('*');
+           if (lockedData) {
+              const mappedLocks = lockedData.map(l => ({
+                 studentId: l.cet_student_id,
+                 name: l.student_name,
+                 course: l.course,
+                 warningCount: l.warning_count,
+                 reason: l.reason,
+                 lockedAt: l.locked_at
+              }));
+              localStorage.setItem('cetLockedExams', JSON.stringify(mappedLocks));
+           }
+        } catch(e) {
+           console.warn('[Supabase] Failed to fetch locked_exams', e);
+        }
+
         _supabaseFetched = true;
         console.log('[Supabase] Loaded', _supabaseAppsCache.length, 'applications from cloud');
         return _supabaseAppsCache;
@@ -662,6 +827,77 @@
         return null;
       }
     }
+
+    // Expose sync function to global scope
+    window.syncPendingFormsToSupabase = async function() {
+       const btn = document.getElementById('btnSyncCloud');
+       if (!btn) return;
+       if (!supabase) { alert('Supabase client not initialized. Check your .env file.'); return; }
+       
+       const localApps = window.getApplications();
+       if (!localApps || localApps.length === 0) {
+          alert('No local applications found to sync.');
+          return;
+       }
+
+       // Ensure we have latest from Supabase to prevent duplicates
+       await window.fetchApplicationsFromSupabase();
+       const cloudApps = _supabaseAppsCache || [];
+       const cloudEmails = cloudApps.map(a => (a.email || '').toLowerCase());
+       const cloudStudentIds = cloudApps.map(a => a.studentId);
+
+       // Find apps that are in localStorage but NOT in Supabase (by email or studentId)
+       const missingApps = localApps.filter(app => {
+          const email = (app.email || '').toLowerCase();
+          return email && !cloudEmails.includes(email) && !cloudStudentIds.includes(app.studentId);
+       });
+
+       if (missingApps.length === 0) {
+          alert('All local forms are already synced with Supabase! 100% matched.');
+          return;
+       }
+
+       if (!confirm(`Found ${missingApps.length} local forms that are missing in Supabase. Do you want to sync them now? This might take a while if there are many documents.`)) return;
+
+       btn.disabled = true;
+       btn.innerHTML = `☁️ Syncing (0/${missingApps.length})...`;
+       
+       let syncedCount = 0;
+       let errorCount = 0;
+
+       for (let i = 0; i < missingApps.length; i++) {
+           const app = missingApps[i];
+           try {
+              btn.innerHTML = `☁️ Syncing (${i+1}/${missingApps.length})...`;
+              // Upload to Supabase via the exact same function apply.html uses
+              const fileDataMap = app.uploadedFiles || {};
+              const syncResult = await SupaDB.saveStudentApplication(app, fileDataMap);
+              if (syncResult && syncResult.supabaseId) {
+                 app.supabaseId = syncResult.supabaseId;
+                 syncedCount++;
+              } else {
+                 errorCount++;
+              }
+           } catch (err) {
+              console.error(`[Sync] Error syncing app ${app.studentId}:`, err);
+              errorCount++;
+           }
+       }
+
+       // Save back to localStorage with updated supabaseIds
+       saveApplications(localApps);
+       
+       // Invalidate cache and re-fetch to update dashboard
+       invalidateCache();
+       await fetchApplicationsFromSupabase();
+       renderApplications();
+       renderDashboardOverview();
+
+       btn.disabled = false;
+       btn.innerHTML = '☁️ Sync to Cloud';
+       
+       alert(`Sync Complete! Successfully synced ${syncedCount} forms. ${errorCount > 0 ? `Failed to sync ${errorCount} forms.` : ''}`);
+    };
 
     window.saveApplications = function(apps) {
       localStorage.setItem('cetApplications', JSON.stringify(apps));
@@ -1263,10 +1499,70 @@
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Done')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Payment Done</button>
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Pending Verification')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Pending</button>
         <button onclick="updatePaymentStatus('${app.applicationId || app.id}', 'Payment Rejected')" class="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-bold shadow-sm transition">Mark Rejected</button>
+        <div style="flex-grow: 1;"></div>
+        <button onclick="adminDownloadReceipt('${app.applicationId || app.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">📄 Download Form</button>
+        <button onclick="adminResendEmail('${app.applicationId || app.id}')" id="btnResendEmail_${app.applicationId || app.id}" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition">📧 Resend Email</button>
       `;
       
       document.getElementById('previewModal').classList.remove('hidden');
     }
+    
+    window.adminDownloadReceipt = function(appId) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
+      if(!app) {
+         let dbApp = DB.getStudentById(appId);
+         if (dbApp) app = dbApp;
+         else return alert('Application not found');
+      }
+      
+      // Store in localStorage so receipt.html can read it
+      localStorage.setItem('cetApplication', JSON.stringify(app));
+      
+      // Open receipt page in a new tab
+      window.open('../student/receipt.html', '_blank');
+    };
+
+    window.adminResendEmail = async function(appId) {
+      let apps = getApplications();
+      let app = apps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
+      if(!app) {
+         let dbApp = DB.getStudentById(appId);
+         if (dbApp) app = dbApp;
+         else return alert('Application not found');
+      }
+      
+      if (!app.email) return alert('No email address found for this application.');
+      if (!confirm('Are you sure you want to resend the application confirmation email to ' + app.email + '?')) return;
+      
+      const btn = document.getElementById('btnResendEmail_' + appId);
+      if(btn) { btn.disabled = true; btn.innerHTML = '⏳ Sending...'; }
+      
+      try {
+        const EmailSvc = (await import('../js/email-service.js')).default;
+        const loginUrl = window.location.origin + '/student/login.html';
+        const emailTemplate = EmailSvc.EmailTemplates.pendingApproval(
+          app.fullName, 
+          app.applicationId || app.studentId || app.id, 
+          app.email,
+          app.mobile || app.password,
+          loginUrl,
+          app.courseApplied || (app.academicDetails ? app.academicDetails.courseApplied : 'N/A'),
+          app.paymentStatus || 'Pending'
+        );
+        
+        const success = await EmailSvc.sendEmail(app.email, emailTemplate.subject, emailTemplate.html);
+        
+        if (!success) throw new Error("Failed to send email after retries. Check console for details.");
+        
+        alert('Email sent successfully to ' + app.email);
+      } catch(err) {
+        console.error('Email send error:', err);
+        alert('Failed to send email: ' + err.message);
+      } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = '📧 Resend Email'; }
+      }
+    };
     
     window.updatePaymentStatus = async function(appId, status) {
       console.log('[Admin Action] Start: Update payment status', appId, status);
@@ -1570,11 +1866,17 @@
       // Read from localStorage first
       let students = [];
       try { students = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e) {}
-      students = students.filter(s => s.applicationStatus === 'Approved' || s.status === 'approved');
+      students = students.filter(s => {
+          const stat = (s.applicationStatus || s.status || '').toUpperCase();
+          return stat === 'APPROVED';
+      });
 
       // If Supabase cache has approved students, merge/replace
       if (_supabaseFetched && _supabaseAppsCache) {
-        const supaApproved = _supabaseAppsCache.filter(s => s.status === 'approved' || s.applicationStatus === 'Approved');
+        const supaApproved = _supabaseAppsCache.filter(s => {
+            const stat = (s.applicationStatus || s.status || '').toUpperCase();
+            return stat === 'APPROVED';
+        });
         if (supaApproved.length > 0) students = supaApproved;
       }
 
@@ -1651,12 +1953,8 @@
       let lockedExams = [];
       try { lockedExams = JSON.parse(localStorage.getItem('cetLockedExams')) || []; } catch(e){}
       
-      const students = DB.getStudents();
-      // Filter out those that are no longer locked in DB
-      const currentLocked = lockedExams.filter(lockObj => {
-         const st = students.find(s => s.studentId === lockObj.studentId);
-         return st && st.examStatus === 'LOCKED';
-      });
+      // Use the locked exams directly from storage (which is now synced from Supabase)
+      const currentLocked = lockedExams;
       
       document.getElementById('lockedBadge').textContent = currentLocked.length || '';
 
@@ -3102,9 +3400,23 @@
     }
     window.closeStudentModal = function(id) { hideModal(id); }
 
+    function getStudentForModal(id) {
+       let s = DB.getStudentById(id);
+       if (!s) {
+         let approved = [];
+         try { approved = JSON.parse(localStorage.getItem('cetApprovedStudents')) || []; } catch(e){}
+         s = approved.find(a => a.id === id || a.studentId === id || a.applicationId === id);
+       }
+       if (!s) {
+         let apps = window.getApplications ? window.getApplications() : [];
+         s = apps.find(a => a.id === id || a.studentId === id || a.applicationId === id);
+       }
+       return s;
+    }
+
     window.openStudentDetailsModal = function(id) {
       console.log('[Details] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       if (!s) { console.warn('Student not found for id:', id); return; }
       const examStatus = s.hasAttempted ? 'Completed' : (s.examStatus || 'Pending Exam');
       document.getElementById('studentDetailsContent').innerHTML = `
@@ -3122,22 +3434,53 @@
       showModal('studentDetailsModal');
     }
 
-    window.openDocumentsModal = function(id) {
+    window.openDocumentsModal = async function(id) {
       console.log('[Docs] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       const apps = window.getApplications();
-      const app = apps.find(a => a.email === s?.email);
-      let content = '';
+      const app = apps.find(a => a.email === s?.email || a.studentId === s?.studentId || a.id === s?.id);
+      
+      document.getElementById('documentsContent').innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">Fetching documents from secure cloud...</p>';
+      showModal('documentsModal');
 
+      const targetId = s?.supabaseId || s?.id || id;
+      let supaDocs = [];
+      if (supabase) {
+         try {
+            const { data, error } = await supabase.from('student_documents').select('*').eq('student_id', targetId);
+            if (data && !error) supaDocs = data;
+         } catch(e) {}
+      }
+      
+      let finalDocs = {};
+      
+      // 1. Load from Supabase
+      if (supaDocs.length > 0) {
+         supaDocs.forEach(d => { finalDocs[d.doc_type] = d.file_url; });
+      } 
+      // 2. Load from localStorage cetDocuments
+      else {
+         const cetDocs = JSON.parse(localStorage.getItem('cetDocuments')) || {};
+         let localD = cetDocs[app?.applicationId] || cetDocs[app?.studentId] || cetDocs[targetId];
+         if (localD) {
+            finalDocs = localD;
+         } else if (app && app.uploadedFiles) {
+            finalDocs = app.uploadedFiles;
+         }
+      }
+
+      let content = '';
       const docList = ['SY Marksheet', 'TY Marksheet', '10th Marksheet', '12th Marksheet', 'Caste Certificate', 'Photo', 'Aadhar Card'];
-      if (app && app.uploadedFiles && Object.keys(app.uploadedFiles).length > 0) {
-        content = Object.entries(app.uploadedFiles).map(([key, data]) => {
-          const isImage = data && data.startsWith('data:image');
+      
+      if (Object.keys(finalDocs).length > 0) {
+        content = Object.entries(finalDocs).map(([key, data]) => {
+          if(!data) return '';
+          const isImage = data.startsWith('data:image') || data.match(/\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i) || data.includes('student-photos') || data.includes('payment-screenshots');
           return `<div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;">
-            <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">${key}</p>
-            ${isImage ? `<img src="${data}" style="max-height:120px;border-radius:6px;display:block;margin-bottom:8px;" />` : ''}
+            <p style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin:0 0 8px;">${key.replace(/File$/, '')}</p>
+            ${isImage ? `<img src="${data}" style="max-height:120px;border-radius:6px;display:block;margin-bottom:8px;background:#f8fafc;" />` : ''}
             <div style="display:flex;gap:8px;">
-              ${isImage ? `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>` : `<a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>`}
+              <a href="${data}" target="_blank" style="background:#eff6ff;color:#3b82f6;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Preview</a>
               <a href="${data}" download="${key}" style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;text-decoration:none;">Download</a>
             </div>
           </div>`;
@@ -3155,12 +3498,11 @@
         content = `<p style="color:#94a3b8;font-size:12px;margin-bottom:10px;">No documents uploaded. Expected documents:</p>` + content;
       }
       document.getElementById('documentsContent').innerHTML = content;
-      showModal('documentsModal');
     }
 
     window.openAnswersModal = function(id) {
       console.log('[Answers] clicked, student id:', id);
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       const res = DB.getResults().find(r => r.studentId === id || r.studentId === s?.studentId);
 
       const dummyAnswers = [
@@ -3241,8 +3583,22 @@
       const time = document.getElementById('rescheduleTime').value;
       console.log('[Admin Action] Start: Reschedule exam', id, date, time);
       if (!date || !time) { showToast('Please select both date and time', 'error'); return; }
-      const s = DB.getStudentById(id);
-      DB.updateStudent(id, { rescheduleDate: date, rescheduleTime: time, examStatus: 'SCHEDULED' });
+      
+      const s = getStudentForModal(id);
+      if (s) {
+         // Update in cet_students if exists
+         let allStudents = DB.getStudents();
+         const dbIdx = allStudents.findIndex(st => st.id === id || st.studentId === s.studentId);
+         if (dbIdx !== -1) {
+            allStudents[dbIdx] = { ...allStudents[dbIdx], rescheduleDate: date, rescheduleTime: time, examStatus: 'SCHEDULED', hasAttempted: false, examTimeLeft: null, activeViolations: 0 };
+            localStorage.setItem('cet_students', JSON.stringify(allStudents));
+         } else {
+            // Re-inject into local storage if they were missing (came from cloud)
+            s.rescheduleDate = date; s.rescheduleTime = time; s.examStatus = 'SCHEDULED'; s.hasAttempted = false; s.examTimeLeft = null; s.activeViolations = 0;
+            allStudents.push(s);
+            localStorage.setItem('cet_students', JSON.stringify(allStudents));
+         }
+      }
 
       // Also sync cetApprovedStudents
       try {
@@ -3252,14 +3608,122 @@
           approved[apIdx].rescheduleDate = date;
           approved[apIdx].rescheduleTime = time;
           approved[apIdx].examStatus = 'SCHEDULED';
+          approved[apIdx].hasAttempted = false;
+          approved[apIdx].examTimeLeft = null;
+          approved[apIdx].activeViolations = 0;
           localStorage.setItem('cetApprovedStudents', JSON.stringify(approved));
+        }
+      } catch(e) {}
+      
+      // Wipe old results locally so the student gets a fresh attempt
+      try {
+        let allResults = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+        allResults = allResults.filter(r => r.studentId !== id && r.studentId !== (s?.studentId));
+        localStorage.setItem('cetExamResults', JSON.stringify(allResults));
+        
+        let cetResults = JSON.parse(localStorage.getItem('cet_results')) || [];
+        cetResults = cetResults.filter(r => r.studentId !== id && r.studentCetId !== (s?.studentId));
+        localStorage.setItem('cet_results', JSON.stringify(cetResults));
+        
+        let allAnswers = JSON.parse(localStorage.getItem('allStudentAnswers')) || [];
+        allAnswers = allAnswers.filter(ans => ans.studentId !== id && ans.studentId !== (s?.studentId));
+        localStorage.setItem('allStudentAnswers', JSON.stringify(allAnswers));
+        
+        let secLogs = JSON.parse(localStorage.getItem('cetExamSecurityLogs')) || [];
+        secLogs = secLogs.filter(l => l.studentId !== id && l.studentId !== (s?.studentId));
+        localStorage.setItem('cetExamSecurityLogs', JSON.stringify(secLogs));
+        
+        // Ensure cetApplications is also updated so dashboard doesn't pull stale state
+        let apps = JSON.parse(localStorage.getItem('cetApplications')) || [];
+        const appIdx = apps.findIndex(a => a.id === id || a.studentId === (s?.studentId));
+        if (appIdx !== -1) {
+           apps[appIdx].rescheduleDate = date;
+           apps[appIdx].rescheduleTime = time;
+           apps[appIdx].examStatus = 'SCHEDULED';
+           apps[appIdx].hasAttempted = false;
+           apps[appIdx].examTimeLeft = null;
+           apps[appIdx].activeViolations = 0;
+           localStorage.setItem('cetApplications', JSON.stringify(apps));
         }
       } catch(e) {}
 
       // Supabase dual-write
       if (supabase && s) {
-        await supabase.from('students').update({ exam_status: 'SCHEDULED' }).eq('student_id', s.studentId || id)
-          .then(({ error }) => { if (error) console.warn('[Admin Action] Failed: Reschedule error:', error.message); else console.log('[Admin Action] Success: Exam rescheduled in cloud'); });
+        const studentIdStr = s.studentId || id;
+        const customExamDateStr = date + '|' + time;
+        
+        // Helper to check if a string is a valid UUID
+        const isUUID = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        
+        // Collect promises
+        const promises = [];
+        
+        // Prepare academic_details payload to store the rescheduled time without needing a new column
+        const existingDetails = typeof s.academicDetails === 'string' ? JSON.parse(s.academicDetails) : (s.academicDetails || {});
+        const newAcademicDetails = { ...existingDetails, rescheduleDate: date, rescheduleTime: time, examDate: customExamDateStr };
+        
+        // 1. Reset Student Table - by email (safest)
+        if (s.email) {
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('email', s.email));
+        }
+        
+        // 2. Create personalized exam_config overlay (delete first to avoid missing unique constraint errors)
+        if (studentIdStr && !isUUID(studentIdStr)) {
+            promises.push(
+                supabase.from('exam_config').delete().eq('course', 'RESCHEDULE_' + studentIdStr).then(() => {
+                    return supabase.from('exam_config').insert({
+                        course: 'RESCHEDULE_' + studentIdStr,
+                        exam_date: date,
+                        start_time: time,
+                        duration_minutes: 60,
+                        is_active: true,
+                        instructions: 'Rescheduled custom exam',
+                        rules: 'Standard Rules'
+                    });
+                })
+            );
+        }
+        
+        // 2. Clear old attempts, results, locked, logs
+        // By cet_student_id
+        if (studentIdStr && !isUUID(studentIdStr)) {
+           promises.push(supabase.from('exam_results').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('locked_exams').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('security_logs').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('exam_attempts').delete().eq('cet_student_id', studentIdStr));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('student_id', studentIdStr));
+        }
+        
+        // By UUID (if we have it in s.id or id)
+        const validUuid = isUUID(s.id) ? s.id : (isUUID(id) ? id : null);
+        if (validUuid) {
+           promises.push(supabase.from('exam_results').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('locked_exams').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('security_logs').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('exam_attempts').delete().eq('student_id', validUuid));
+           promises.push(supabase.from('students').update({ exam_status: 'SCHEDULED', has_attempted: false, active_violations: 0, lock_reason: null, academic_details: newAcademicDetails }).eq('id', validUuid));
+        }
+        
+        // Wait for all cloud updates to finish before refetching
+        try {
+          const results = await Promise.all(promises);
+          
+          let hasErrors = false;
+          results.forEach(res => {
+            if (res && res.error) {
+              console.warn('[Admin Action] Supabase update error:', res.error);
+              hasErrors = true;
+            }
+          });
+          
+          if (hasErrors) {
+            console.warn('[Admin Action] Some cloud updates failed. Checking if student table was updated...');
+          } else {
+            console.log('[Admin Action] Successfully completed all cloud updates for reschedule');
+          }
+        } catch (err) {
+          console.warn('[Admin Action] Exception during cloud updates:', err);
+        }
       }
 
       // Email Notification
@@ -3276,6 +3740,11 @@
       showToast('Exam rescheduled to ' + date + ' at ' + time, 'success');
       console.log('[Admin Action] Success: Exam rescheduled', id);
       renderStudents();
+      
+      // Force Supabase refresh immediately so UI cache drops the old 'Completed' state
+      if (supabase && typeof window.fetchApplicationsFromSupabase === 'function') {
+         window.fetchApplicationsFromSupabase().then(() => window.renderStudents());
+      }
     }
 
     window.resumeExam = async function(id) {
@@ -3309,13 +3778,13 @@
     window.deleteApprovedStudent = function(id) {
       console.log('[Admin Action] Start: Open delete modal', id);
       document.getElementById('deleteStudentConfirmId').value = id;
-      document.getElementById('deleteStudentName').textContent = DB.getStudentById(id)?.fullName || 'this student';
+      document.getElementById('deleteStudentName').textContent = getStudentForModal(id)?.fullName || 'this student';
       showModal('deleteStudentModal');
     }
 
     window.confirmDeleteStudent = async function() {
       const id = document.getElementById('deleteStudentConfirmId').value;
-      const s = DB.getStudentById(id);
+      const s = getStudentForModal(id);
       
       const confirmation = prompt(`To delete this student, type "DELETE" below:\n\nStudent Name: ${s?.fullName || 'this student'}`);
       if(confirmation !== "DELETE") {
@@ -3447,12 +3916,78 @@
             <p style="font-weight:800;font-size:1rem;color:${passing === 'PASS' ? '#059669' : '#dc2626'};margin:0;">${passing}</p>
           </div>
         </div>
-        <div style="margin-top:16px;text-align:right;">
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
+          <button type="button" onclick="editResultScore(${idx})" style="background:#f59e0b;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;">✏️ Edit Score</button>
           <button type="button" onclick="document.getElementById('resultDetailModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 24px;border-radius:8px;border:none;cursor:pointer;">Close</button>
         </div>
       `;
       document.getElementById('resultDetailModal').style.display = 'flex';
-    };
+    }
+    
+    window.editResultScore = async function(idx) {
+       const r = window._allResults && window._allResults[idx];
+       if (!r) return;
+       
+       let newScore = prompt(`Edit Score for ${r.name || r.studentName} (${r.studentId}):\nCurrent Score: ${r.score} / ${r.total || r.totalQuestions}`, r.score);
+       if (newScore === null) return; // user cancelled
+       
+       newScore = parseFloat(newScore);
+       if (isNaN(newScore)) {
+          alert('Invalid score entered.');
+          return;
+       }
+       
+       // Update Local Array
+       r.score = newScore;
+       
+       const totalQ = r.total || r.totalQuestions || 15;
+       const correctAns = newScore;
+       const wrongAns = Math.max(0, totalQ - newScore);
+       r.correctAnswers = correctAns;
+       r.wrongAnswers = wrongAns;
+       
+       // Reflect in main cetExamResults array
+       let allRes = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+       let mainIdx = allRes.findIndex(x => x.id === r.id || (x.studentId === r.studentId && x.course === r.course));
+       if (mainIdx !== -1) {
+          allRes[mainIdx].score = newScore;
+          allRes[mainIdx].correctAnswers = correctAns;
+          allRes[mainIdx].wrongAnswers = wrongAns;
+          localStorage.setItem('cetExamResults', JSON.stringify(allRes));
+       }
+       
+       // Update Supabase Database
+       try {
+          if (supabase) {
+             const { error } = await supabase
+                 .from('exam_results')
+                 .update({ 
+                     score: newScore,
+                     correct_answers: correctAns,
+                     wrong_answers: wrongAns
+                 })
+                 .eq('cet_student_id', r.studentId);
+             
+             if (error) throw error;
+             
+             // Also update exam_attempts so everything matches perfectly
+             await supabase
+                 .from('exam_attempts')
+                 .update({ score: newScore })
+                 .eq('cet_student_id', r.studentId);
+                 
+             console.log('[Supabase] Result updated successfully');
+          }
+       } catch (err) {
+          console.error('Failed to update result on cloud:', err);
+          alert('Note: Score updated locally, but failed to sync to cloud. Error: ' + err.message);
+       }
+       
+       // Refresh UI
+       document.getElementById('resultDetailModal').style.display = 'none';
+       window.renderResults();
+       alert(`Score successfully updated to ${newScore}.`);
+    };;
 
     window.viewAnswersModal = function(idx) {
       const r = window._allResults && window._allResults[idx];
@@ -3500,7 +4035,7 @@
           </tbody>
         </table>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
-          <p style="font-weight:700;color:#0f172a;margin:0;">Total Score: <span style="color:#4f46e5;">${totalMarks} / ${answers.length}</span></p>
+          <p style="font-weight:700;color:#0f172a;margin:0;">Final Saved Score: <span style="color:#4f46e5;font-size:1.1rem;">${r.score !== undefined ? r.score : totalMarks} / ${r.total || r.totalQuestions || answers.length}</span> <span style="font-size:10px;color:#64748b;font-weight:500;margin-left:8px;">(Auto-evaluated: ${totalMarks})</span></p>
           <button type="button" onclick="document.getElementById('resultAnswersModal').style.display='none';" style="background:#4f46e5;color:#fff;font-weight:700;padding:8px 20px;border-radius:8px;border:none;cursor:pointer;">Close</button>
         </div>
       `;
@@ -3683,6 +4218,215 @@
       }
     };
 
+    window.openCategoryReportModal = function() {
+       const apps = window.getApplications ? window.getApplications() : [];
+       if (!apps || apps.length === 0) {
+           alert("No applications found to generate report.");
+           return;
+       }
+
+       // Calculate statistics
+       // Group by Course -> Category
+       const stats = {};
+       const allCategories = new Set();
+       const allCourses = new Set();
+       
+       apps.forEach(app => {
+           let course = app.courseApplied || (app.academicDetails && app.academicDetails.courseApplied) || 'Unknown Course';
+           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown Category';
+           
+           allCourses.add(course);
+           allCategories.add(category);
+           
+           if (!stats[course]) stats[course] = {};
+           if (!stats[course][category]) stats[course][category] = 0;
+           if (!stats[course]['Total']) stats[course]['Total'] = 0;
+           
+           stats[course][category]++;
+           stats[course]['Total']++;
+       });
+       
+       const categoriesArray = Array.from(allCategories).sort();
+       window._categoryStatsData = { stats, courses: Array.from(allCourses).sort(), categories: categoriesArray };
+
+       let html = `<table class="w-full text-left border-collapse border border-slate-200">
+          <thead>
+            <tr class="bg-indigo-50 text-indigo-900 text-xs uppercase tracking-wider font-bold">
+              <th class="p-3 border border-slate-200">Course</th>`;
+              
+       categoriesArray.forEach(c => {
+           html += `<th class="p-3 border border-slate-200 text-center">${c}</th>`;
+       });
+       
+       html += `<th class="p-3 border border-slate-200 text-center bg-indigo-100">Total</th>
+            </tr>
+          </thead>
+          <tbody>`;
+          
+       window._categoryStatsData.courses.forEach(course => {
+           html += `<tr class="hover:bg-slate-50">
+             <td class="p-3 border border-slate-200 font-bold text-slate-800">${course}</td>`;
+           categoriesArray.forEach(c => {
+               const count = stats[course][c] || 0;
+               html += `<td class="p-3 border border-slate-200 text-center text-slate-600">${count > 0 ? count : '-'}</td>`;
+           });
+           html += `<td class="p-3 border border-slate-200 text-center font-bold text-indigo-700 bg-indigo-50/50">${stats[course]['Total']}</td>
+           </tr>`;
+       });
+       
+       html += `</tbody></table>`;
+       
+       document.getElementById('categoryReportContent').innerHTML = html;
+       document.getElementById('categoryReportModal').style.display = 'flex';
+    };
+
+    window.downloadDetailedCategoryMeritList = function(format) {
+       const apps = window.getApplications ? window.getApplications() : [];
+       if (!apps || apps.length === 0) { alert('No applications to export.'); return; }
+       
+       // Group students by Caste Category
+       const groupedByCaste = {};
+       apps.forEach(app => {
+           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown Category';
+           if (!groupedByCaste[category]) groupedByCaste[category] = [];
+           groupedByCaste[category].push(app);
+       });
+       
+       const categories = Object.keys(groupedByCaste).sort();
+       
+       if (format === 'excel') {
+          if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+          const wb = XLSX.utils.book_new();
+          
+          categories.forEach(caste => {
+             const wsData = [];
+             
+             // Group by Course within caste
+             const courseGroups = {};
+             groupedByCaste[caste].forEach(a => {
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
+             });
+             
+             Object.keys(courseGroups).sort().forEach(course => {
+                wsData.push([`COURSE: ${course} (Category: ${caste}) - Total: ${courseGroups[course].length}`]);
+                wsData.push(['Application ID', 'Student ID', 'Applicant Name', 'Mobile', 'Email', 'Status']);
+                courseGroups[course].forEach(a => {
+                   wsData.push([
+                      a.applicationId || '',
+                      a.studentId || '',
+                      a.fullName || a.name || '',
+                      a.mobile || '',
+                      a.email || '',
+                      a.applicationStatus || a.status || ''
+                   ]);
+                });
+                wsData.push([]); // Empty row spacing
+             });
+             
+             const ws = XLSX.utils.aoa_to_sheet(wsData);
+             let sheetName = caste.replace(/[\\\/\?\*\[\]]/g, '').substring(0, 31);
+             if(!sheetName) sheetName = "Category";
+             XLSX.utils.book_append_sheet(wb, ws, sheetName);
+          });
+          
+          XLSX.writeFile(wb, `Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.xlsx`);
+       } 
+       else if (format === 'pdf') {
+          if (typeof jspdf === 'undefined') { alert('PDF library still loading, please retry.'); return; }
+          const doc = new jspdf.jsPDF();
+          let currentY = 15;
+          
+          doc.setFontSize(16);
+          doc.text('Category & Course Wise Merit List', 14, currentY);
+          currentY += 10;
+          
+          categories.forEach(caste => {
+             // Check page bounds for main category header
+             if (currentY > 260) { doc.addPage(); currentY = 15; }
+             
+             doc.setFontSize(15);
+             doc.setTextColor(255, 255, 255);
+             doc.setFillColor(79, 70, 229); // Indigo background
+             doc.rect(14, currentY, 182, 8, 'F');
+             doc.text(`CATEGORY: ${caste} (Total: ${groupedByCaste[caste].length})`, 16, currentY + 6);
+             currentY += 14;
+             
+             // Group by Course within caste
+             const courseGroups = {};
+             groupedByCaste[caste].forEach(a => {
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
+             });
+             
+             Object.keys(courseGroups).sort().forEach(course => {
+                 if (currentY > 260) { doc.addPage(); currentY = 15; }
+                 
+                 doc.setFontSize(12);
+                 doc.setTextColor(51, 65, 85); // Slate 700
+                 doc.text(`Course: ${course} (${courseGroups[course].length} Students)`, 14, currentY);
+                 currentY += 4;
+                 
+                 const tableData = courseGroups[course].map(a => {
+                    return [
+                       a.applicationId || '',
+                       a.fullName || a.name || '',
+                       a.mobile || '',
+                       a.applicationStatus || a.status || ''
+                    ];
+                 });
+                 
+                 doc.autoTable({
+                    startY: currentY,
+                    head: [['App ID', 'Applicant Name', 'Mobile', 'App Status']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [148, 163, 184] }, // Slate 400
+                    margin: { left: 14, right: 14 }
+                 });
+                 
+                 currentY = doc.lastAutoTable.finalY + 10;
+             });
+             
+             currentY += 5; // Extra spacing between categories
+          });
+          
+          doc.save(`Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.pdf`);
+       }
+       else if (format === 'word') {
+          let content = 'CATEGORY & COURSE WISE DETAILED MERIT LIST\n\n';
+          categories.forEach(caste => {
+             content += `========================================================\n`;
+             content += `CATEGORY: ${caste} (Total: ${groupedByCaste[caste].length} Students)\n`;
+             content += `========================================================\n\n`;
+             
+             const courseGroups = {};
+             groupedByCaste[caste].forEach(a => {
+                const course = a.courseApplied || (a.academicDetails && a.academicDetails.courseApplied) || 'Unknown Course';
+                if (!courseGroups[course]) courseGroups[course] = [];
+                courseGroups[course].push(a);
+             });
+             
+             Object.keys(courseGroups).sort().forEach(course => {
+                 content += `--- COURSE: ${course} (${courseGroups[course].length} Students) ---\n`;
+                 content += `App ID\tName\tMobile\tEmail\n`;
+                 courseGroups[course].forEach(a => {
+                    content += `${a.applicationId||''}\t${a.fullName||a.name||''}\t${a.mobile||''}\t${a.email||''}\n`;
+                 });
+                 content += `\n`;
+             });
+             content += `\n`;
+          });
+          
+          const blob = new Blob([content], { type: 'application/msword' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.doc`; a.click();
+          URL.revokeObjectURL(url);
+       }
+    };
+
     window.downloadApplications = function(format) {
        const data = window._currentApplicationsData || [];
        if (data.length === 0) { alert('No applications to export.'); return; }
@@ -3763,5 +4507,47 @@
          const link = document.createElement('a'); link.href = url; link.download = `Documents_Verification_Report_${new Date().toISOString().split('T')[0]}.doc`; link.click();
          URL.revokeObjectURL(url);
        }
+    };
+    window.downloadWhatsAppContacts = function() {
+        const data = window._currentApplicationsData || [];
+        if (data.length === 0) { 
+            alert('No applications found.'); 
+            return; 
+        }
+        
+        // Extract mobile numbers from all valid applications
+        const numbers = data.map(a => a.mobile).filter(Boolean);
+        
+        // Remove duplicates and empty strings
+        const uniqueNumbers = [...new Set(numbers)];
+        
+        if (uniqueNumbers.length === 0) { 
+            alert('No mobile numbers found in the current list.'); 
+            return; 
+        }
+        
+        // Generate VCF content
+        let vcfContent = '';
+        uniqueNumbers.forEach((num, index) => {
+            // Get student name if available, otherwise just use generic name
+            const student = data.find(a => a.mobile === num);
+            const rawName = student && (student.fullName || student.name) ? student.fullName || student.name : `Student ${index + 1}`;
+            // Remove any commas or newlines from the name to prevent VCF corruption
+            const cleanName = rawName.replace(/[\r\n,]/g, ' ').trim();
+            vcfContent += `BEGIN:VCARD\nVERSION:3.0\nFN:CET MSC ${cleanName}\nTEL;TYPE=CELL:${num}\nEND:VCARD\n`;
+        });
+        
+        // Create and trigger download
+        const blob = new Blob([vcfContent], { type: 'text/vcard' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CET_WhatsApp_Contacts_${new Date().toISOString().split('T')[0]}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ Successfully downloaded ${uniqueNumbers.length} contacts!\n\nPlease open this .vcf file on your mobile phone to save all numbers instantly.`);
     };
   

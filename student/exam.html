@@ -112,9 +112,14 @@
         </div>
       </div>
       
-      <button id="startSetupBtn" onclick="runSetupSequence()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors">
-        Initiate Security Checks & Start
-      </button>
+      <div class="flex gap-4">
+        <button id="startSetupBtn" onclick="runSetupSequence()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors text-sm">
+          Start Security Checks
+        </button>
+        <button id="forceStartBtn" onclick="engageExam()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors text-sm border border-slate-600">
+          Force Start (Mobile)
+        </button>
+      </div>
       <p id="setupErrorMsg" class="text-red-400 text-sm mt-4 font-medium h-4"></p>
     </div>
   </div>
@@ -553,7 +558,7 @@
       
       if (currentStudent.examTimeLeft !== undefined && currentStudent.examTimeLeft > 0) {
          examTimeLeft = currentStudent.examTimeLeft;
-      } else {
+      } else if (examConfig && examConfig.examDate && examConfig.startTime) {
          const now = window.getNow ? window.getNow() : new Date();
          let start;
          try {
@@ -563,8 +568,11 @@
                start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
             } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
          } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
-         const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
+         const duration = examConfig.durationMinutes || 60;
+         const end = new Date(start.getTime() + (duration * 60000));
          examTimeLeft = Math.floor((end - now) / 1000);
+      } else {
+         examTimeLeft = 60 * 60; // 60 minutes fallback if no config
       }
       
       if (examTimeLeft <= 0) { executeFinalSubmit('Auto Submitted', true); return; }
@@ -1050,6 +1058,7 @@
     window.triggerSubmit = triggerSubmit;
     window.renderCurrentQuestion = renderCurrentQuestion;
     window.updateUIMap = updateUIMap;
+    window.engageExam = engageExam;
     Object.defineProperty(window, 'currentIdx', { get: () => currentIdx, set: (v) => { currentIdx = v; } });
   </script>
 </body>

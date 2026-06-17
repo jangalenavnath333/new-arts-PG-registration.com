@@ -5,19 +5,23 @@ const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 async function testRpc() {
   const payload = {
     p_student_row: {
-      student_id: "MSC-CS-2026-9999",
-      full_name: "Test User",
-      email: "test_rpc_9999@example.com",
-      mobile: "9999999999",
+      student_id: "MSC-CS-2026-9998",
+      full_name: "Test User 2",
+      email: "test_rpc_9998@example.com",
+      mobile: "9999999998",
       course_applied: "M.Sc. Computer Science",
-      password_hash: "9999999999"
+      password_hash: "9999999998"
     },
-    p_doc_rows: [],
+    p_doc_rows: [{
+       doc_type: "passport_photo",
+       file_url: "http://example.com/photo.jpg",
+       file_name: "photo.jpg"
+    }],
     p_payment_row: {
-      application_id: "APP-9999",
-      cet_student_id: "MSC-CS-2026-9999",
-      full_name: "Test User",
-      email: "test_rpc_9999@example.com",
+      application_id: "APP-9998",
+      cet_student_id: "MSC-CS-2026-9998",
+      full_name: "Test User 2",
+      email: "test_rpc_9998@example.com",
       course_applied: "M.Sc. Computer Science",
       payment_status: "SUCCESS"
     }
