@@ -1234,7 +1234,7 @@
                await supabaseClient.from('students').update({
                   email: app.email, mobile: app.mobile, full_name: app.fullName,
                   academic_details: app.academicDetails
-               }).eq('student_id', app.studentId);
+               }).eq('student_id', app.studentId || app.applicationId);
                console.log('[Supabase] Application updated successfully');
             } catch(e){ console.error('[Supabase Update Error]', e); }
          }

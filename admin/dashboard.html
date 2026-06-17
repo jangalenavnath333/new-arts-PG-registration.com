@@ -1270,8 +1270,10 @@
     }
     // Reload data if edited in another tab
     window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && typeof renderApplications === 'function') {
-         renderApplications();
+      if (document.visibilityState === 'visible' && typeof fetchApplicationsFromSupabase === 'function') {
+         fetchApplicationsFromSupabase().then(() => {
+            if (typeof renderApplications === 'function') renderApplications();
+         });
       }
     });
 
@@ -2566,13 +2568,6 @@
          else return;
       }
       
-      // Ensure we have the absolute latest from localStorage in case it was edited in another tab
-      try {
-         let lsApps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-         let freshApp = lsApps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
-         if (freshApp) app = freshApp;
-      } catch(e) {}
-      
       // Try loading documents from Supabase first (for Supabase-origin apps)
       let supabaseDocs = {};
       if (supabase && app.supabaseId) {
@@ -2753,13 +2748,6 @@
          if (dbApp) app = dbApp;
          else return alert('Application not found');
       }
-      
-      // Ensure we have the absolute latest from localStorage in case it was edited in another tab
-      try {
-         let lsApps = JSON.parse(localStorage.getItem('cetApplications')) || [];
-         let freshApp = lsApps.find(a => a.applicationId === appId || a.studentId === appId || a.id === appId);
-         if (freshApp) app = freshApp;
-      } catch(e) {}
       
       // Store in localStorage so receipt.html can read it
       localStorage.setItem('cetApplication', JSON.stringify(app));
