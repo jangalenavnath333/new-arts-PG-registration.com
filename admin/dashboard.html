@@ -2561,17 +2561,32 @@
       const newName = prompt('Enter the correct full name:', app.fullName || '');
       if (newName === null) return;
 
+      if (!app.academicDetails) app.academicDetails = {};
+      
+      const new10th = prompt('Enter the correct 10th Percentage:', app.academicDetails.tenthPercent || '');
+      if (new10th === null) return;
+
+      const new12th = prompt('Enter the correct 12th Percentage:', app.academicDetails.twelfthPercent || '');
+      if (new12th === null) return;
+
+      const newDegree = prompt('Enter the correct Degree Percentage / CGPA:', app.academicDetails.degreePercent || '');
+      if (newDegree === null) return;
+
       if (newEmail.trim() !== '' || newMobile.trim() !== '' || newName.trim() !== '') {
         if (newEmail.trim()) app.email = newEmail.trim();
         if (newMobile.trim()) app.mobile = newMobile.trim();
         if (newName.trim()) app.fullName = newName.trim();
+        app.academicDetails.tenthPercent = new10th.trim();
+        app.academicDetails.twelfthPercent = new12th.trim();
+        app.academicDetails.degreePercent = newDegree.trim();
         
         let lsApps = JSON.parse(localStorage.getItem('cet_applications') || '[]');
         let idx = lsApps.findIndex(a => a.applicationId === appId);
         if (idx !== -1) {
-          if (newEmail.trim()) lsApps[idx].email = app.email;
-          if (newMobile.trim()) lsApps[idx].mobile = app.mobile;
-          if (newName.trim()) lsApps[idx].fullName = app.fullName;
+          lsApps[idx].email = app.email;
+          lsApps[idx].mobile = app.mobile;
+          lsApps[idx].fullName = app.fullName;
+          lsApps[idx].academicDetails = app.academicDetails;
           localStorage.setItem('cet_applications', JSON.stringify(lsApps));
         }
         
@@ -2580,11 +2595,12 @@
            window.supabase.from('students').update({ 
              email: app.email,
              mobile: app.mobile,
-             full_name: app.fullName
+             full_name: app.fullName,
+             academic_details: app.academicDetails
            }).eq('student_id', app.studentId || appId).then(console.log);
         }
         renderApplications();
-        alert('Details updated! Email: ' + app.email + '. You can now use Mass Email to send them the information.');
+        alert('Details & Marks updated! Email: ' + app.email + '. You can now use Mass Email to send them the information.');
       }
     };
 
