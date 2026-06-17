@@ -415,10 +415,10 @@
            throw new Error("In-app browser detected or camera not supported. Please click the 3 dots (⋮) and select 'Open in Chrome' or 'Open in Safari'.");
         }
 
-        // Give the user plenty of time (60 seconds) to accept the camera permission on mobile
-        const getUserMediaWithTimeout = (constraints, ms = 60000) => {
+        // Give the user time to accept the camera permission on mobile
+        const getUserMediaWithTimeout = (constraints, ms = 15000) => {
            return new Promise((resolve, reject) => {
-               const t = setTimeout(() => reject(new Error("Camera request timed out. Please click 'Allow' when prompted.")), ms);
+               const t = setTimeout(() => reject(new Error("Camera request timed out. Please check permissions.")), ms);
                navigator.mediaDevices.getUserMedia(constraints)
                  .then(res => { clearTimeout(t); resolve(res); })
                  .catch(err => { clearTimeout(t); reject(err); });
@@ -426,10 +426,10 @@
         };
 
         try {
-           mediaStream = await getUserMediaWithTimeout({ video: true, audio: true }, 60000);
+           mediaStream = await getUserMediaWithTimeout({ video: { facingMode: 'user' }, audio: true }, 15000);
         } catch (audioErr) {
            console.warn("Audio/Video failed, trying video only...", audioErr);
-           mediaStream = await getUserMediaWithTimeout({ video: true }, 60000);
+           mediaStream = await getUserMediaWithTimeout({ video: { facingMode: 'user' } }, 15000);
         }
         
         document.getElementById('previewBox').style.display = 'block';
@@ -462,11 +462,22 @@
       } catch (e) {
         setCheck('chk-media', false);
         let errMsg = e.message || e.name || "Permission Denied";
-        errbox.innerHTML = `<span style="font-size:13px; color: #ef4444;">❌ Camera Error: ${errMsg}. Camera is MANDATORY for this exam. Please refresh and allow camera access.</span>`;
-        mediaStream = null;
+        
         btn.disabled = false;
         btn.textContent = 'Retry Security Checks';
-        alert("Camera Error: " + errMsg + "\n\nIf you blocked the camera, please go to Site Settings and Allow it. Exam cannot start without a camera.");
+        
+        // Add a bypass button ONLY when it fails, so they are not permanently stuck
+        errbox.innerHTML = `
+          <div class="mt-4 p-4 bg-red-900/40 border border-red-500 rounded-lg text-left">
+             <span style="font-size:13px; color: #fca5a5; font-weight:bold;">❌ Camera Error: ${errMsg}</span>
+             <p class="text-xs text-red-200 mt-2 mb-3">If you cannot fix this, you can force start the exam, but your camera will be recorded as OFF.</p>
+             <button onclick="engageExam()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm transition">
+               Proceed Without Camera (Force Start)
+             </button>
+          </div>
+        `;
+        mediaStream = null;
+        alert("Camera Failed: " + errMsg);
       }
     }
 
