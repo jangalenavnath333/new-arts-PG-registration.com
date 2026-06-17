@@ -3145,12 +3145,12 @@
         const securityLogs = [];
         try {
           const allLogs = JSON.parse(localStorage.getItem('cetExamSecurityLogs')) || [];
-          securityLogs.push(...allLogs.filter(l => l.studentId === s.id || l.studentId === s.studentId));
+          securityLogs.push(...allLogs.filter(l => l.studentId && (l.studentId === s.id || l.studentId === s.studentId)));
         } catch(e) {}
         
         const tabSwitches = securityLogs.filter(l => l.type === 'TAB_SWITCH').length;
         const clipboards = securityLogs.filter(l => l.type === 'CLIPBOARD').length;
-        const totalViolations = r ? (r.violations || 0) : securityLogs.length;
+        const totalViolations = r ? (r.violations || 0) : (s.active_violations || s.activeViolations || securityLogs.length);
 
         let statusHtml = '';
         if(examStatus === 'TERMINATED') statusHtml = '<span class="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200">Terminated</span>';
