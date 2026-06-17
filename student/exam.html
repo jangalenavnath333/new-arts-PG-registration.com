@@ -386,7 +386,12 @@
       errbox.innerHTML = '';
       
       if(currentStudent.hasAttempted) {
-        setCheck('chk-status', false); return errbox.textContent = "You have already completed this safely monitored exam.";
+        setCheck('chk-status', false); 
+        btn.textContent = 'Start Security Checks & Camera';
+        btn.disabled = false;
+        errbox.textContent = "You have already completed this safely monitored exam.";
+        alert("You have already completed this exam.");
+        return;
       }
       setCheck('chk-status', true);
 
@@ -405,8 +410,9 @@
 
       // 2. Request Camera strictly
       try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-           throw new Error("Your browser does not support camera access. Please use Google Chrome or Safari.");
+        const isWebView = /wv|Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+        if (isWebView || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+           throw new Error("In-app browser detected or camera not supported. Please click the 3 dots (⋮) and select 'Open in Chrome' or 'Open in Safari'.");
         }
 
         // Give the user plenty of time (60 seconds) to accept the camera permission on mobile
@@ -460,6 +466,7 @@
         mediaStream = null;
         btn.disabled = false;
         btn.textContent = 'Retry Security Checks';
+        alert("Camera Error: " + errMsg + "\n\nIf you blocked the camera, please go to Site Settings and Allow it. Exam cannot start without a camera.");
       }
     }
 
