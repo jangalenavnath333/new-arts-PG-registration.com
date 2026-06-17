@@ -1267,8 +1267,13 @@
       if (!btn) return;
       btn.disabled = btn._origDisabled || false;
       btn.textContent = btn._origText || btn.textContent;
-      btn.classList.remove('admin-btn-processing');
     }
+    // Reload data if edited in another tab
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && typeof renderApplications === 'function') {
+         renderApplications();
+      }
+    });
 
     // System Guard using Supabase Auth
     window.addEventListener('DOMContentLoaded', async () => {

@@ -1228,30 +1228,29 @@
          }
 
          // Sync to Supabase
-         if (window.supabase) {
+         const supabaseClient = window.supabaseGetClient ? window.supabaseGetClient() : null;
+         if (supabaseClient) {
             try {
-               await window.supabase.from('students').update({
+               await supabaseClient.from('students').update({
                   email: app.email, mobile: app.mobile, full_name: app.fullName,
                   academic_details: app.academicDetails
                }).eq('student_id', app.studentId);
-            } catch(e){}
+               console.log('[Supabase] Application updated successfully');
+            } catch(e){ console.error('[Supabase Update Error]', e); }
          }
 
          // Send Emails
          btn.innerHTML = '✉️ Sending Emails...';
          try {
             if (window.EmailSvc) {
-               // Send application received
-               await window.EmailSvc.sendApplicationReceived(app);
-               // Also try to send approval / exam login if it has a studentId
-               if (app.studentId) {
-                  await window.EmailSvc.sendApplicationApproved(app);
-               }
+               // Send the confirmation/login email
+               await window.EmailSvc.sendConfirmationEmail(app);
             }
          } catch(e) { console.error("Email Error:", e); }
 
-         alert("Application updated and emails sent successfully!");
-         window.close(); // Close the new tab if it was opened
+         // Set data for receipt display and redirect
+         localStorage.setItem('cetApplication', JSON.stringify(app));
+         window.location.href = './receipt.html';
          return;
       }
 
