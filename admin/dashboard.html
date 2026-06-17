@@ -682,23 +682,23 @@
           </div>
 
           <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
+            <div onclick="setMonFilter('ALL')" class="cursor-pointer hover:shadow-md transition bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Total Students</p>
               <p class="text-3xl font-black text-indigo-900" id="mon-total">0</p>
             </div>
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+            <div onclick="setMonFilter('NOT_STARTED')" class="cursor-pointer hover:shadow-md transition bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-slate-600 uppercase mb-1">Not Started</p>
               <p class="text-3xl font-black text-slate-900" id="mon-notstarted">0</p>
             </div>
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+            <div onclick="setMonFilter('IN_PROGRESS')" class="cursor-pointer hover:shadow-md transition bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-blue-600 uppercase mb-1">In Progress</p>
               <p class="text-3xl font-black text-blue-900" id="mon-progress">0</p>
             </div>
-            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+            <div onclick="setMonFilter('COMPLETED')" class="cursor-pointer hover:shadow-md transition bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-emerald-600 uppercase mb-1">Completed</p>
               <p class="text-3xl font-black text-emerald-900" id="mon-completed">0</p>
             </div>
-            <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
+            <div onclick="setMonFilter('WARNINGS')" class="cursor-pointer hover:shadow-md transition bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-amber-600 uppercase mb-1">Warnings</p>
               <p class="text-3xl font-black text-amber-900" id="mon-warnings">0</p>
             </div>
@@ -3956,6 +3956,14 @@
       showToast(`Reminder draft opened for ${window._pendingReminderEmails.length} students!`, 'success');
     };
 
+    window._monitoringFilter = 'ALL';
+    
+    window.setMonFilter = function(f) {
+      window._monitoringFilter = f;
+      window.renderMonitoring();
+      showToast(`Filtered by: ${f.replace('_', ' ')}`, 'info');
+    };
+
     window.renderMonitoring = async function() {
       let stats = { total: 0, notstarted: 0, progress: 0, completed: 0, warnings: 0, locked: 0 };
       let studentsList = [];
@@ -3994,19 +4002,29 @@
         studentsList.forEach(s => {
            stats.total++;
            
-           if (!s.status || s.status === 'PENDING' || s.status === 'NOT_STARTED') {
+           let isNotStarted = (!s.status || s.status === 'PENDING' || s.status === 'NOT_STARTED');
+           let isInProgress = (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED');
+           let isCompleted = (s.status === 'COMPLETED');
+           
+           if (isNotStarted) {
                stats.notstarted++;
                if (s.email) window._pendingReminderEmails.push(s.email);
            }
            
-           if (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED') stats.progress++;
-           if (s.status === 'COMPLETED') stats.completed++;
+           if (isInProgress) stats.progress++;
+           if (isCompleted) stats.completed++;
            if (s.status === 'LOCKED' || s.status === 'TERMINATED') stats.locked++;
            stats.warnings += (s.violations || 0);
 
+           // Filter Check
+           if (window._monitoringFilter === 'NOT_STARTED' && !isNotStarted) return;
+           if (window._monitoringFilter === 'IN_PROGRESS' && !isInProgress) return;
+           if (window._monitoringFilter === 'COMPLETED' && !isCompleted) return;
+           if (window._monitoringFilter === 'WARNINGS' && (s.violations || 0) === 0) return;
+
            let statusBadge = '';
-           if (s.status === 'IN_PROGRESS' || s.status === 'SCHEDULED') statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">In Progress</span>';
-           else if (s.status === 'COMPLETED') statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Completed</span>';
+           if (isInProgress) statusBadge = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">In Progress</span>';
+           else if (isCompleted) statusBadge = '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Completed</span>';
            else if (s.status === 'LOCKED') statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">Locked</span>';
            else statusBadge = `<span class="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs font-bold">${s.status || 'Pending'}</span>`;
 
@@ -4020,9 +4038,9 @@
                  ${s.violations > 0 ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-bold">${s.violations} Warnings</span>` : '<span class="text-slate-400 text-xs">None</span>'}
                </td>
                <td class="p-4">
-                 <span class="flex items-center gap-1 ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'text-slate-400' : 'text-emerald-600'} text-xs font-bold">
-                    <span class="w-2 h-2 rounded-full ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'bg-slate-300' : 'bg-emerald-500 animate-pulse'}"></span> 
-                    ${(s.status==='COMPLETED'||s.status==='PENDING') ? 'Offline' : 'Active'}
+                 <span class="flex items-center gap-1 ${(isCompleted||isNotStarted) ? 'text-slate-400' : 'text-emerald-600'} text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full ${(isCompleted||isNotStarted) ? 'bg-slate-300' : 'bg-emerald-500 animate-pulse'}"></span> 
+                    ${(isCompleted||isNotStarted) ? 'Offline' : 'Active'}
                  </span>
                </td>
                <td class="p-4 text-right">
@@ -4033,7 +4051,7 @@
         });
 
         if (html === '') {
-           html = '<tr><td colspan="7" class="p-8 text-center text-slate-400">No active exam sessions found.</td></tr>';
+           html = `<tr><td colspan="7" class="p-8 text-center text-slate-400">No students found for filter: ${window._monitoringFilter.replace('_', ' ')}</td></tr>`;
         }
 
         document.getElementById('mon-total').textContent = stats.total;
