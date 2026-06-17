@@ -2539,7 +2539,7 @@
               ${(appStatus !== 'Rejected' && appStatus !== 'REJECTED') ? `
                 <button onclick="rejectStudent('${s.applicationId}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1.5 rounded text-xs font-bold border border-red-200 transition">Reject</button>
               ` : ''}
-              <button onclick="editStudentDetails('${s.applicationId}')" class="bg-amber-50 hover:bg-amber-100 text-amber-600 px-2 py-1.5 rounded text-xs font-bold border border-amber-300 transition ml-1">Edit</button>
+              <button onclick="window.open('../student/apply.html?edit_app_id=${s.applicationId}', '_blank')" class="bg-amber-50 hover:bg-amber-100 text-amber-600 px-2 py-1.5 rounded text-xs font-bold border border-amber-300 transition ml-1">Edit</button>
               <button onclick="deleteApplication('${s.applicationId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1.5 rounded text-xs font-bold border border-slate-300 transition ml-1">Delete</button>
             </td>
           </tr>
@@ -2548,60 +2548,8 @@
     }
 
     window.editStudentDetails = function(appId) {
-      const apps = getApplications();
-      let app = apps.find(a => a.applicationId === appId);
-      if (!app) return;
-      
-      const newEmail = prompt('Enter the correct email address for ' + app.fullName + ':', app.email);
-      if (newEmail === null) return; // cancelled
-      
-      const newMobile = prompt('Enter the correct mobile number:', app.mobile || '');
-      if (newMobile === null) return;
-      
-      const newName = prompt('Enter the correct full name:', app.fullName || '');
-      if (newName === null) return;
-
-      if (!app.academicDetails) app.academicDetails = {};
-      
-      const new10th = prompt('Enter the correct 10th Percentage:', app.academicDetails.tenthPercent || '');
-      if (new10th === null) return;
-
-      const new12th = prompt('Enter the correct 12th Percentage:', app.academicDetails.twelfthPercent || '');
-      if (new12th === null) return;
-
-      const newDegree = prompt('Enter the correct Degree Percentage / CGPA:', app.academicDetails.degreePercent || '');
-      if (newDegree === null) return;
-
-      if (newEmail.trim() !== '' || newMobile.trim() !== '' || newName.trim() !== '') {
-        if (newEmail.trim()) app.email = newEmail.trim();
-        if (newMobile.trim()) app.mobile = newMobile.trim();
-        if (newName.trim()) app.fullName = newName.trim();
-        app.academicDetails.tenthPercent = new10th.trim();
-        app.academicDetails.twelfthPercent = new12th.trim();
-        app.academicDetails.degreePercent = newDegree.trim();
-        
-        let lsApps = JSON.parse(localStorage.getItem('cet_applications') || '[]');
-        let idx = lsApps.findIndex(a => a.applicationId === appId);
-        if (idx !== -1) {
-          lsApps[idx].email = app.email;
-          lsApps[idx].mobile = app.mobile;
-          lsApps[idx].fullName = app.fullName;
-          lsApps[idx].academicDetails = app.academicDetails;
-          localStorage.setItem('cet_applications', JSON.stringify(lsApps));
-        }
-        
-        // Sync to Supabase if available
-        if (window.supabase) {
-           window.supabase.from('students').update({ 
-             email: app.email,
-             mobile: app.mobile,
-             full_name: app.fullName,
-             academic_details: app.academicDetails
-           }).eq('student_id', app.studentId || appId).then(console.log);
-        }
-        renderApplications();
-        alert('Details & Marks updated! Email: ' + app.email + '. You can now use Mass Email to send them the information.');
-      }
+      // Kept for backward compatibility if any old handlers reference it.
+      window.open('../student/apply.html?edit_app_id=' + appId, '_blank');
     };
 
     window.previewApplication = async function(appId) {

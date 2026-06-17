@@ -620,12 +620,11 @@
     import DB from '../js/db.js';
     import { saveStudentApplication, isReady as isSupabaseReady, uploadFile, getClient } from '../js/supabase-db.js';
     import EmailSvc from '../js/email-service.js';
+    window.EmailSvc = EmailSvc;
     window.isSupabaseReady = isSupabaseReady;
     window.saveStudentApplication = saveStudentApplication;
     window.supabaseUploadFile = uploadFile;
     window.supabaseGetClient = getClient;
-    window.supabaseUploadFile = uploadFile;
-    window.isSupabaseReady = isSupabaseReady;
 
     window.APPLICATION_FEE = 500; // Live production fee
     window.pendingAppId = 'APP' + Date.now();
@@ -751,6 +750,65 @@
         window.prefetchedOrderData = data;
         console.log('[Razorpay] Order prefetched successfully.');
       }).catch(err => console.error('[Razorpay] Pre-fetch failed:', err));
+
+      const editAppId = urlParams.get('edit_app_id');
+      if (editAppId) {
+        window.isEditMode = true;
+        let lsApps = [];
+        try { lsApps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e){}
+        const app = lsApps.find(a => a.applicationId === editAppId);
+        if (app) {
+          window.editingApp = app;
+          window.pendingAppId = app.applicationId;
+          document.getElementById('fullName').value = app.fullName || '';
+          document.getElementById('email').value = app.email || '';
+          document.getElementById('mobileNumber').value = app.mobile || '';
+          document.getElementById('dob').value = app.dob || '';
+          
+          if (app.address) {
+             const parts = app.address.split(', ');
+             document.getElementById('addressLine1').value = parts[0] || '';
+             document.getElementById('addressLine2').value = parts[1] || '';
+             document.getElementById('village').value = parts[2] || '';
+             document.getElementById('taluka').value = parts[3] ? parts[3].replace('Taluka: ', '') : '';
+             document.getElementById('district').value = parts[4] ? parts[4].replace('District: ', '') : '';
+             document.getElementById('state').value = parts[5] || 'Maharashtra';
+             document.getElementById('pinCode').value = parts[6] ? parts[6].replace('PIN: ', '') : '';
+          }
+          
+          document.getElementById('casteCategory').value = app.category || '';
+          window.handleCasteChange();
+          
+          if (app.academicDetails) {
+             document.getElementById('twelfthPercent').value = app.academicDetails.twelfthPercent || '';
+             document.getElementById('mathsMarks').value = app.academicDetails.mathsMarks || '';
+             document.getElementById('syMarks').value = app.academicDetails.syMarks || '';
+             document.getElementById('syBackground').value = app.academicDetails.syBackground || '';
+             document.getElementById('tyResultStatus').value = app.academicDetails.tyResultStatus || '';
+             document.getElementById('tyMarks').value = app.academicDetails.tyMarks || '';
+             document.getElementById('tyBackground').value = app.academicDetails.tyBackground || '';
+             window.handleTyStatusChange();
+          }
+          
+          if (app.courseApplied) {
+             const cards = document.querySelectorAll('.course-card h3');
+             cards.forEach(c => {
+                 if (c.innerText.includes(app.courseApplied)) window.selectCourse(app.courseApplied, c.parentElement);
+             });
+          }
+          
+          const feeDisplay = document.getElementById('feeAmountDisplay');
+          if (feeDisplay) {
+            feeDisplay.textContent = '₹0 (Edit Mode)';
+            feeDisplay.style.color = '#34d399';
+          }
+          const btn = document.getElementById('submitBtn');
+          if (btn) btn.innerHTML = 'Update & Resend Email';
+          
+          document.getElementById('termsCheck').checked = true;
+          showAlert('📝 Edit Mode: Update the required fields and submit to send the corrected email.', 'info');
+        }
+      }
     });
 
     let currentStep = 1; 
@@ -1099,6 +1157,90 @@
       if (!validateStep(1)) { fail(1); return; }
       if (!validateStep(2)) { fail(2); return; }
       if (!validateStep(3)) { fail(3); return; }
+
+      if (window.isEditMode) {
+         window.isSubmittingForm = true;
+         btn.innerHTML = '⌛ Updating Application...';
+         const app = window.editingApp;
+         const course = document.getElementById('courseApplied').value;
+         const caste = document.getElementById('casteCategory').value;
+         
+         app.fullName = document.getElementById('fullName').value.trim();
+         app.name = app.fullName;
+         app.email = document.getElementById('email').value.trim().toLowerCase();
+         app.mobile = document.getElementById('mobileNumber').value.trim();
+         app.dob = document.getElementById('dob').value.trim();
+         app.address = [
+            document.getElementById('addressLine1').value.trim(),
+            document.getElementById('addressLine2').value.trim(),
+            document.getElementById('village').value.trim(),
+            'Taluka: ' + document.getElementById('taluka').value.trim(),
+            'District: ' + document.getElementById('district').value.trim(),
+            document.getElementById('state').value.trim(),
+            'PIN: ' + document.getElementById('pinCode').value.trim()
+         ].filter(Boolean).join(', ');
+         
+         app.courseApplied = course;
+         app.category = caste;
+         if (!app.academicDetails) app.academicDetails = {};
+         app.academicDetails.twelfthPercent = document.getElementById('twelfthPercent').value;
+         app.academicDetails.mathsMarks = document.getElementById('mathsMarks').value;
+         app.academicDetails.syMarks = document.getElementById('syMarks').value;
+         app.academicDetails.syBackground = document.getElementById('syBackground').value;
+         app.academicDetails.tyResultStatus = document.getElementById('tyResultStatus').value;
+         app.academicDetails.tyMarks = document.getElementById('tyMarks')?.value || '';
+         app.academicDetails.tyBackground = document.getElementById('tyBackground')?.value || '';
+         app.academicDetails.courseApplied = course;
+         app.academicDetails.casteCategory = caste;
+
+         if (!app.uploadedFiles) app.uploadedFiles = {};
+         for (const k in fileDataMap) {
+             if (fileDataMap[k]) app.uploadedFiles[k] = fileDataMap[k];
+         }
+         
+         // Update localStorage (applications)
+         let lsApps = JSON.parse(localStorage.getItem('cetApplications') || '[]');
+         let idx = lsApps.findIndex(a => a.applicationId === app.applicationId);
+         if (idx !== -1) {
+            lsApps[idx] = app;
+            localStorage.setItem('cetApplications', JSON.stringify(lsApps));
+         }
+
+         // Update localStorage (db.js compat array)
+         let oldApps = JSON.parse(localStorage.getItem('cet_applications') || '[]');
+         let oldIdx = oldApps.findIndex(a => a.applicationId === app.applicationId);
+         if (oldIdx !== -1) {
+            oldApps[oldIdx] = app;
+            localStorage.setItem('cet_applications', JSON.stringify(oldApps));
+         }
+
+         // Sync to Supabase
+         if (window.supabase) {
+            try {
+               await window.supabase.from('students').update({
+                  email: app.email, mobile: app.mobile, full_name: app.fullName,
+                  academic_details: app.academicDetails
+               }).eq('student_id', app.studentId);
+            } catch(e){}
+         }
+
+         // Send Emails
+         btn.innerHTML = '✉️ Sending Emails...';
+         try {
+            if (window.EmailSvc) {
+               // Send application received
+               await window.EmailSvc.sendApplicationReceived(app);
+               // Also try to send approval / exam login if it has a studentId
+               if (app.studentId) {
+                  await window.EmailSvc.sendApplicationApproved(app);
+               }
+            }
+         } catch(e) { console.error("Email Error:", e); }
+
+         alert("Application updated and emails sent successfully!");
+         window.close(); // Close the new tab if it was opened
+         return;
+      }
 
       window.isSubmittingForm = true;
 
