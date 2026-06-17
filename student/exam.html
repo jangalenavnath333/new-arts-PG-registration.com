@@ -113,11 +113,8 @@
       </div>
       
       <div class="flex gap-4">
-        <button id="startSetupBtn" onclick="runSetupSequence()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors text-sm">
-          Start Security Checks
-        </button>
-        <button id="forceStartBtn" onclick="engageExam()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors text-sm border border-slate-600">
-          Force Start (Mobile)
+        <button id="startSetupBtn" onclick="runSetupSequence()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-colors text-sm">
+          Start Security Checks & Camera
         </button>
       </div>
       <p id="setupErrorMsg" class="text-red-400 text-sm mt-4 font-medium h-4"></p>
@@ -386,46 +383,58 @@
       const errbox = document.getElementById('setupErrorMsg');
       btn.disabled = true;
       btn.textContent = 'Running Security Protocols...';
-      errbox.textContent = '';
+      errbox.innerHTML = '';
       
       if(currentStudent.hasAttempted) {
         setCheck('chk-status', false); return errbox.textContent = "You have already completed this safely monitored exam.";
       }
       setCheck('chk-status', true);
 
+      // 1. Synchronously request fullscreen to preserve the user gesture (crucial for mobile)
+      try {
+        if (document.documentElement.requestFullscreen) {
+           document.documentElement.requestFullscreen().catch(e => console.warn("Fullscreen deferred:", e));
+        } else if (document.documentElement.webkitRequestFullscreen) {
+           document.documentElement.webkitRequestFullscreen();
+        }
+        setCheck('chk-full', true);
+      } catch (e) {
+         console.warn("Fullscreen API not supported:", e);
+         setCheck('chk-full', true); // Bypass visually if unsupported (like iOS Safari)
+      }
+
+      // 2. Request Camera strictly
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-           throw new Error("Your browser does not support camera access. Please open this link in standard Google Chrome or Safari.");
+           throw new Error("Your browser does not support camera access. Please use Google Chrome or Safari.");
         }
 
-        const getUserMediaWithTimeout = (constraints, ms = 10000) => {
+        // Give the user plenty of time (60 seconds) to accept the camera permission on mobile
+        const getUserMediaWithTimeout = (constraints, ms = 60000) => {
            return new Promise((resolve, reject) => {
-               const t = setTimeout(() => reject(new Error("Camera request timed out (Browser blocked or ignored request)")), ms);
-               navigator.mediaDevices.getUserMedia(constraints).then(res => { clearTimeout(t); resolve(res); }).catch(err => { clearTimeout(t); reject(err); });
+               const t = setTimeout(() => reject(new Error("Camera request timed out. Please click 'Allow' when prompted.")), ms);
+               navigator.mediaDevices.getUserMedia(constraints)
+                 .then(res => { clearTimeout(t); resolve(res); })
+                 .catch(err => { clearTimeout(t); reject(err); });
            });
         };
 
         try {
-           mediaStream = await getUserMediaWithTimeout({ video: true, audio: true }, 4000);
+           mediaStream = await getUserMediaWithTimeout({ video: true, audio: true }, 60000);
         } catch (audioErr) {
-           console.warn("Could not get audio or timed out, falling back to video only", audioErr);
-           mediaStream = await getUserMediaWithTimeout({ video: true }, 3000);
+           console.warn("Audio/Video failed, trying video only...", audioErr);
+           mediaStream = await getUserMediaWithTimeout({ video: true }, 60000);
         }
         
         document.getElementById('previewBox').style.display = 'block';
         document.getElementById('previewVideo').srcObject = mediaStream;
         setCheck('chk-media', true);
 
-        // Load Face API models silently in background (DO NOT AWAIT)
+        // Load Face API models silently in background
         if (typeof faceapi !== 'undefined') {
           faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
-            .then(() => {
-              faceDetectionEnabled = true;
-              console.log('[FaceAPI] Models loaded successfully');
-            })
-            .catch(e => {
-              console.warn('[FaceAPI] Could not load face models:', e);
-            });
+            .then(() => { faceDetectionEnabled = true; })
+            .catch(e => { console.warn('[FaceAPI] Could not load face models:', e); });
         }
 
         setTimeout(() => {
@@ -440,42 +449,18 @@
             if(obj) { obj.examPhotoCapture = cvs.toDataURL('image/jpeg', 0.8); LocalDB.set('cet_students', students); }
           } catch(err) { console.warn("Failed to capture photo", err); }
         }, 1500);
+
+        // ONLY start the exam if camera was successfully acquired
+        setTimeout(() => engageExam(), 800);
+
       } catch (e) {
         setCheck('chk-media', false);
-        
-        let errMsg = e.message || e.name || "Unknown Error";
-        console.warn("Camera failed, bypassing for mobile compatibility:", errMsg);
-        
-        errbox.innerHTML = `<span style="font-size:12px; color: #fbbf24;">⚠️ Camera Error: ${errMsg}. Proceeding without camera.</span>`;
+        let errMsg = e.message || e.name || "Permission Denied";
+        errbox.innerHTML = `<span style="font-size:13px; color: #ef4444;">❌ Camera Error: ${errMsg}. Camera is MANDATORY for this exam. Please refresh and allow camera access.</span>`;
         mediaStream = null;
-        // Do NOT return here. Allow the exam to proceed!
+        btn.disabled = false;
+        btn.textContent = 'Retry Security Checks';
       }
-
-      try {
-        const reqFs = () => {
-          if (document.documentElement.requestFullscreen) {
-             return document.documentElement.requestFullscreen();
-          } else if (document.documentElement.webkitRequestFullscreen) {
-             return document.documentElement.webkitRequestFullscreen();
-          }
-          return null;
-        };
-        
-        const fsPromise = reqFs();
-        if (fsPromise) {
-           await Promise.race([
-             fsPromise,
-             new Promise((_, reject) => setTimeout(() => reject(new Error("Fullscreen request timed out")), 3000))
-           ]);
-        }
-        setCheck('chk-full', true);
-      } catch (e) {
-         console.warn("Fullscreen API not supported or rejected:", e);
-         // Mobile devices often reject fullscreen. We shouldn't block the exam for this.
-         setCheck('chk-full', true); // Bypass to allow entry
-      }
-
-      setTimeout(() => engageExam(), 800);
     }
 
     async function engageExam() {
