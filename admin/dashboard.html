@@ -674,14 +674,14 @@
               <p class="text-sm text-slate-500">Monitor active exam sessions and security violations in real-time.</p>
             </div>
             <div class="flex gap-3">
-               <button onclick="sendExamReminders()" class="btn btn-solid-sm bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+               <button onclick="sendExamReminders()" class="btn btn-solid-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2" style="background-color: #f59e0b; color: white;">
                  ✉️ Send Reminders
                </button>
                <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-5 gap-4 mb-8">
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-center">
               <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Total Students</p>
               <p class="text-3xl font-black text-indigo-900" id="mon-total">0</p>
