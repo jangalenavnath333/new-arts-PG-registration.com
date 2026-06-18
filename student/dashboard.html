@@ -498,7 +498,7 @@
                   const parts = examDate.split('-');
                   const timeParts = startTime.split(':');
                   if (parts.length === 3 && timeParts.length >= 2) {
-                     start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+                     start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
                   } else {
                      start = new Date(`${examDate}T${startTime}`);
                   }
@@ -731,7 +731,7 @@
             const parts = config.examDate.split('-');
             const timeParts = config.startTime.split(':');
             if (parts.length === 3 && timeParts.length >= 2) {
-               start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+               start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
             } else { start = new Date(`${config.examDate}T${config.startTime}`); }
          } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
          
@@ -929,7 +929,7 @@
          const parts = config.examDate.split('-');
          const timeParts = config.startTime.split(':');
          if (parts.length === 3 && timeParts.length >= 2) {
-            start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+            start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
          } else { start = new Date(`${config.examDate}T${config.startTime}`); }
       } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
       const end = new Date(start.getTime() + (config.durationMinutes * 60000));

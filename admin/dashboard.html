@@ -3150,7 +3150,7 @@
         
         const tabSwitches = securityLogs.filter(l => l.type === 'TAB_SWITCH').length;
         const clipboards = securityLogs.filter(l => l.type === 'CLIPBOARD').length;
-        const totalViolations = r ? (r.violations || 0) : (s.active_violations || s.activeViolations || securityLogs.length);
+        const totalViolations = r ? (r.violations || 0) : (s.active_violations ?? s.activeViolations ?? securityLogs.filter(l => ['TAB_SWITCH', 'CLIPBOARD', 'FULLSCREEN_EXIT', 'NO_FACE', 'MULTIPLE_FACES', 'WINDOW_BLUR', 'RIGHT_CLICK', 'KEYBOARD_SHORTCUT'].includes(l.type)).length);
 
         let statusHtml = '';
         if(examStatus === 'TERMINATED') statusHtml = '<span class="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-200">Terminated</span>';

@@ -117,7 +117,7 @@
           Start Security Checks & Camera
         </button>
       </div>
-      <p id="setupErrorMsg" class="text-red-400 text-sm mt-4 font-medium h-4"></p>
+      <div id="setupErrorMsg" class="w-full mt-4"></div>
     </div>
   </div>
 
@@ -354,7 +354,7 @@
               const parts = examConfig.examDate.split('-');
               const timeParts = examConfig.startTime.split(':');
               if (parts.length === 3 && timeParts.length >= 2) {
-                 start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+                 start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
               } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
            } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
            const end = new Date(start.getTime() + (examConfig.durationMinutes * 60000));
@@ -466,18 +466,50 @@
         btn.disabled = false;
         btn.textContent = 'Retry Security Checks';
         
-        // Add a bypass button ONLY when it fails, so they are not permanently stuck
-        errbox.innerHTML = `
-          <div class="mt-4 p-4 bg-red-900/40 border border-red-500 rounded-lg text-left">
-             <span style="font-size:13px; color: #fca5a5; font-weight:bold;">❌ Camera Error: ${errMsg}</span>
-             <p class="text-xs text-red-200 mt-2 mb-3">If you cannot fix this, you can force start the exam, but your camera will be recorded as OFF.</p>
-             <button onclick="engageExam()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm transition">
-               Proceed Without Camera (Force Start)
-             </button>
-          </div>
-        `;
+        // Decide whether to show the Bypass button
+        let canBypass = false;
+        
+        try {
+            if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                // If there are NO video devices physically connected, they can bypass.
+                // If there ARE video devices, they MUST give permission.
+                if (videoDevices.length === 0) {
+                    canBypass = true;
+                }
+            } else {
+                // If we can't even enumerate devices, and it's not a mobile device, allow bypass
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (!isMobile) canBypass = true;
+            }
+        } catch(err) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (!isMobile) canBypass = true;
+        }
+
+        if (canBypass) {
+            errbox.innerHTML = `
+              <div class="mt-4 p-4 bg-red-900/40 border border-red-500 rounded-lg text-left">
+                 <span style="font-size:13px; color: #fca5a5; font-weight:bold;">❌ Camera Missing: ${errMsg}</span>
+                 <p class="text-xs text-red-200 mt-2 mb-3">No webcam detected. Since you are on a Desktop PC without a camera, you may proceed. Your screen and tab activity will still be strictly monitored.</p>
+                 <button onclick="engageExam()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm transition shadow-lg">
+                   Proceed Without Camera (Desktop Mode)
+                 </button>
+              </div>
+            `;
+        } else {
+            errbox.innerHTML = `
+              <div class="mt-4 p-4 bg-red-900/40 border border-red-500 rounded-lg text-left">
+                 <span style="font-size:13px; color: #fca5a5; font-weight:bold;">❌ Camera Error: ${errMsg}</span>
+                 <p class="text-xs text-red-200 mt-2 mb-3"><b>Camera is MANDATORY for mobile and laptop devices.</b> Please click "Allow" when prompted, or go to Site Settings to enable the camera.</p>
+                 <button onclick="runSetupSequence()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm transition shadow-lg">
+                   Try Again
+                 </button>
+              </div>
+            `;
+        }
         mediaStream = null;
-        alert("Camera Failed: " + errMsg);
       }
     }
 
@@ -568,7 +600,7 @@
             const parts = examConfig.examDate.split('-');
             const timeParts = examConfig.startTime.split(':');
             if (parts.length === 3 && timeParts.length >= 2) {
-               start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+               start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
             } else { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
          } catch(e) { start = new Date(`${examConfig.examDate}T${examConfig.startTime}`); }
          const duration = examConfig.durationMinutes || 60;

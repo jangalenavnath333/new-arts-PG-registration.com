@@ -120,7 +120,7 @@ export function getExamStatus(examDate, startTime, durationMinutes) {
       const parts = examDate.split('-');
       const timeParts = startTime.split(':');
       if (parts.length === 3 && timeParts.length >= 2) {
-         start = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), parseInt(timeParts[0]), parseInt(timeParts[1]), 0);
+         start = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10)-1, parseInt(parts[2], 10), parseInt(timeParts[0], 10), parseInt(timeParts[1], 10), 0);
       } else {
          start = new Date(`${examDate}T${startTime}`);
       }
