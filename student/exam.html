@@ -7,7 +7,7 @@
   
   <link rel="stylesheet" href="../css/tailwind.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script defer src="../js/face-api.min.js"></script>
   
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; user-select: none; -webkit-user-select: none; }
@@ -439,7 +439,7 @@
 
         // Load Face API models silently in background
         if (typeof faceapi !== 'undefined') {
-          faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/')
+          faceapi.nets.tinyFaceDetector.loadFromUri('../models/')
             .then(() => { faceDetectionEnabled = true; })
             .catch(e => { console.warn('[FaceAPI] Could not load face models:', e); });
         }
