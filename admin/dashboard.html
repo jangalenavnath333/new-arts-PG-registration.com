@@ -390,6 +390,9 @@
                 </div>
                 <input type="text" id="studentsSearchInput" oninput="renderStudents()" placeholder="Search Name or ID..." class="w-full bg-white border border-slate-300 text-slate-800 h-12 pl-11 pr-4 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400">
               </div>
+              <button onclick="sendSelectedInvites()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 h-12">
+                ✉️ Send Invite Emails
+              </button>
             </div>
           </div>
           
@@ -397,7 +400,10 @@
             <table class="w-full text-left border-collapse min-w-[1100px]">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                  <th class="p-4 rounded-l-lg border-y border-l border-slate-200">Student ID</th>
+                  <th class="p-4 rounded-l-lg border-y border-l border-slate-200 w-12 text-center">
+                     <input type="checkbox" id="selectAllStudents" onclick="toggleSelectAllStudents(this)" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                  </th>
+                  <th class="p-4 border-y border-slate-200">Student ID</th>
                   <th class="p-4 border-y border-slate-200">Name</th>
                   <th class="p-4 border-y border-slate-200">Exam Status</th>
                   <th class="p-4 border-y border-slate-200 text-center">Score</th>
@@ -466,7 +472,8 @@
                 <div>
                   <label class="block text-sm font-semibold text-slate-700 mb-1">Exam Type *</label>
                   <select id="examType" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500 mb-4 font-medium">
-                    <option value="CET Exam">CET Exam</option>
+                    <option value="Demo CET Exam">Demo CET Exam</option>
+                    <option value="Final CET Exam">Final CET Exam</option>
                     <option value="Internal Exam">Internal Exam</option>
                     <option value="Unit Test">Unit Test</option>
                     <option value="Practical Test">Practical Test</option>
@@ -3103,6 +3110,70 @@
     // ============================================
     // APPROVED STUDENTS & EXAM RESULTS
     // ============================================
+    
+    window.toggleSelectAllStudents = function(checkbox) {
+      const checkboxes = document.querySelectorAll('.student-checkbox');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    };
+    
+    window.sendSelectedInvites = async function() {
+      const selected = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+      if(selected.length === 0) {
+        showToast('Please select at least one student to send invites.', 'error');
+        return;
+      }
+      
+      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      const courseConfig = configObj['M.Sc. Computer Science'] || configObj;
+      if (!courseConfig.examDate || !courseConfig.startTime) {
+         showToast('Exam date/time not configured yet. Go to Exam Settings.', 'error');
+         return;
+      }
+      
+      if(!confirm(`Are you sure you want to send Exam Invites to ${selected.length} selected students?`)) return;
+      
+      const btn = document.querySelector('button[onclick="sendSelectedInvites()"]');
+      if(btn) { btn.disabled = true; btn.innerHTML = 'Sending...'; }
+      
+      showToast(`Sending ${selected.length} emails. Please wait...`, 'info');
+      
+      let allDbStudents = [];
+      if(supabase) {
+         const {data} = await supabase.from('students').select('*').in('id', selected);
+         if(data) allDbStudents = data;
+      } else {
+         const local = DB.getStudents() || [];
+         allDbStudents = local.filter(s => selected.includes(s.id || s.supabaseId));
+      }
+      
+      let emailsPromises = [];
+      allDbStudents.forEach(st => {
+         if (st.email) {
+            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
+              const portalUrl = window.location.origin + '/student/login.html';
+              const examUrl = window.location.origin + '/exam/index.html';
+              const tpl = EmailSvc.EmailTemplates.scheduleUpdate(
+                 st.full_name || st.name || 'Student', 
+                 courseConfig.examDate, 
+                 courseConfig.startTime, 
+                 courseConfig.durationMinutes || 60, 
+                 courseConfig.course || 'M.Sc. Computer Science', 
+                 st.student_id || st.id, 
+                 portalUrl, examUrl, st.email
+              );
+              return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html).then((success) => success === true);
+            }).catch(e => false);
+            emailsPromises.push(p);
+         }
+      });
+      
+      Promise.all(emailsPromises).then(results => {
+         const sentCount = results.filter(r => r === true).length;
+         showToast(`Successfully sent ${sentCount} invite emails!`, 'success');
+         if(btn) { btn.disabled = false; btn.innerHTML = '✉️ Send Invite Emails'; }
+      });
+    };
+
     window.renderStudents = function() {
       // Read from localStorage first
       let students = [];
@@ -3164,6 +3235,9 @@
         const sid = s.id;
         return `
           <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-4 text-center">
+              <input type="checkbox" class="student-checkbox w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" value="${sid}">
+            </td>
             <td class="p-4 font-mono text-sm text-indigo-600 font-bold cursor-pointer hover:underline" onclick="openStudentDetailsModal('${sid}')">${s.studentId}</td>
             <td class="p-4 font-medium text-slate-800 text-sm">${s.fullName}</td>
             <td class="p-4">${statusHtml}</td>
