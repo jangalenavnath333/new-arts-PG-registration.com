@@ -625,6 +625,8 @@
       
       isExamActive = true; // Exam is fully active now
       
+      let missingFaceCounter = 0;
+      
       // AI Face Tracking (runs every 2.5 seconds)
       setInterval(() => {
         if (faceDetectionEnabled && isExamActive && !warningGracePeriod) {
@@ -632,11 +634,18 @@
           if (video && !video.paused && !video.ended && mediaStream) {
             faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).then(detections => {
               if (detections.length === 0) {
-                logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
-                registerViolation('No face detected! Please look directly at the camera.');
+                missingFaceCounter++;
+                if (missingFaceCounter >= 3) {
+                   missingFaceCounter = 0; // Reset after warning
+                   logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
+                   registerViolation('No face detected! Please look directly at the camera.');
+                }
               } else if (detections.length > 1) {
+                missingFaceCounter = 0;
                 logSecurityEvent('MULTIPLE_FACES', `Detected ${detections.length} faces.`);
                 registerViolation('Multiple faces detected! You must be alone in the room.');
+              } else {
+                missingFaceCounter = 0; // Face detected successfully, reset counter
               }
             }).catch(e => {});
           }
@@ -865,7 +874,11 @@
       updateViolationsUI();
       
       if(activeViolations > 3) {
-         alert("⚠️ STRICT WARNING!\n\nYou have already crossed the maximum limit of 3 warnings.\n\nFrom now on, for every new warning (like switching tabs), your marks will be AUTOMATICALLY DEDUCTED from your final CET result.\nThis system is fully automatic. Please give your exam honestly and carefully.\n\n⚠️ कडक सूचना!\n\nतुमच्या ३ वॉर्निंग्स पूर्ण झाल्या आहेत. यापुढे तुम्ही जेवढ्या वेळा टॅब बदलाल किंवा नवीन वॉर्निंग आणाल, तेवढे मार्क्स तुमच्या फायनल रिझल्टमधून 'ऑटोमॅटिक' मायनस (कमी) केले जातील.\nही सिस्टीम पूर्णपणे ऑटोमॅटिक आहे. त्यामुळे इथून पुढे व्यवस्थित आणि प्रामाणिकपणे एक्झाम द्या.");
+         // Show extra scary text inside the modal dynamically instead of native alert
+         const msgBox = document.querySelector('#warningOverlay .text-red-200');
+         if (msgBox) {
+            msgBox.innerHTML = `⚠️ <b>STRICT WARNING:</b> You have crossed the 3 warning limit. From now on, your marks are being AUTOMATICALLY DEDUCTED from your final CET result for every new violation.<br><br>⚠️ <b>कडक सूचना:</b> तुमच्या ३ वॉर्निंग्स पूर्ण झाल्या आहेत. इथून पुढे तुमचे मार्क्स 'ऑटोमॅटिक' कमी केले जात आहेत.`;
+         }
       }
       
       // Show BIG warning overlay
