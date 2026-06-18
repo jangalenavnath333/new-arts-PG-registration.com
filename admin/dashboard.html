@@ -4019,18 +4019,50 @@
 
     window._pendingReminderEmails = [];
 
-    window.sendExamReminders = function() {
+    window.sendExamReminders = async function() {
       if (window._pendingReminderEmails.length === 0) {
          showToast('All students have started the exam! No reminders to send.', 'success');
          return;
       }
-      const bccList = window._pendingReminderEmails.join(',');
-      const subject = encodeURIComponent("URGENT: Start your CET Exam NOW!");
-      const loginUrl = "https://jangalenavnath333.github.io/new-arts-PG-registration.com/student/login.html";
-      const body = encodeURIComponent(`Dear Student,\n\nYour CET Exam has started. You have not logged in yet. Please click the link below to login and start your exam immediately:\n\n${loginUrl}\n\nFailure to start on time may result in your exam being cancelled.\n\nRegards,\nAdmin`);
       
-      window.open(`mailto:?bcc=${bccList}&subject=${subject}&body=${body}`, '_blank');
-      showToast(`Reminder draft opened for ${window._pendingReminderEmails.length} students!`, 'success');
+      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      const courseConfig = configObj['M.Sc. Computer Science'] || configObj;
+      if (!courseConfig.examDate || !courseConfig.startTime) {
+         showToast('Exam date/time not configured yet. Go to Exam Settings.', 'error');
+         return;
+      }
+      
+      if(!confirm(`Send URGENT reminder emails to ${window._pendingReminderEmails.length} students who have NOT started the exam yet?`)) return;
+      
+      showToast(`Sending ${window._pendingReminderEmails.length} reminder emails. Please wait...`, 'info');
+      
+      let emailsPromises = [];
+      window._pendingReminderEmails.forEach(st => {
+         if (st.email) {
+            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
+              const portalUrl = window.location.origin + '/student/login.html';
+              const examUrl = window.location.origin + '/exam/index.html';
+              const tpl = EmailSvc.EmailTemplates.scheduleUpdate(
+                 st.name || st.fullName || 'Student', 
+                 courseConfig.examDate, 
+                 courseConfig.startTime, 
+                 courseConfig.durationMinutes || 60, 
+                 courseConfig.course || 'M.Sc. Computer Science', 
+                 st.studentId || st.id, 
+                 portalUrl, examUrl, st.email
+              );
+              // Prefix subject with URGENT
+              tpl.subject = "URGENT REMINDER: " + tpl.subject;
+              return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html).then((success) => success === true);
+            }).catch(e => false);
+            emailsPromises.push(p);
+         }
+      });
+      
+      Promise.all(emailsPromises).then(results => {
+         const sentCount = results.filter(r => r === true).length;
+         showToast(`Successfully sent ${sentCount} URGENT reminder emails!`, 'success');
+      });
     };
 
     window._monitoringFilter = 'ALL';
@@ -4120,7 +4152,7 @@
            
            if (isNotStarted) {
                stats.notstarted++;
-               if (s.email) window._pendingReminderEmails.push(s.email);
+               if (s.email) window._pendingReminderEmails.push(s);
            }
            
            if (isInProgress) stats.progress++;
