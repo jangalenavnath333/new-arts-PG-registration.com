@@ -519,8 +519,8 @@
       document.getElementById('mainExamInterface').classList.add('flex');
       isSetupPhase = false;
       warningGracePeriod = true;
-      // 30 seconds grace period where violations are ignored/suppressed
-      setTimeout(() => { warningGracePeriod = false; }, 30000);
+      // 3 seconds grace period where violations are ignored/suppressed
+      setTimeout(() => { warningGracePeriod = false; }, 3000);
       
       document.getElementById('topStudentDisplay').textContent = `${currentStudent.fullName} | ID: ${currentStudent.studentId}`;
       const photoSrc = currentStudent.photoData || currentStudent.uploadedFiles?.photoFile;
@@ -622,6 +622,24 @@
       renderCurrentQuestion();
       
       isExamActive = true; // Exam is fully active now
+      
+      // AI Face Tracking (runs every 2.5 seconds)
+      setInterval(() => {
+        if (faceDetectionEnabled && isExamActive && !warningGracePeriod) {
+          const video = document.getElementById('liveVideo');
+          if (video && !video.paused && !video.ended && mediaStream) {
+            faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).then(detections => {
+              if (detections.length === 0) {
+                logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
+                registerViolation('No face detected! Please look directly at the camera.');
+              } else if (detections.length > 1) {
+                logSecurityEvent('MULTIPLE_FACES', `Detected ${detections.length} faces.`);
+                registerViolation('Multiple faces detected! You must be alone in the room.');
+              }
+            }).catch(e => {});
+          }
+        }
+      }, 2500);
       
       timerID = setInterval(examClockTick, 1000);
       examClockTick();
@@ -743,21 +761,7 @@
       const [h, m, s] = [Math.floor(examTimeLeft / 3600), Math.floor((examTimeLeft % 3600) / 60), Math.floor(examTimeLeft % 60)];
       document.getElementById('topTimer').textContent = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
 
-      // AI Face Tracking (runs every 5 seconds)
-      if (faceDetectionEnabled && isExamActive && examTimeLeft % 5 === 0) {
-        const video = document.getElementById('liveVideo');
-        if (video && !video.paused && !video.ended) {
-          faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).then(detections => {
-            if (detections.length === 0) {
-              logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
-              registerViolation('No face detected! Please look at the camera.');
-            } else if (detections.length > 1) {
-              logSecurityEvent('MULTIPLE_FACES', `Detected ${detections.length} faces.`);
-              registerViolation('Multiple faces detected! You must be alone.');
-            }
-          }).catch(e => {});
-        }
-      }
+
     }
 
     function logSecurityEvent(type, message) {
@@ -1000,7 +1004,7 @@
       
       // Temporary grace period on unlock
       warningGracePeriod = true;
-      setTimeout(() => { warningGracePeriod = false; }, 10000);
+      setTimeout(() => { warningGracePeriod = false; }, 3000);
 
       isExamActive = true;
       timerID = setInterval(examClockTick, 1000);
