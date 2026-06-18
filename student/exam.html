@@ -635,7 +635,8 @@
             faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).then(detections => {
               if (detections.length === 0) {
                 missingFaceCounter++;
-                if (missingFaceCounter >= 3) {
+                // Wait for 6 consecutive missed checks (15 seconds) before warning
+                if (missingFaceCounter >= 6) {
                    missingFaceCounter = 0; // Reset after warning
                    logSecurityEvent('NO_FACE', 'No face detected in webcam feed.');
                    registerViolation('No face detected! Please look directly at the camera.');
