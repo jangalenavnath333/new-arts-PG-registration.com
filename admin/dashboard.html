@@ -677,6 +677,9 @@
                <button onclick="sendExamReminders()" class="btn btn-solid-sm bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2" style="background-color: #f59e0b; color: white;">
                  ✉️ Send Reminders
                </button>
+               <button onclick="massResetExams()" class="btn btn-solid-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                 ⚠️ Mass Reset Exams
+               </button>
                <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
             </div>
           </div>
@@ -3962,6 +3965,41 @@
       window._monitoringFilter = f;
       window.renderMonitoring();
       showToast(`Filtered by: ${f.replace('_', ' ')}`, 'info');
+    };
+
+    window.massResetExams = async function() {
+      if(!confirm("⚠️ WARNING!\n\nAre you sure you want to reset ALL exams?\n\nThis will clear the 'Completed' status for all students and allow them to take a fresh exam.\n\nOnly do this if you have finished the Demo Test and want to prepare for the Final Test!")) return;
+      
+      const btn = document.querySelector('button[onclick="massResetExams()"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Resetting...'; }
+      
+      showToast('Resetting all students to SCHEDULED...', 'info');
+      
+      try {
+        if (supabase) {
+           const { error } = await supabase.from('students').update({
+             exam_status: 'SCHEDULED',
+             has_attempted: false,
+             active_violations: 0,
+             lock_reason: null
+           }).in('application_status', ['APPROVED']); // update all approved students
+           
+           if (error) {
+              console.warn('[Admin] Reset error:', error);
+              showToast('Reset failed: ' + error.message, 'error');
+           } else {
+              // Also clear local locked exams
+              LocalDB.set('cetLockedExams', []);
+              showToast('✅ All exams successfully reset!', 'success');
+              renderMonitoring();
+              renderStudents();
+           }
+        }
+      } catch(e) {
+         showToast('Reset failed.', 'error');
+      }
+      
+      if (btn) { btn.disabled = false; btn.innerHTML = '⚠️ Mass Reset Exams'; }
     };
 
     window.renderMonitoring = async function() {
