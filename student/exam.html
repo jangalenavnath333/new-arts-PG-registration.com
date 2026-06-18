@@ -214,11 +214,12 @@
       <div class="w-24 h-24 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center text-6xl mx-auto mb-6 animate-pulse">⚠️</div>
       <h2 class="text-4xl font-black text-white mb-2 uppercase tracking-tight">Security Warning <span id="warnCountBadge" class="text-red-500"></span></h2>
       <p class="text-red-400 text-xl font-bold mb-4" id="warnReasonText">Violation detected.</p>
-      <p class="text-slate-300 text-base mb-8">Please return to your exam immediately. 3 warnings will lock your exam permanently.</p>
-      <div class="bg-slate-800 rounded-full h-3 w-full overflow-hidden mb-2 relative">
-         <div id="warnProgressBar" class="absolute left-0 top-0 h-full bg-red-500 transition-all duration-1000 ease-linear w-full"></div>
+      <div class="bg-red-950/50 p-4 rounded-xl border border-red-500/50 mb-8 text-left">
+         <p class="text-red-200 text-sm">Our AI proctoring system has recorded a suspicious action. <b>If you continue to break the rules, your marks will be automatically DEDUCTED</b> from your final CET result.</p>
       </div>
-      <p class="text-slate-500 text-sm font-bold">Resuming in <span id="warnTimeLeft">5</span> seconds...</p>
+      <button onclick="dismissWarning()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all active:scale-95">
+         I Understand, Resume Exam
+      </button>
     </div>
   </div>
 
@@ -617,7 +618,8 @@
       
       activeViolations = currentStudent.activeViolations || 0;
       updateViolationsUI();
-      document.getElementById('violationCountBadge').textContent = `${activeViolations} Warnings`;
+      const badge = document.getElementById('violationCountBadge');
+      if (badge) badge.textContent = `${activeViolations} Warnings`;
       updateUIMap();
       renderCurrentQuestion();
       
@@ -720,6 +722,7 @@
     }
 
     function saveTextAnswer(val) {
+      if(!isExamActive) return;
       answersStore[currentIdx] = val;
       LocalDB.set(`cetExamAnswers_${currentStudent.id}`, answersStore);
       ExamSupa.scheduleAutosave(answersStore, examTimeLeft, activeViolations);
@@ -737,6 +740,7 @@
     }
 
     function navQuestion(dir) {
+      if(!isExamActive) return;
       const nextQ = currentIdx + dir;
       if(nextQ >= 0 && nextQ < examData.length) { currentIdx = nextQ; renderCurrentQuestion(); updateUIMap(); }
     }
@@ -871,25 +875,25 @@
       const ov = document.getElementById('warningOverlay');
       ov.classList.remove('hidden');
       ov.classList.add('flex');
+      // Remove the auto-hide timer. The user MUST click the 'I Understand' button.
+    }
+    
+    window.dismissWarning = function() {
+      // Re-enter fullscreen using this click user gesture
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+         document.documentElement.requestFullscreen().catch(()=>{});
+      } else if (document.documentElement.webkitRequestFullscreen && !document.fullscreenElement) {
+         document.documentElement.webkitRequestFullscreen();
+      }
       
-      let wTime = 5;
-      document.getElementById('warnTimeLeft').textContent = wTime;
-      document.getElementById('warnProgressBar').style.width = '100%';
+      const ov = document.getElementById('warningOverlay');
+      ov.classList.add('hidden');
+      ov.classList.remove('flex');
       
-      const wInterval = setInterval(() => {
-        wTime--;
-        document.getElementById('warnTimeLeft').textContent = wTime;
-        document.getElementById('warnProgressBar').style.width = (wTime * 20) + '%';
-        if(wTime <= 0) {
-          clearInterval(wInterval);
-          ov.classList.remove('flex');
-          ov.classList.add('hidden');
-          // Resume tracking, give 3 sec grace period
-          isExamActive = true;
-          warningGracePeriod = true;
-          setTimeout(() => warningGracePeriod = false, 3000);
-        }
-      }, 1000);
+      // Temporary grace period so immediate triggers don't happen
+      warningGracePeriod = true;
+      setTimeout(() => { warningGracePeriod = false; }, 3000);
+      isExamActive = true;
     }
 
     function executeExamLock(reason) {
