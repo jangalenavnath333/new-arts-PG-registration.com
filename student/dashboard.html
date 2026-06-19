@@ -1222,7 +1222,7 @@
       // QR Code
       const qrContainer = document.createElement('div');
       new QRCode(qrContainer, {
-         text: `CET ID: ${student.studentId} | Score: ${result.score}/${result.total} | Status: ${grade} | Rank: ${rank}`,
+         text: `CET ID: ${student.studentId} | Name: ${student.fullName} | Status: Approved`,
          width: 128, height: 128
       });
       
