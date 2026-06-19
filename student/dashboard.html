@@ -1444,7 +1444,7 @@
       let photoData = null;
       if (supaClient) {
          try {
-            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', student.id).eq('doc_type', 'passport_photo').maybeSingle();
+            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', student.id).in('doc_type', ['photoFile', 'passport_photo']).limit(1).maybeSingle();
             if (data && data.file_url) photoData = data.file_url;
          } catch(e) { console.error(e); }
       }
