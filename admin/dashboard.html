@@ -3289,11 +3289,21 @@
          btn.disabled = true;
       }
 
-      // 1. Fetch Photo
-      let photoData = null;
-      if (window.supabase) {
+      // 1. Fetch Photo securely
+      let supaClient = null;
+      if (typeof supabase !== 'undefined') supaClient = supabase;
+      else if (window.supabase) supaClient = window.supabase;
+      else {
          try {
-            const { data } = await window.supabase.from('student_documents').select('file_url').eq('student_id', student.id).eq('doc_type', 'passport_photo').maybeSingle();
+            const SupaDB = await import('../js/supabase-db.js');
+            supaClient = SupaDB.getClient();
+         } catch(e) {}
+      }
+
+      let photoData = null;
+      if (supaClient) {
+         try {
+            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', student.id).eq('doc_type', 'passport_photo').maybeSingle();
             if (data && data.file_url) photoData = data.file_url;
          } catch(e) { console.error(e); }
       }
@@ -3302,59 +3312,17 @@
       const doc = new jsPDF('p', 'mm', 'a4');
       
       let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
-      
-      // Borders
-      doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
-      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
-
-      // Header
-      doc.setFontSize(16);
-      doc.setTextColor(30, 58, 138);
-      doc.setFont("helvetica", "bold");
-      doc.text("New Arts, Commerce and Science College, Ahmednagar", 105, 22, { align: "center" });
-      doc.setFontSize(12);
-      doc.text("(Autonomous)", 105, 28, { align: "center" });
-      doc.setFontSize(14);
-      doc.setTextColor(220, 38, 38); // Red
-      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 36, { align: "center" });
-      
-      // Title
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.setFillColor(230, 230, 230);
-      doc.rect(15, 42, 180, 8, 'F');
-      doc.text("ADMIT CARD (HALL TICKET) - CET EXAM 2026", 105, 48, { align: "center" });
-      doc.setFont("helvetica", "normal");
-      
-      // Main Box
-      doc.rect(15, 55, 180, 110);
-      
-      // Details
-      doc.setFontSize(11);
-      doc.text(`Student Name:`, 20, 65); doc.setFont("helvetica", "bold"); doc.text(`${student.fullName || ''}`, 55, 65); doc.setFont("helvetica", "normal");
-      doc.text(`Roll No / ID:`, 20, 75); doc.setFont("helvetica", "bold"); doc.text(`${student.studentId || ''}`, 55, 75); doc.setFont("helvetica", "normal");
-      doc.text(`Course Applied:`, 20, 85); doc.setFont("helvetica", "bold"); doc.text(`${student.courseApplied || 'N/A'}`, 55, 85); doc.setFont("helvetica", "normal");
-      
       let examDateStr = config.examDate ? new Date(`${config.examDate}`).toLocaleDateString() : '24 June 2026';
       let examTimeStr = config.startTime ? new Date(`${config.examDate}T${config.startTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM';
       let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
       
-      doc.text(`Exam Date:`, 20, 95); doc.setFont("helvetica", "bold"); doc.text(`${examDateStr}`, 55, 95); doc.setFont("helvetica", "normal");
-      doc.text(`Exam Time:`, 20, 105); doc.setFont("helvetica", "bold"); doc.text(`${examTimeStr}`, 55, 105); doc.setFont("helvetica", "normal");
-      doc.text(`Duration:`, 20, 115); doc.setFont("helvetica", "bold"); doc.text(`${durationStr}`, 55, 115); doc.setFont("helvetica", "normal");
-      
-      doc.text(`Exam Center:`, 20, 125); doc.setFont("helvetica", "bold"); doc.text(`CASAS Department, New Arts College, Ahmednagar`, 55, 125); doc.setFont("helvetica", "normal");
+      // Outer Borders
+      doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
 
-      // Login Credentials Box
-      doc.setFillColor(248, 250, 252);
-      doc.rect(15, 135, 110, 25, 'FD');
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 58, 138);
-      doc.text(`Student Login Credentials:`, 20, 142);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Login ID: ${student.email || student.mobile}`, 20, 150);
-      doc.text(`Password: ${student.password_hash || student.mobile}`, 20, 157);
-      doc.setFont("helvetica", "normal");
+      // Header Yellow Box
+      doc.setFillColor(255, 252, 230); // light yellow
+      doc.rect(15, 15, 180, 25, 'F');
       
       // Load Images Helper
       const loadImage = (src) => new Promise((resolve) => {
@@ -3369,27 +3337,84 @@
          img.src = src;
       });
 
+      // Load College Logo
+      const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+      const lData = await loadImage(logoUrl);
+      if (lData) {
+         doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
+      }
+      
+      // Header Text
+      doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+      doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+      doc.setFontSize(14); doc.setTextColor(180, 0, 0); // Dark Red
+      doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+      doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+      doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+      
+      // Blue banner
+      doc.setFillColor(30, 58, 138); // blue
+      doc.rect(15, 40, 180, 8, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
+      
+      // Title
+      doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+      doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
+      doc.setFontSize(12);
+      doc.text(student.courseApplied ? student.courseApplied.toUpperCase() : "M.SC. COMPUTER SCIENCE", 105, 62, { align: "center" });
+      
+      // Outer border for table
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5);
+      doc.rect(15, 66, 180, 80);
+      
+      // Photo Area vertical line
+      doc.line(145, 66, 145, 146); 
+      
+      // Draw rows (8 rows, 10 height each)
+      const rows = [
+         ["Full Name:", student.fullName || ''],
+         ["Roll No / CET ID:", student.studentId || ''],
+         ["Mobile Number:", student.mobile || ''],
+         ["Exam Date:", examDateStr],
+         ["Exam Time:", examTimeStr],
+         ["Duration:", durationStr],
+         ["Login ID:", student.email || student.mobile],
+         ["Password:", student.password_hash || student.mobile]
+      ];
+      
+      let yLine = 66;
+      rows.forEach((r, i) => {
+         doc.setFontSize(10);
+         doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 6);
+         doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 6);
+         
+         yLine += 10;
+         if (i < 7) {
+            doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine); // Horizontal line
+         }
+      });
+      
+      // Vertical line separating labels and values
+      doc.line(70, 66, 70, 146);
+      
       // Draw Photo
       if (photoData) {
          const pData = await loadImage(photoData);
-         if (pData) doc.addImage(pData, 'JPEG', 150, 60, 35, 45);
-         doc.rect(150, 60, 35, 45); // photo border
+         if (pData) doc.addImage(pData, 'JPEG', 150, 75, 40, 50);
+         doc.rect(150, 75, 40, 50); // photo border
       } else {
-         doc.rect(150, 60, 35, 45);
-         doc.setFontSize(9); doc.setTextColor(150, 150, 150); doc.text("Passport Photo", 167, 82, {align:"center"}); doc.setFontSize(11); doc.setTextColor(0,0,0);
+         doc.rect(150, 75, 40, 50);
+         doc.setFontSize(9); doc.setTextColor(150, 150, 150); doc.text("Photograph", 170, 100, {align:"center"}); doc.setTextColor(0,0,0);
       }
-
-      // Load College Logo
-      const logoUrl = window.location.origin + '/images/department%20logo.jpeg';
-      const lData = await loadImage(logoUrl);
-      if (lData) {
-         doc.addImage(lData, 'JPEG', 18, 16, 22, 22);
-         doc.addImage(lData, 'JPEG', 170, 16, 22, 22);
-      }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("Photograph", 170, 130, {align:"center"});
 
       // Instructions
       doc.setFontSize(12); doc.setFont("helvetica", "bold");
-      doc.text("Important Instructions for Candidates:", 15, 175);
+      doc.text("Important Instructions for Candidates:", 15, 155);
       doc.setFont("helvetica", "normal"); doc.setFontSize(10);
       const instructions = config.instructions || [
         "Please keep this admit card ready along with an original Photo ID for verification.",
@@ -3398,7 +3423,7 @@
         "Tab switching or exiting fullscreen is strictly prohibited and will auto-submit the exam.",
         "Login exactly at the specified Exam Time using the credentials provided above."
       ];
-      let y = 183;
+      let y = 163;
       instructions.forEach((ins, idx) => {
          const lines = doc.splitTextToSize(`${idx + 1}. ${ins}`, 180);
          doc.text(lines, 15, y);
