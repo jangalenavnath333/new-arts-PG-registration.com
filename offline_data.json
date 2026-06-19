@@ -1,0 +1,2599 @@
+{
+  "students": [],
+  "exam_config": [
+    {
+      "id": "5abf1fe7-7839-41f0-a962-37250a5f01bd",
+      "exam_date": "2026-06-17",
+      "start_time": "23:27",
+      "duration_minutes": 60,
+      "is_active": true,
+      "instructions": "Rescheduled custom exam",
+      "rules": "Standard Rules",
+      "updated_at": "2026-06-17T17:56:28.671663+00:00",
+      "course": "RESCHEDULE_MSC-CS-2026-8451"
+    },
+    {
+      "id": "c48a25d6-bcd5-4d3f-8ab7-1dcf27bdb9de",
+      "exam_date": "2026-06-18",
+      "start_time": "11:06",
+      "duration_minutes": 60,
+      "is_active": true,
+      "instructions": "Rescheduled custom exam",
+      "rules": "Standard Rules",
+      "updated_at": "2026-06-18T05:35:47.63935+00:00",
+      "course": "RESCHEDULE_MSC-CS-2026-2069"
+    },
+    {
+      "id": "f1505d91-23f2-48b1-8b3e-addd4fbe34ca",
+      "exam_date": "2026-06-19",
+      "start_time": "13:42",
+      "duration_minutes": 60,
+      "is_active": true,
+      "instructions": "Rescheduled custom exam",
+      "rules": "Standard Rules",
+      "updated_at": "2026-06-19T08:10:09.413634+00:00",
+      "course": "RESCHEDULE_MSC-CA-2026-6179"
+    },
+    {
+      "id": "b5315386-d5e7-4edd-86da-5188807d3a71",
+      "exam_date": "2026-06-04",
+      "start_time": "16:10",
+      "duration_minutes": 60,
+      "is_active": true,
+      "instructions": [],
+      "rules": [],
+      "updated_at": "2026-06-04T10:40:35.599127+00:00",
+      "course": "M.Sc. Computer Science"
+    }
+  ],
+  "question_sets": [
+    {
+      "id": "633bc173-f3b9-4661-9181-db47cfbef948",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-04T10:27:25.868113+00:00",
+      "updated_at": "2026-06-04T10:27:25.868113+00:00"
+    },
+    {
+      "id": "2c8a376d-de42-4126-ab55-a3484bbfa305",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-05T12:35:58.397984+00:00",
+      "updated_at": "2026-06-05T12:35:58.397984+00:00"
+    },
+    {
+      "id": "c0ed948f-2407-4830-aaf8-91f569cdcff4",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-05T12:36:30.718014+00:00",
+      "updated_at": "2026-06-05T12:36:30.718014+00:00"
+    },
+    {
+      "id": "56ca43ff-9f63-4a26-bd65-9d6b101ef9b3",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [],
+      "created_at": "2026-06-10T11:54:29.379706+00:00",
+      "updated_at": "2026-06-10T11:54:29.379706+00:00"
+    },
+    {
+      "id": "5c3a4e1d-d03e-4878-90e8-f00026dfcf70",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-10T11:54:36.66497+00:00",
+      "updated_at": "2026-06-10T11:54:36.66497+00:00"
+    },
+    {
+      "id": "241905b0-a8da-4215-b883-5a3846596b45",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-16T09:37:45.205166+00:00",
+      "updated_at": "2026-06-16T09:37:45.205166+00:00"
+    },
+    {
+      "id": "19f819b4-56ce-46ed-a358-493dc6365331",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-18T05:06:23.588668+00:00",
+      "updated_at": "2026-06-18T05:06:23.588668+00:00"
+    },
+    {
+      "id": "e2da3eea-1b9a-4f77-89f4-768a7fb17413",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "type": "mcq_single",
+          "unit": "",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English",
+          "difficulty": "Medium"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        }
+      ],
+      "created_at": "2026-06-19T08:09:25.82541+00:00",
+      "updated_at": "2026-06-19T08:09:25.82541+00:00"
+    },
+    {
+      "id": "a35b04c5-e158-4ac8-8593-863a7623464e",
+      "name": "DEMO CET EXAM",
+      "is_active": true,
+      "questions": [],
+      "created_at": "2026-06-19T13:58:09.18827+00:00",
+      "updated_at": "2026-06-19T13:58:09.18827+00:00"
+    },
+    {
+      "id": "cb3a01db-3516-4f05-96b6-b5d18d910486",
+      "name": "DEMO CET EXAM",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q_1781877511204hi9id",
+          "text": "CPU stands for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "B",
+          "options": [
+            "Central Program Unit",
+            "Central Processing Unit",
+            "Computer Processing Unit",
+            "Central Performance Unit"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781877511204gv55p",
+          "text": "Which data structure works on the FIFO principle?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "B",
+          "options": [
+            "Stack",
+            "Queue",
+            "Tree",
+            "Graph"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781877511204v5ijd",
+          "text": "What is the binary equivalent of decimal number 10?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "B",
+          "options": [
+            "1001",
+            "1010",
+            "1110",
+            "1100"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781877511204qo5sd",
+          "text": "Which SQL command is used to retrieve data from a table?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "C",
+          "options": [
+            "INSERT",
+            "UPDATE",
+            "SELECT",
+            "DELETE"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781877511204by9du",
+          "text": "Which of the following is an operating system?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "B",
+          "options": [
+            "Python",
+            "Linux",
+            "MySQL",
+            "HTML"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781877511204skvzz",
+          "text": "HTML is mainly used for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "B",
+          "options": [
+            "Database Management",
+            "Web Page Creation",
+            "Image Editing",
+            "Programming Hardware"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781877511204zyfq3",
+          "text": "Which company developed the Java programming language?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "C",
+          "options": [
+            "Microsoft",
+            "Apple",
+            "Sun Microsystems",
+            "IBM"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781877511204v68pv",
+          "text": "What does RAM stand for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "A",
+          "options": [
+            "Random Access Memory",
+            "Read Access Memory",
+            "Rapid Access Machine",
+            "Random Application Memory"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_17818775112049r7jc",
+          "text": "Which sorting algorithm repeatedly compares adjacent elements?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "C",
+          "options": [
+            "Merge Sort",
+            "Quick Sort",
+            "Bubble Sort",
+            "Heap Sort"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781877511204zuqxa",
+          "text": "Which protocol is commonly used to browse websites?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "C",
+          "options": [
+            "FTP",
+            "SMTP",
+            "HTTP",
+            "POP3"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781877511204o1476",
+          "text": "In C language, which symbol is used to end a statement?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "C",
+          "options": [
+            ":",
+            ",",
+            ";",
+            "#"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781877511204qas2c",
+          "text": "Which database language is used to define table structures?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "A",
+          "options": [
+            "DDL",
+            "DML",
+            "TCL",
+            "DCL"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_1781877511204povrv",
+          "text": "Which searching algorithm requires the data to be sorted?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "B",
+          "options": [
+            "Linear Search",
+            "Binary Search",
+            "DFS",
+            "BFS"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_17818775112040lso1",
+          "text": "Which of the following is an example of Object-Oriented Programming language?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "C",
+          "options": [
+            "C",
+            "Assembly",
+            "Java",
+            "HTML"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_17818775112044nn29",
+          "text": "Which normal form removes partial dependency in database normalization?",
+          "type": "mcq_single",
+          "marks": 3,
+          "correct": "B",
+          "options": [
+            "First Normal Form (1NF)",
+            "Second Normal Form (2NF)",
+            "Third Normal Form (3NF)",
+            "Boyce-Codd Normal Form (BCNF)"
+          ],
+          "correctIndex": 1
+        }
+      ],
+      "created_at": "2026-06-19T13:58:56.743596+00:00",
+      "updated_at": "2026-06-19T13:58:56.743596+00:00"
+    },
+    {
+      "id": "9fe034bf-43d9-40ea-9ed5-e14d015ece91",
+      "name": "Default Question Set",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q1",
+          "text": "If A > B, B > C, and C > D, which is the largest?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "B",
+            "C",
+            "A",
+            "D"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q2",
+          "text": "What is 15% of 200?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "20",
+            "25",
+            "30",
+            "35"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q3",
+          "text": "Which data structure uses LIFO (Last In, First Out) order?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Queue",
+            "Stack",
+            "Array",
+            "Linked List"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q4",
+          "text": "Choose the correct spelling:",
+          "type": "mcq_single",
+          "unit": "",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "Accomodate",
+            "Accommodate",
+            "Acommodate",
+            "Accommodat"
+          ],
+          "subject": "English",
+          "difficulty": "Medium"
+        },
+        {
+          "id": "Q5",
+          "text": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "5",
+            "10",
+            "20",
+            "100"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q6",
+          "text": "What is the value of âˆš144?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "11",
+            "12",
+            "13",
+            "14"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q7",
+          "text": "What does HTML stand for?",
+          "marks": 1,
+          "correct": 0,
+          "options": [
+            "HyperText Markup Language",
+            "HighText Markup Language",
+            "HyperText Machine Language",
+            "HyperTool Markup Language"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q8",
+          "text": "Which planet is known as the Red Planet?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Venus",
+            "Jupiter",
+            "Mars",
+            "Saturn"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q9",
+          "text": "What is the next number in the sequence: 2, 6, 12, 20, 30, __?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "40",
+            "42",
+            "44",
+            "46"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q10",
+          "text": "A train travels 60 km in 45 minutes. What is its speed in km/h?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "70",
+            "75",
+            "80",
+            "90"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q11",
+          "text": "Which of the following is NOT a programming language?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Java",
+            "Python",
+            "HTML",
+            "C++"
+          ],
+          "subject": "Computer Science"
+        },
+        {
+          "id": "Q12",
+          "text": "The synonym of \"Eloquent\" is:",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "Mute",
+            "Articulate",
+            "Confused",
+            "Silent"
+          ],
+          "subject": "English"
+        },
+        {
+          "id": "Q13",
+          "text": "Who is known as the father of computers?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "Bill Gates",
+            "Steve Jobs",
+            "Charles Babbage",
+            "Alan Turing"
+          ],
+          "subject": "General Knowledge"
+        },
+        {
+          "id": "Q14",
+          "text": "If x + 5 = 12, what is x?",
+          "marks": 1,
+          "correct": 1,
+          "options": [
+            "6",
+            "7",
+            "8",
+            "9"
+          ],
+          "subject": "Mathematics"
+        },
+        {
+          "id": "Q15",
+          "text": "Complete the pattern: 1, 1, 2, 3, 5, 8, 13, __?",
+          "marks": 1,
+          "correct": 2,
+          "options": [
+            "18",
+            "20",
+            "21",
+            "24"
+          ],
+          "subject": "Logical Reasoning"
+        },
+        {
+          "id": "Q_1781879069365ndmn2",
+          "text": "CPU stands for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Central Program Unit",
+            "Central Processing Unit",
+            "Computer Processing Unit",
+            "Central Performance Unit"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_178187906936550rwi",
+          "text": "Which data structure works on the FIFO principle?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Stack",
+            "Queue",
+            "Tree",
+            "Graph"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879069365o4olu",
+          "text": "What is the binary equivalent of decimal number 10?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "1001",
+            "1010",
+            "1110",
+            "1100"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879069365nvgqs",
+          "text": "Which SQL command is used to retrieve data from a table?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "INSERT",
+            "UPDATE",
+            "SELECT",
+            "DELETE"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365bwvg0",
+          "text": "Which of the following is an operating system?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Python",
+            "Linux",
+            "MySQL",
+            "HTML"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879069365z9rc8",
+          "text": "HTML is mainly used for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Database Management",
+            "Web Page Creation",
+            "Image Editing",
+            "Programming Hardware"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879069365vmxd5",
+          "text": "Which company developed the Java programming language?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "Microsoft",
+            "Apple",
+            "Sun Microsystems",
+            "IBM"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365zsemp",
+          "text": "What does RAM stand for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "0",
+          "options": [
+            "Random Access Memory",
+            "Read Access Memory",
+            "Rapid Access Machine",
+            "Random Application Memory"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_1781879069365j53xe",
+          "text": "Which sorting algorithm repeatedly compares adjacent elements?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "Merge Sort",
+            "Quick Sort",
+            "Bubble Sort",
+            "Heap Sort"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365fyx6k",
+          "text": "Which protocol is commonly used to browse websites?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "FTP",
+            "SMTP",
+            "HTTP",
+            "POP3"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365yusrx",
+          "text": "In C language, which symbol is used to end a statement?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            ":",
+            ",",
+            ";",
+            "#"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365i3igj",
+          "text": "Which database language is used to define table structures?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "0",
+          "options": [
+            "DDL",
+            "DML",
+            "TCL",
+            "DCL"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_1781879069365fkz80",
+          "text": "Which searching algorithm requires the data to be sorted?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "1",
+          "options": [
+            "Linear Search",
+            "Binary Search",
+            "DFS",
+            "BFS"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879069365rq6df",
+          "text": "Which of the following is an example of Object-Oriented Programming language?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "C",
+            "Assembly",
+            "Java",
+            "HTML"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879069365b6fiu",
+          "text": "Which normal form removes partial dependency in database normalization?",
+          "type": "mcq_single",
+          "marks": 3,
+          "correct": "1",
+          "options": [
+            "First Normal Form (1NF)",
+            "Second Normal Form (2NF)",
+            "Third Normal Form (3NF)",
+            "Boyce-Codd Normal Form (BCNF)"
+          ],
+          "correctIndex": 1
+        }
+      ],
+      "created_at": "2026-06-19T14:24:37.908664+00:00",
+      "updated_at": "2026-06-19T14:24:37.908664+00:00"
+    },
+    {
+      "id": "92834329-d44c-4550-8085-4762b9a16441",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [],
+      "created_at": "2026-06-19T14:24:45.378542+00:00",
+      "updated_at": "2026-06-19T14:24:45.378542+00:00"
+    },
+    {
+      "id": "1c43bd90-2e7a-41d2-8482-6154f0061953",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [],
+      "created_at": "2026-06-19T14:24:59.780503+00:00",
+      "updated_at": "2026-06-19T14:24:59.780503+00:00"
+    },
+    {
+      "id": "bc66b1c3-9db3-4d80-bac0-c17be96c67b0",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [],
+      "created_at": "2026-06-19T14:25:19.830649+00:00",
+      "updated_at": "2026-06-19T14:25:19.830649+00:00"
+    },
+    {
+      "id": "bc0161eb-c415-4c59-b4f2-209d392ef6e0",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q_17818791282507xz1s",
+          "text": "CPU stands for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Central Program Unit",
+            "Central Processing Unit",
+            "Computer Processing Unit",
+            "Central Performance Unit"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250x8yl2",
+          "text": "Which data structure works on the FIFO principle?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Stack",
+            "Queue",
+            "Tree",
+            "Graph"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250a81gh",
+          "text": "What is the binary equivalent of decimal number 10?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "1001",
+            "1010",
+            "1110",
+            "1100"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250wp6bm",
+          "text": "Which SQL command is used to retrieve data from a table?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "INSERT",
+            "UPDATE",
+            "SELECT",
+            "DELETE"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250psjo3",
+          "text": "Which of the following is an operating system?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Python",
+            "Linux",
+            "MySQL",
+            "HTML"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250whd75",
+          "text": "HTML is mainly used for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Database Management",
+            "Web Page Creation",
+            "Image Editing",
+            "Programming Hardware"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250l0bdg",
+          "text": "Which company developed the Java programming language?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "Microsoft",
+            "Apple",
+            "Sun Microsystems",
+            "IBM"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250zssv5",
+          "text": "What does RAM stand for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "0",
+          "options": [
+            "Random Access Memory",
+            "Read Access Memory",
+            "Rapid Access Machine",
+            "Random Application Memory"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_17818791282502xmzo",
+          "text": "Which sorting algorithm repeatedly compares adjacent elements?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "Merge Sort",
+            "Quick Sort",
+            "Bubble Sort",
+            "Heap Sort"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250had70",
+          "text": "Which protocol is commonly used to browse websites?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "FTP",
+            "SMTP",
+            "HTTP",
+            "POP3"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_17818791282500cwqj",
+          "text": "In C language, which symbol is used to end a statement?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            ":",
+            ",",
+            ";",
+            "#"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250yw179",
+          "text": "Which database language is used to define table structures?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "0",
+          "options": [
+            "DDL",
+            "DML",
+            "TCL",
+            "DCL"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_1781879128250i7g2r",
+          "text": "Which searching algorithm requires the data to be sorted?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "1",
+          "options": [
+            "Linear Search",
+            "Binary Search",
+            "DFS",
+            "BFS"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250uy8a8",
+          "text": "Which of the following is an example of Object-Oriented Programming language?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "C",
+            "Assembly",
+            "Java",
+            "HTML"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250twqot",
+          "text": "Which normal form removes partial dependency in database normalization?",
+          "type": "mcq_single",
+          "marks": 3,
+          "correct": "1",
+          "options": [
+            "First Normal Form (1NF)",
+            "Second Normal Form (2NF)",
+            "Third Normal Form (3NF)",
+            "Boyce-Codd Normal Form (BCNF)"
+          ],
+          "correctIndex": 1
+        }
+      ],
+      "created_at": "2026-06-19T14:25:32.341972+00:00",
+      "updated_at": "2026-06-19T14:25:32.341972+00:00"
+    },
+    {
+      "id": "129d3009-f904-4388-b928-e8e2f0d1c3d6",
+      "name": "MSC CET EXAM",
+      "is_active": true,
+      "questions": [
+        {
+          "id": "Q_17818791282507xz1s",
+          "text": "CPU stands for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Central Program Unit",
+            "Central Processing Unit",
+            "Computer Processing Unit",
+            "Central Performance Unit"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250x8yl2",
+          "text": "Which data structure works on the FIFO principle?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Stack",
+            "Queue",
+            "Tree",
+            "Graph"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250a81gh",
+          "text": "What is the binary equivalent of decimal number 10?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "1001",
+            "1010",
+            "1110",
+            "1100"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250wp6bm",
+          "text": "Which SQL command is used to retrieve data from a table?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "INSERT",
+            "UPDATE",
+            "SELECT",
+            "DELETE"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250psjo3",
+          "text": "Which of the following is an operating system?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Python",
+            "Linux",
+            "MySQL",
+            "HTML"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250whd75",
+          "text": "HTML is mainly used for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "1",
+          "options": [
+            "Database Management",
+            "Web Page Creation",
+            "Image Editing",
+            "Programming Hardware"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250l0bdg",
+          "text": "Which company developed the Java programming language?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "2",
+          "options": [
+            "Microsoft",
+            "Apple",
+            "Sun Microsystems",
+            "IBM"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250zssv5",
+          "text": "What does RAM stand for?",
+          "type": "mcq_single",
+          "marks": 1,
+          "correct": "0",
+          "options": [
+            "Random Access Memory",
+            "Read Access Memory",
+            "Rapid Access Machine",
+            "Random Application Memory"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_17818791282502xmzo",
+          "text": "Which sorting algorithm repeatedly compares adjacent elements?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "Merge Sort",
+            "Quick Sort",
+            "Bubble Sort",
+            "Heap Sort"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250had70",
+          "text": "Which protocol is commonly used to browse websites?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "FTP",
+            "SMTP",
+            "HTTP",
+            "POP3"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_17818791282500cwqj",
+          "text": "In C language, which symbol is used to end a statement?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            ":",
+            ",",
+            ";",
+            "#"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250yw179",
+          "text": "Which database language is used to define table structures?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "0",
+          "options": [
+            "DDL",
+            "DML",
+            "TCL",
+            "DCL"
+          ],
+          "correctIndex": 0
+        },
+        {
+          "id": "Q_1781879128250i7g2r",
+          "text": "Which searching algorithm requires the data to be sorted?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "1",
+          "options": [
+            "Linear Search",
+            "Binary Search",
+            "DFS",
+            "BFS"
+          ],
+          "correctIndex": 1
+        },
+        {
+          "id": "Q_1781879128250uy8a8",
+          "text": "Which of the following is an example of Object-Oriented Programming language?",
+          "type": "mcq_single",
+          "marks": 2,
+          "correct": "2",
+          "options": [
+            "C",
+            "Assembly",
+            "Java",
+            "HTML"
+          ],
+          "correctIndex": 2
+        },
+        {
+          "id": "Q_1781879128250twqot",
+          "text": "Which normal form removes partial dependency in database normalization?",
+          "type": "mcq_single",
+          "marks": 3,
+          "correct": "1",
+          "options": [
+            "First Normal Form (1NF)",
+            "Second Normal Form (2NF)",
+            "Third Normal Form (3NF)",
+            "Boyce-Codd Normal Form (BCNF)"
+          ],
+          "correctIndex": 1
+        }
+      ],
+      "created_at": "2026-06-19T14:26:00.745212+00:00",
+      "updated_at": "2026-06-19T14:26:00.745212+00:00"
+    }
+  ],
+  "exam_attempts": [],
+  "exam_results": [],
+  "security_logs": []
+}

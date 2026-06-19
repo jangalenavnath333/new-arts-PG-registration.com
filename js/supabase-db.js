@@ -6,8 +6,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const offlineUrl = localStorage.getItem('OFFLINE_API_URL');
+const supabaseUrl = offlineUrl || import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = offlineUrl ? 'offline-key' : import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 let supabase = null;
 if (supabaseUrl && supabaseAnonKey) {
