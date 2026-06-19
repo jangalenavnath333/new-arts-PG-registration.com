@@ -534,7 +534,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           
           <!-- LEFT: Sets Management -->
-          <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[750px]">
+          <div class="col-span-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col min-h-[750px]">
             <div class="mb-4">
               <label class="block text-xs font-bold text-slate-500 mb-1">Course</label>
               <select id="questionsCourse" onchange="currentlyViewingSetId=null; renderQuestions()" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:border-indigo-500 font-medium">
@@ -565,7 +565,7 @@
           </div>
 
           <!-- RIGHT: Selected Set Questions -->
-          <div class="col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-[700px]">
+          <div class="col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col min-h-[700px]">
             <div class="flex justify-between items-center mb-6">
               <div>
                 <h2 class="text-xl font-bold text-slate-900" id="activeSetTitle">Select a Set</h2>
@@ -3800,7 +3800,10 @@
          document.getElementById('qOpt3').value = q.options[3];
       }
       
-      document.getElementById('qCorrectSingle').value = q.correct !== undefined ? q.correct : '0';
+      let correctVal = q.correct !== undefined ? q.correct : '0';
+      if (q.correctIndex !== undefined) correctVal = q.correctIndex.toString();
+      document.getElementById('qCorrectSingle').value = correctVal;
+      
       if(q.correctMulti) {
          document.getElementById('qCorrectMulti0').checked = !!q.correctMulti[0];
          document.getElementById('qCorrectMulti1').checked = !!q.correctMulti[1];
@@ -6153,9 +6156,11 @@
                 const ansKey = q.correct ? q.correct.toLowerCase().charAt(0) : '';
                 if (ansMap[ansKey] !== undefined) {
                     q.correctIndex = ansMap[ansKey];
+                    q.correct = q.correctIndex.toString();
                 } else {
                     q.needsReview = true;
                     q.correctIndex = 0;
+                    q.correct = '0';
                 }
             } else {
                 q.type = 'descriptive';
