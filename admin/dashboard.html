@@ -689,6 +689,9 @@
                <button onclick="massResetExams()" class="btn btn-solid-sm bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
                  ⚠️ Mass Reset Exams
                </button>
+               <button onclick="exportOfflineData()" class="btn btn-solid-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                 ⬇️ Download Offline Data
+               </button>
                <button onclick="renderMonitoring()" class="btn btn-solid-sm bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">↻ Refresh Status</button>
             </div>
           </div>
@@ -4111,6 +4114,50 @@
       }
       
       if (btn) { btn.disabled = false; btn.innerHTML = '⚠️ Mass Reset Exams'; }
+    };
+    
+    window.exportOfflineData = async function() {
+      try {
+        const client = getClient();
+        if (!client) return alert('Database client not found.');
+        
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        
+        const { data: students, error: err1 } = await client.from('students').select('*');
+        if (err1) throw err1;
+        
+        const { data: examConfig, error: err2 } = await client.from('exam_config').select('*');
+        if (err2) throw err2;
+        
+        const { data: questionSets, error: err3 } = await client.from('question_sets').select('*');
+        if (err3) throw err3;
+        
+        const offlineData = {
+          students: students || [],
+          exam_config: examConfig || [],
+          question_sets: questionSets || [],
+          exam_attempts: [],
+          exam_results: [],
+          security_logs: []
+        };
+        
+        const blob = new Blob([JSON.stringify(offlineData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'offline_data.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        alert('✅ Offline Data Downloaded!\n\nPlease place this "offline_data.json" file in your CET EXAM ONLINE folder before starting the offline server.');
+      } catch (err) {
+        console.error('Export error:', err);
+        alert('Failed to export data: ' + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+      }
     };
 
     window.renderMonitoring = async function() {
