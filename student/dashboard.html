@@ -151,6 +151,9 @@
                     <span style="font-size: 16px;">🆔</span>
                     <span id="headerCetId" style="font-size: 13px; color: var(--light); font-weight: 700; font-family: monospace;">--</span>
                   </div>
+                  <button onclick="downloadAdmitCard(event)" id="headerAdmitCardBtn" class="btn" style="background: rgba(99,102,241,0.2); border: 1px solid var(--primary); color: var(--white); padding: 6px 16px; font-weight: 700; border-radius: 8px; font-size: 13px; display: none; transition: all 0.2s ease; cursor: pointer;">
+                    📄 Download Admit Card
+                  </button>
                 </div>
                 
                 <div id="headerStatus"></div>
@@ -794,10 +797,13 @@
 
          // Admit Card Button Logic
          const admitBtn = document.getElementById('premiumAdmitCardBtn');
+         const headerAdmitBtn = document.getElementById('headerAdmitCardBtn');
          if (admitBtn) {
-            // Always show admit card button for all registered students
             admitBtn.style.display = 'block';
             admitBtn.onclick = (e) => downloadAdmitCard(e);
+         }
+         if (headerAdmitBtn) {
+            headerAdmitBtn.style.display = 'inline-flex';
          }
       } catch (e) {
          console.warn('DOM update error in renderOverview', e);
