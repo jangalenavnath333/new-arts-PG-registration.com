@@ -795,12 +795,9 @@
          // Admit Card Button Logic
          const admitBtn = document.getElementById('premiumAdmitCardBtn');
          if (admitBtn) {
-            if (isApproved) {
-               admitBtn.style.display = 'block';
-               admitBtn.onclick = (e) => downloadAdmitCard(e);
-            } else {
-               admitBtn.style.display = 'none';
-            }
+            // Always show admit card button for all registered students
+            admitBtn.style.display = 'block';
+            admitBtn.onclick = (e) => downloadAdmitCard(e);
          }
       } catch (e) {
          console.warn('DOM update error in renderOverview', e);
