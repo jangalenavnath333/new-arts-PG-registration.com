@@ -24,6 +24,26 @@ function saveDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2))
 // MOCK SUPABASE REST API
 // ============================================
 
+// 0. Student Login (RPC)
+app.post('/rest/v1/rpc/student_login', (req, res) => {
+  const { p_email } = req.body;
+  console.log(`[student_login] Received login attempt for: ${p_email}`);
+  const db = loadDB();
+  const input = (p_email || '').toLowerCase();
+  const student = db.students.find(s => (s.email || '').toLowerCase() === input || (s.student_id || '').toLowerCase() === input);
+  if (student) {
+    res.json([{
+      id: student.id, student_id: student.student_id, full_name: student.full_name,
+      email: student.email, mobile: student.mobile || '1234', password_hash: student.password_hash || '1234',
+      status: student.status, application_status: student.application_status,
+      exam_status: student.exam_status, has_attempted: student.has_attempted,
+      course_applied: student.course_applied, exam_date: student.exam_date
+    }]);
+  } else {
+    res.json([]);
+  }
+});
+
 // 1. Check Eligibility (RPC)
 app.post('/rest/v1/rpc/check_eligibility', (req, res) => {
   const { p_identifier } = req.body;
@@ -112,17 +132,44 @@ app.post('/rest/v1/security_logs', (req, res) => {
   res.json(null);
 });
 
+// Helper to filter results based on PostgREST eq query params
+function applyPostgrestFilters(data, query) {
+  let result = [...data];
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === 'string' && value.startsWith('eq.')) {
+      const matchVal = value.substring(3);
+      result = result.filter(item => String(item[key]) === matchVal);
+    }
+  }
+  return result;
+}
+
 // 7. Exam Configs
 app.get('/rest/v1/exam_config', (req, res) => {
   const db = loadDB();
-  // Simplified matching for offline mode
-  res.json(db.exam_config.filter(c => c.is_active));
+  let result = db.exam_config.filter(c => c.is_active);
+  result = applyPostgrestFilters(result, req.query);
+  console.log('[exam_config] ACCEPT:', req.headers.accept);
+  
+  if (req.headers.accept && req.headers.accept.includes('application/vnd.pgrst.object')) {
+    if (result.length === 0) return res.status(406).json({ message: "No rows found" });
+    return res.json(result[0]);
+  }
+  res.json(result);
 });
 
 // 8. Question Sets
 app.get('/rest/v1/question_sets', (req, res) => {
   const db = loadDB();
-  res.json(db.question_sets.filter(q => q.is_active));
+  let result = db.question_sets.filter(q => q.is_active);
+  result = applyPostgrestFilters(result, req.query);
+  console.log('[question_sets] ACCEPT:', req.headers.accept);
+  
+  if (req.headers.accept && req.headers.accept.includes('application/vnd.pgrst.object')) {
+    if (result.length === 0) return res.status(406).json({ message: "No rows found" });
+    return res.json(result[0]);
+  }
+  res.json(result);
 });
 
 // 9. Redirect root to offline mode

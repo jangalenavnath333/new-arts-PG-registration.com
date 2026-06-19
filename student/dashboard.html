@@ -1425,39 +1425,59 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
-      const config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science');
-      if (!config || !config.examDate) {
-        alert('Exam schedule not set by admin yet.');
-        return;
-      }
+      let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
       
       // Header
-      doc.setFontSize(22);
+      doc.setFontSize(16);
       doc.setTextColor(30, 58, 138); // blue
-      doc.text("CET EXAM ONLINE", 105, 20, { align: "center" });
+      doc.text("New Arts, Commerce and Science College, Ahmednagar (Autonomous)", 105, 15, { align: "center" });
+      doc.setFontSize(14);
+      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 23, { align: "center" });
       
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.text("ADMIT CARD (HALL TICKET)", 105, 30, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.text("ADMIT CARD (HALL TICKET) - CET EXAM 2026", 105, 33, { align: "center" });
+      doc.setFont("helvetica", "normal");
       
       // Box
-      doc.rect(15, 35, 180, 100);
+      doc.rect(15, 38, 180, 110);
       
       // Details
       doc.setFontSize(11);
-      doc.text(`Student Name: ${student.fullName || ''}`, 20, 45);
-      doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 55);
-      doc.text(`Hall Ticket ID: ${student.hallTicketId || 'Assigned Post-Schedule'}`, 20, 65);
-      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 75);
+      doc.text(`Student Name: ${student.fullName || ''}`, 20, 48);
+      doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 58);
+      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 68);
       
-      const start = new Date(`${config.examDate}T${config.startTime}`);
-      doc.text(`Exam Date: ${start.toLocaleDateString()}`, 20, 85);
-      doc.text(`Exam Time: ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`, 20, 95);
-      doc.text(`Duration: ${config.durationMinutes} Minutes`, 20, 105);
-      doc.text(`College: New Arts, Commerce and Science College`, 20, 115);
+      let examDateStr = config.examDate ? new Date(`${config.examDate}`).toLocaleDateString() : '24 June 2026';
+      let examTimeStr = config.startTime ? new Date(`${config.examDate}T${config.startTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM';
+      let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
+      
+      doc.text(`Exam Date: ${examDateStr}`, 20, 78);
+      doc.text(`Exam Time: ${examTimeStr}`, 20, 88);
+      doc.text(`Duration: ${durationStr}`, 20, 98);
+      
+      doc.setFont("helvetica", "bold");
+      doc.text(`Exam Center:`, 20, 108);
+      doc.setFont("helvetica", "normal");
+      doc.text(`CASAS Department, New Arts College, Ahmednagar`, 48, 108);
+
+      // Login Credentials (Important)
+      doc.rect(15, 118, 110, 25);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Student Login Credentials for Exam:`, 20, 125);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Login ID: ${student.email || student.mobile}`, 20, 133);
+      doc.text(`Password: ${student.password_hash || student.mobile}`, 20, 140);
       
       // Photo handling for Base64 vs URLs
       let photoData = student.photoData || (student.uploadedFiles && student.uploadedFiles.photoFile);
+      // Wait! The online dashboard doesn't have student.photoData, it has passport_photo_url or application_documents!
+      // In student dashboard, it's the student logging in, so they might not have their photo in localStorage if it wasn't fetched.
+      // But let's try to get it from student.application_documents if available.
+      if (!photoData && student.application_documents && student.application_documents.passport_photo) {
+        photoData = student.application_documents.passport_photo;
+      }
       if (photoData) {
          try {
            if (photoData.startsWith('http')) {

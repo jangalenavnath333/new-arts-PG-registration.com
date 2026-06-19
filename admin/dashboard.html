@@ -3252,6 +3252,7 @@
             <td class="p-4 text-center font-bold text-amber-600">${clipboards > 0 ? clipboards : '--'}</td>
             <td class="p-4">
               <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;">
+                <button type="button" onclick="downloadAdminAdmitCard('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs font-bold">📄 Admit Card</button>
                 <button type="button" onclick="openStudentDetailsModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded text-xs font-bold">Details</button>
                 <button type="button" onclick="openDocumentsModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-2 py-1 rounded text-xs font-bold">Docs</button>
                 ${hasAttempted ? `<button type="button" onclick="openAnswersModal('${sid}')" style="cursor:pointer;pointer-events:auto;" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2 py-1 rounded text-xs font-bold">Answers</button>` : ''}
@@ -3264,6 +3265,121 @@
           </tr>
         `;
       }).join('') || '<tr><td colspan="6" class="p-8 text-center text-slate-500">No approved students found matching filters.</td></tr>';
+    }
+
+    // ============================================
+    // ADMIT CARD GENERATION
+    // ============================================
+    window.downloadAdminAdmitCard = function(studentId) {
+      let students = [];
+      if (_supabaseAppsCache) {
+         students = _supabaseAppsCache;
+      } else {
+         students = JSON.parse(localStorage.getItem('cetApprovedStudents')) || [];
+      }
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      
+      let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
+      
+      // Header
+      doc.setFontSize(16);
+      doc.setTextColor(30, 58, 138); // blue
+      doc.text("New Arts, Commerce and Science College, Ahmednagar (Autonomous)", 105, 15, { align: "center" });
+      doc.setFontSize(14);
+      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 23, { align: "center" });
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.text("ADMIT CARD (HALL TICKET) - CET EXAM 2026", 105, 33, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      
+      // Box
+      doc.rect(15, 38, 180, 110);
+      
+      // Details
+      doc.setFontSize(11);
+      doc.text(`Student Name: ${student.fullName || ''}`, 20, 48);
+      doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 58);
+      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 68);
+      
+      let examDateStr = config.examDate ? new Date(`${config.examDate}`).toLocaleDateString() : '24 June 2026';
+      let examTimeStr = config.startTime ? new Date(`${config.examDate}T${config.startTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM';
+      let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
+      
+      doc.text(`Exam Date: ${examDateStr}`, 20, 78);
+      doc.text(`Exam Time: ${examTimeStr}`, 20, 88);
+      doc.text(`Duration: ${durationStr}`, 20, 98);
+      
+      doc.setFont("helvetica", "bold");
+      doc.text(`Exam Center:`, 20, 108);
+      doc.setFont("helvetica", "normal");
+      doc.text(`CASAS Department, New Arts College, Ahmednagar`, 48, 108);
+
+      // Login Credentials
+      doc.rect(15, 118, 110, 25);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Student Login Credentials for Exam:`, 20, 125);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Login ID: ${student.email || student.mobile}`, 20, 133);
+      doc.text(`Password: ${student.password_hash || student.mobile}`, 20, 140);
+      
+      let photoData = student.passport_photo_url || (student.application_documents && student.application_documents.passport_photo);
+      if (photoData) {
+         try {
+           if (photoData.startsWith('http')) {
+              const img = new Image();
+              img.crossOrigin = 'Anonymous';
+              img.onload = () => {
+                 const canvas = document.createElement('canvas');
+                 canvas.width = img.width; canvas.height = img.height;
+                 canvas.getContext('2d').drawImage(img, 0, 0);
+                 doc.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 150, 43, 35, 45);
+                 finishPDF();
+              };
+              img.onerror = () => finishPDF();
+              img.src = photoData;
+              return;
+           } else {
+              doc.addImage(photoData, 'JPEG', 150, 43, 35, 45);
+           }
+         } catch(e) {}
+      }
+      finishPDF();
+
+      function finishPDF() {
+         const qrContainer = document.createElement('div');
+         new QRCode(qrContainer, {
+            text: `CET ID: ${student.studentId} | Name: ${student.fullName} | Status: Approved`,
+            width: 128, height: 128
+         });
+         setTimeout(() => {
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 95, 35, 35);
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Important Instructions:", 15, 155);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            const instructions = config.instructions || [
+              "Please keep this admit card ready for verification.",
+              "Webcam is mandatory throughout the exam.",
+              "Tab switching is strictly prohibited."
+            ];
+            let y = 165;
+            instructions.forEach((ins, idx) => {
+               doc.text(`${idx + 1}. ${ins}`, 15, y);
+               y += 7;
+            });
+            
+            doc.save(`CET_AdmitCard_${student.studentId || 'Student'}.pdf`);
+         }, 100);
+      }
     }
 
     // ============================================
@@ -4118,10 +4234,8 @@
     
     window.exportOfflineData = async function() {
       try {
-        const client = getClient();
-        if (!client) return alert('Database client not found.');
-        
-        document.getElementById('loadingOverlay').classList.remove('hidden');
+        if (!supabase) return alert('Database client not found.');
+        const client = supabase;
         
         const { data: students, error: err1 } = await client.from('students').select('*');
         if (err1) throw err1;
@@ -4155,8 +4269,6 @@
       } catch (err) {
         console.error('Export error:', err);
         alert('Failed to export data: ' + err.message);
-      } finally {
-        document.getElementById('loadingOverlay').classList.add('hidden');
       }
     };
 
