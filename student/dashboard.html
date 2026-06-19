@@ -795,9 +795,9 @@
          // Admit Card Button Logic
          const admitBtn = document.getElementById('premiumAdmitCardBtn');
          if (admitBtn) {
-            if (isApproved && config && config.examDate) {
+            if (isApproved) {
                admitBtn.style.display = 'block';
-               admitBtn.onclick = () => downloadAdmitCard(app.id || '');
+               admitBtn.onclick = (e) => downloadAdmitCard(e);
             } else {
                admitBtn.style.display = 'none';
             }
@@ -1465,18 +1465,22 @@
       doc.setFillColor(255, 252, 230); // light yellow
       doc.rect(15, 15, 180, 25, 'F');
       
-      // Load Images Helper
-      const loadImage = (src) => new Promise((resolve) => {
-         const img = new Image(); img.crossOrigin = 'Anonymous';
-         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width; canvas.height = img.height;
-            canvas.getContext('2d').drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg'));
-         };
-         img.onerror = () => resolve(null);
-         img.src = src;
-      });
+      // Load Images Helper via Fetch to avoid CORS canvas taint
+      const loadImage = async (src) => {
+         try {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            return new Promise((resolve) => {
+               const reader = new FileReader();
+               reader.onloadend = () => resolve(reader.result);
+               reader.onerror = () => resolve(null);
+               reader.readAsDataURL(blob);
+            });
+         } catch(e) {
+            console.error('[AdmitCard] Image fetch failed:', src, e);
+            return null;
+         }
+      };
 
       // Load College Logo
       const logoUrl = window.location.origin + '/images/maharaj.jpeg';
@@ -1553,23 +1557,7 @@
       doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
       doc.text("Photograph", 170, 130, {align:"center"});
 
-      // Instructions
-      doc.setFontSize(12); doc.setFont("helvetica", "bold");
-      doc.text("Important Instructions for Candidates:", 15, 155);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-      const instructions = config.instructions || [
-        "Please keep this admit card ready along with an original Photo ID for verification.",
-        "Ensure a stable internet connection before starting the online exam.",
-        "Webcam is mandatory throughout the exam for AI Proctoring.",
-        "Tab switching or exiting fullscreen is strictly prohibited and will auto-submit the exam.",
-        "Login exactly at the specified Exam Time using the credentials provided above."
-      ];
-      let y = 163;
-      instructions.forEach((ins, idx) => {
-         const lines = doc.splitTextToSize(`${idx + 1}. ${ins}`, 180);
-         doc.text(lines, 15, y);
-         y += lines.length * 6;
-      });
+      // Remove instructions as requested by user
       
       // Save locally
       const fileName = `CET_AdmitCard_${student.studentId || 'Pending'}.pdf`;
