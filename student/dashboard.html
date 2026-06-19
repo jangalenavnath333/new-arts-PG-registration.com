@@ -222,7 +222,7 @@
                 <span style="margin-right: 8px;">🚀</span> START EXAM NOW
               </button>
               
-              <button onclick="downloadAdmitCard()" id="premiumAdmitCardBtn" class="btn" style="width: 100%; max-width: 300px; display: none; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 12px 24px; font-weight: 600; border-radius: 12px; transition: all 0.2s ease;">
+              <button onclick="downloadAdmitCard(event)" id="premiumAdmitCardBtn" class="btn" style="width: 100%; max-width: 300px; display: none; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 12px 24px; font-weight: 600; border-radius: 12px; transition: all 0.2s ease;">
                 📄 Download Admit Card
               </button>
             </div>
@@ -1421,86 +1421,113 @@
       window.location.href = 'login.html';
     }
 
-    async function downloadAdmitCard() {
+    async function downloadAdmitCard(event) {
+      const btn = event ? event.currentTarget : document.getElementById('premiumAdmitCardBtn');
+      let originalText = '';
+      if (btn) {
+         originalText = btn.innerHTML;
+         btn.innerHTML = '⏳ Generating...';
+         btn.disabled = true;
+      }
+
+      // 1. Fetch Photo
+      let photoData = null;
+      if (window.supabase) {
+         try {
+            const { data } = await window.supabase.from('student_documents').select('file_url').eq('student_id', student.id).eq('doc_type', 'passport_photo').maybeSingle();
+            if (data && data.file_url) photoData = data.file_url;
+         } catch(e) { console.error(e); }
+      }
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
       let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
       
+      // Borders
+      doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
+
       // Header
       doc.setFontSize(16);
-      doc.setTextColor(30, 58, 138); // blue
-      doc.text("New Arts, Commerce and Science College, Ahmednagar (Autonomous)", 105, 15, { align: "center" });
+      doc.setTextColor(30, 58, 138);
+      doc.setFont("helvetica", "bold");
+      doc.text("New Arts, Commerce and Science College, Ahmednagar", 105, 22, { align: "center" });
+      doc.setFontSize(12);
+      doc.text("(Autonomous)", 105, 28, { align: "center" });
       doc.setFontSize(14);
-      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 23, { align: "center" });
+      doc.setTextColor(220, 38, 38); // Red
+      doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 36, { align: "center" });
       
+      // Title
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "bold");
-      doc.text("ADMIT CARD (HALL TICKET) - CET EXAM 2026", 105, 33, { align: "center" });
+      doc.setFillColor(230, 230, 230);
+      doc.rect(15, 42, 180, 8, 'F');
+      doc.text("ADMIT CARD (HALL TICKET) - CET EXAM 2026", 105, 48, { align: "center" });
       doc.setFont("helvetica", "normal");
       
-      // Box
-      doc.rect(15, 38, 180, 110);
+      // Main Box
+      doc.rect(15, 55, 180, 110);
       
       // Details
       doc.setFontSize(11);
-      doc.text(`Student Name: ${student.fullName || ''}`, 20, 48);
-      doc.text(`CET ID / Roll No: ${student.studentId || ''}`, 20, 58);
-      doc.text(`Course Applied: ${student.courseApplied || student.academicDetails?.courseApplied || 'N/A'}`, 20, 68);
+      doc.text(`Student Name:`, 20, 65); doc.setFont("helvetica", "bold"); doc.text(`${student.fullName || ''}`, 55, 65); doc.setFont("helvetica", "normal");
+      doc.text(`Roll No / ID:`, 20, 75); doc.setFont("helvetica", "bold"); doc.text(`${student.studentId || ''}`, 55, 75); doc.setFont("helvetica", "normal");
+      doc.text(`Course Applied:`, 20, 85); doc.setFont("helvetica", "bold"); doc.text(`${student.courseApplied || 'N/A'}`, 55, 85); doc.setFont("helvetica", "normal");
       
       let examDateStr = config.examDate ? new Date(`${config.examDate}`).toLocaleDateString() : '24 June 2026';
       let examTimeStr = config.startTime ? new Date(`${config.examDate}T${config.startTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM';
       let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
       
-      doc.text(`Exam Date: ${examDateStr}`, 20, 78);
-      doc.text(`Exam Time: ${examTimeStr}`, 20, 88);
-      doc.text(`Duration: ${durationStr}`, 20, 98);
+      doc.text(`Exam Date:`, 20, 95); doc.setFont("helvetica", "bold"); doc.text(`${examDateStr}`, 55, 95); doc.setFont("helvetica", "normal");
+      doc.text(`Exam Time:`, 20, 105); doc.setFont("helvetica", "bold"); doc.text(`${examTimeStr}`, 55, 105); doc.setFont("helvetica", "normal");
+      doc.text(`Duration:`, 20, 115); doc.setFont("helvetica", "bold"); doc.text(`${durationStr}`, 55, 115); doc.setFont("helvetica", "normal");
       
-      doc.setFont("helvetica", "bold");
-      doc.text(`Exam Center:`, 20, 108);
-      doc.setFont("helvetica", "normal");
-      doc.text(`CASAS Department, New Arts College, Ahmednagar`, 48, 108);
+      doc.text(`Exam Center:`, 20, 125); doc.setFont("helvetica", "bold"); doc.text(`CASAS Department, New Arts College, Ahmednagar`, 55, 125); doc.setFont("helvetica", "normal");
 
-      // Login Credentials (Important)
-      doc.rect(15, 118, 110, 25);
+      // Login Credentials Box
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, 135, 110, 25, 'FD');
       doc.setFont("helvetica", "bold");
-      doc.text(`Student Login Credentials for Exam:`, 20, 125);
+      doc.setTextColor(30, 58, 138);
+      doc.text(`Student Login Credentials:`, 20, 142);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Login ID: ${student.email || student.mobile}`, 20, 150);
+      doc.text(`Password: ${student.password_hash || student.mobile}`, 20, 157);
       doc.setFont("helvetica", "normal");
-      doc.text(`Login ID: ${student.email || student.mobile}`, 20, 133);
-      doc.text(`Password: ${student.password_hash || student.mobile}`, 20, 140);
       
-      // Photo handling for Base64 vs URLs
-      let photoData = student.photoData || (student.uploadedFiles && student.uploadedFiles.photoFile);
-      // Wait! The online dashboard doesn't have student.photoData, it has passport_photo_url or application_documents!
-      // In student dashboard, it's the student logging in, so they might not have their photo in localStorage if it wasn't fetched.
-      // But let's try to get it from student.application_documents if available.
-      if (!photoData && student.application_documents && student.application_documents.passport_photo) {
-        photoData = student.application_documents.passport_photo;
-      }
+      // Load Images Helper
+      const loadImage = (src) => new Promise((resolve) => {
+         const img = new Image(); img.crossOrigin = 'Anonymous';
+         img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg'));
+         };
+         img.onerror = () => resolve(null);
+         img.src = src;
+      });
+
+      // Draw Photo
       if (photoData) {
-         try {
-           if (photoData.startsWith('http')) {
-              // Fetch external URL as Base64 to avoid CORS issues in jsPDF
-              const imgData = await new Promise((resolve) => {
-                 const img = new Image();
-                 img.crossOrigin = 'Anonymous';
-                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width; canvas.height = img.height;
-                    canvas.getContext('2d').drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/jpeg'));
-                 };
-                 img.onerror = () => resolve(null);
-                 img.src = photoData;
-              });
-              if (imgData) doc.addImage(imgData, 'JPEG', 150, 40, 35, 45);
-           } else {
-              doc.addImage(photoData, 'JPEG', 150, 40, 35, 45);
-           }
-         } catch(e) { console.warn("Could not add photo to PDF", e); }
+         const pData = await loadImage(photoData);
+         if (pData) doc.addImage(pData, 'JPEG', 150, 60, 35, 45);
+         doc.rect(150, 60, 35, 45); // photo border
+      } else {
+         doc.rect(150, 60, 35, 45);
+         doc.setFontSize(9); doc.setTextColor(150, 150, 150); doc.text("Passport Photo", 167, 82, {align:"center"}); doc.setFontSize(11); doc.setTextColor(0,0,0);
       }
-      
+
+      // Load College Logo
+      const logoUrl = window.location.origin + '/images/department%20logo.jpeg';
+      const lData = await loadImage(logoUrl);
+      if (lData) {
+         doc.addImage(lData, 'JPEG', 18, 16, 22, 22);
+         doc.addImage(lData, 'JPEG', 170, 16, 22, 22);
+      }
+
       // QR Code
       const qrContainer = document.createElement('div');
       new QRCode(qrContainer, {
@@ -1508,33 +1535,37 @@
          width: 128, height: 128
       });
       
-      await new Promise(r => setTimeout(r, 100)); // wait for QR render
+      await new Promise(r => setTimeout(r, 100)); // Wait for QR render
       const qrCanvas = qrContainer.querySelector('canvas');
-      if (qrCanvas) {
-         doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 90, 35, 35);
-      }
+      if (qrCanvas) doc.addImage(qrCanvas.toDataURL('image/png'), 'PNG', 150, 110, 30, 30);
       
       // Instructions
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Important Instructions:", 15, 145);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(12); doc.setFont("helvetica", "bold");
+      doc.text("Important Instructions for Candidates:", 15, 175);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
       const instructions = config.instructions || [
-        "Please keep this admit card ready for verification.",
-        "Webcam is mandatory throughout the exam.",
-        "Tab switching is strictly prohibited."
+        "Please keep this admit card ready along with an original Photo ID for verification.",
+        "Ensure a stable internet connection before starting the online exam.",
+        "Webcam is mandatory throughout the exam for AI Proctoring.",
+        "Tab switching or exiting fullscreen is strictly prohibited and will auto-submit the exam.",
+        "Login exactly at the specified Exam Time using the credentials provided above."
       ];
-      let y = 155;
+      let y = 183;
       instructions.forEach((ins, idx) => {
-         doc.text(`${idx + 1}. ${ins}`, 15, y);
-         y += 7;
+         const lines = doc.splitTextToSize(`${idx + 1}. ${ins}`, 180);
+         doc.text(lines, 15, y);
+         y += lines.length * 6;
       });
       
       // Save locally
       const fileName = `CET_AdmitCard_${student.studentId || 'Pending'}.pdf`;
       doc.save(fileName);
       console.log('[Student] Admit Card PDF Generated');
+      
+      if (btn) {
+         btn.innerHTML = originalText;
+         btn.disabled = false;
+      }
       
       // Upload to Supabase asynchronously
       try {
