@@ -1451,6 +1451,10 @@
             if (data && data.file_url) photoData = data.file_url;
          } catch(e) { console.error(e); }
       }
+      
+      if (!photoData) {
+         photoData = student.photoData || student.passportPhotoUrl || localStorage.getItem('cet_student_photo_' + student.id) || null;
+      }
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
@@ -1468,10 +1472,11 @@
       doc.setFillColor(255, 252, 230); // light yellow
       doc.rect(15, 15, 180, 25, 'F');
       
-      // Load Images Helper via Fetch to avoid CORS canvas taint
+      // Load Images Helper via Fetch (with CORS Proxy fallback)
       const loadImage = async (src) => {
          try {
-            const res = await fetch(src);
+            let res = await fetch(src);
+            if (!res.ok) throw new Error('Network response was not ok');
             const blob = await res.blob();
             return new Promise((resolve) => {
                const reader = new FileReader();
@@ -1480,8 +1485,21 @@
                reader.readAsDataURL(blob);
             });
          } catch(e) {
-            console.error('[AdmitCard] Image fetch failed:', src, e);
-            return null;
+            console.warn('[AdmitCard] Direct image fetch failed, trying proxy...', src);
+            try {
+               const proxySrc = 'https://corsproxy.io/?' + encodeURIComponent(src);
+               let res = await fetch(proxySrc);
+               const blob = await res.blob();
+               return new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.onerror = () => resolve(null);
+                  reader.readAsDataURL(blob);
+               });
+            } catch (err) {
+               console.error('[AdmitCard] Proxy fetch also failed:', err);
+               return null;
+            }
          }
       };
 
