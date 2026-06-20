@@ -4485,6 +4485,21 @@
       
       // Do not inject dummy data, use actual DB/localstorage records.
       
+      // Deduplicate results by studentId, keeping only the most recently submitted
+      res.sort((a, b) => {
+          const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+          const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+          return timeB - timeA;
+      });
+      const uniqueMap = new Map();
+      res.forEach(r => {
+          const key = r.studentId || (r.id ? String(r.id) : Math.random());
+          if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, r);
+          }
+      });
+      res = Array.from(uniqueMap.values());
+      
       // Calculate Course Ranks
       const courseGroups = {};
       res.forEach(r => {
@@ -4568,10 +4583,73 @@
               <button type="button" onclick="viewResultModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-indigo-600 font-bold text-xs bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100">View Result</button>
               <button type="button" onclick="viewAnswersModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 hover:bg-emerald-100">View Answers</button>
               <button type="button" onclick="downloadStudentPDF(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-slate-600 font-bold text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200 hover:bg-slate-200">Download PDF</button>
+              <button type="button" onclick="deleteResultModal(${idx})" style="cursor:pointer;pointer-events:auto;position:relative;z-index:10;" class="text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded border border-red-100 hover:bg-red-100">Delete</button>
             </div>
         </tr>
       `}).join('') || '<tr><td colspan="10" class="p-8 text-center text-slate-500">No results found matching filters.</td></tr>';
     }
+
+    window.deleteResultModal = async function(idx) {
+        if (!confirm('Are you sure you want to delete this result? This will reset the student\\'s exam status and allow them to take the exam again.')) return;
+        
+        const r = window._allResults && window._allResults[idx];
+        if (!r) { alert('No result data found.'); return; }
+        
+        let allResults = JSON.parse(localStorage.getItem('cetExamResults')) || [];
+        
+        // Remove ALL results matching this student ID from local storage so they don't reappear
+        allResults = allResults.filter(res => res.studentId !== r.studentId);
+        localStorage.setItem('cetExamResults', JSON.stringify(allResults));
+        
+        let localStudents = JSON.parse(localStorage.getItem('cet_students')) || [];
+        let stIndex = localStudents.findIndex(s => s.studentId === r.studentId || s.id === r.studentId);
+        if (stIndex !== -1) {
+            localStudents[stIndex].exam_status = 'Pending Exam';
+            localStudents[stIndex].hasTakenExam = false;
+            localStudents[stIndex].exam_locked = false;
+            localStudents[stIndex].total_warnings = 0;
+            localStorage.setItem('cet_students', JSON.stringify(localStudents));
+        }
+
+        if (window._currentApplicationsData) {
+            let appIndex = window._currentApplicationsData.findIndex(app => app.student_id === r.studentId || app.studentId === r.studentId);
+            if (appIndex !== -1) {
+                window._currentApplicationsData[appIndex].exam_status = 'Pending Exam';
+                window._currentApplicationsData[appIndex].hasTakenExam = false;
+                window._currentApplicationsData[appIndex].exam_locked = false;
+            }
+        }
+        
+        if (window.supabase) {
+            try {
+                // Delete from exam_results table
+                if (r.id && typeof r.id === 'string' && r.id.length > 5) {
+                    await window.supabase.from('exam_results').delete().eq('id', r.id);
+                } else {
+                    await window.supabase.from('exam_results').delete().eq('student_id', r.studentId);
+                }
+                
+                // Update applications table
+                const { data: apps } = await window.supabase.from('applications').select('id').eq('student_id', r.studentId);
+                if (apps && apps.length > 0) {
+                   await window.supabase.from('applications')
+                      .update({ 
+                          exam_status: 'Pending Exam', 
+                          hasTakenExam: false,
+                          exam_locked: false,
+                          total_warnings: 0
+                      })
+                      .eq('student_id', r.studentId);
+                }
+            } catch (err) {
+                console.error('Error deleting from supabase:', err);
+            }
+        }
+        
+        renderResults();
+        if (typeof renderStudents === 'function') renderStudents();
+        showToast('Result deleted successfully. Student can now retake the exam.', 'success');
+    };
 
     window.publishGlobalResults = async function() {
       const filterCourse = document.getElementById('resFilterCourse')?.value || '';
