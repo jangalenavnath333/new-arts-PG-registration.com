@@ -1462,8 +1462,8 @@
       
       let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
       let examDateStr = '25 June 2026';
-      let examTimeStr = 'Morning';
-      let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
+      let examTimeStr = '09:30 AM to 11:00 AM';
+      let durationStr = '90 Minutes';
       
       // Outer Borders
       doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
@@ -1579,19 +1579,30 @@
       doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
       doc.text("Photograph", 170, 130, {align:"center"});
 
-      // Add Important Notice in English (translated from Marathi)
+      // Add Important Instructions
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      doc.setTextColor(180, 0, 0); // Dark Red
-      doc.text("IMPORTANT NOTICE:", 15, 155);
+      doc.setTextColor(180, 0, 0);
+      doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 155);
       
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
       
-      const noticeText = "The entrance examination will be held OFFLINE on Thursday, 25 June 2026 morning at the college's 'Center for Advanced Studies in Applied Sciences' (CASAS). On the same day afternoon, immediate admissions will be granted via a Counseling Round based on merit from the exam marks. All students should note today's deadline and fill the form urgently.";
-      const splitNotice = doc.splitTextToSize(noticeText, 180);
-      doc.text(splitNotice, 15, 162);
+      const instructions = [
+         "1. Schedule: Offline Exam on 25 June 2026 (09:30 AM to 11:00 AM).",
+         "   Report strictly at 09:00 AM at CASAS Dept (1st Floor, Admin Building).",
+         "2. Format: Offline mode. Total 100 Marks (75 Questions).",
+         "3. Counseling: Merit list and Counseling Round will be on the same day at 01:00 PM.",
+         "4. Admission: Selected students must pay Rs. 1000/- provisional fee on the spot.",
+         "5. Documents: Bring Original Caste Certificate (if applicable) and valid ID proof."
+      ];
+      
+      let instY = 162;
+      instructions.forEach(inst => {
+         doc.text(inst, 15, instY);
+         instY += 5.5;
+      });
       
       // Add Student Signature box
       doc.rect(20, 195, 50, 15);
