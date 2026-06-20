@@ -248,6 +248,46 @@ export const EmailTemplates = {
 
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
       
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <h2 style="margin: 0 0 16px; color: #dc2626; font-size: 18px; text-align: center;">📢 महत्त्वाची प्रवेश सूचना: एम.एस्सी. प्रवेश परीक्षा २०२६ 📢</h2>
+        <p style="color: #334155; font-size: 13px; line-height: 1.7;">
+          न्यू आर्ट्स, कॉमर्स अँड सायन्स कॉलेज, अहमदनगर येथील कॅसस (Center For Advanced Studies in Applied Sciences) विभागातील M.Sc. Computer Science आणि M.Sc. Computer Applications या अभ्यासक्रमांसाठी अर्ज केलेल्या सर्व विद्यार्थ्यांसाठी प्रवेश प्रक्रियेचे नियम आणि सविस्तर वेळापत्रक खालीलप्रमाणे आहे:
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">१. प्रवेशाचा मुख्य निकष:</strong> M.Sc. चे सर्व प्रवेश हे फक्त आणि फक्त प्रवेश परीक्षेमध्ये मिळालेल्या गुणांच्या आधारावरच गुणवत्ता यादी (Merit List) तयार केली जाईल.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">२. परीक्षेचा दिनांक आणि वेळ:</strong> प्रवेश परीक्षा गुरुवार दिनांक २५ जून २०२६ रोजी सकाळी ०९:३० ते ११:०० या वेळेत होईल.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">३. रिपोर्टिंग वेळ आणि ठिकाण:</strong> सर्व विद्यार्थ्यांनी गुरुवार दिनांक २५ जून रोजी सकाळी ठीक ०९:०० वाजता कॅसस (CASAS) विभाग, प्रशासकीय इमारतीमधील पहिल्या मजल्यावर ऑफलाइन परीक्षेसाठी समक्ष उपस्थित राहणे अनिवार्य आहे.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">४. प्रवेश परीक्षेचे स्वरूप व उत्तरपत्रिका:</strong> सदर परीक्षा पूर्णपणे ऑफलाइन पद्धतीने होणार असून एकूण १०० गुणांची असेल. परीक्षेमध्ये एकूण ७५ प्रश्न विचारले जातील, ज्यामध्ये ५० प्रश्न प्रत्येकी १ गुणाचे आणि २५ प्रश्न प्रत्येकी २ गुणांचे असतील. विद्यार्थ्यांना सर्व प्रश्न उत्तरपत्रिकेवर (Answer Sheet) सोडवायचे आहेत, याची विद्यार्थ्यांनी नोंद घ्यावी.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">५. उपस्थितीची अनिवार्यता:</strong> या प्रवेश परीक्षेसाठी उपस्थित राहून परीक्षा देणाऱ्या विद्यार्थ्यांचाच प्रवेशासाठी विचार केला जाईल. प्रवेश परीक्षेस गैरहजर राहिल्यास विद्यार्थ्याचा प्रवेशावरील दावा पूर्णपणे संपुष्टात येईल, याची गंभीर नोंद घ्यावी.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">६. गुणवत्ता यादी व कौन्सिलिंग:</strong> प्रवेश परीक्षा संपल्यानंतर लगेचच विद्यार्थ्यांची प्रवेश परीक्षा गुणांनुसार गुणवत्ता यादी तयार केली जाईल. त्यानंतर याच गुणवत्ता यादीनुसार त्याच दिवशी दुपारी ठीक ०१:०० वाजता कौन्सिलिंग राऊंडद्वारे विद्यार्थ्यांचे प्रवेश केले जातील.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">७. तात्पुरते प्रवेश शुल्क:</strong> गुणवत्तेनुसार प्रवेश मिळालेल्या विद्यार्थ्यांनी जागेवरच प्रोव्हिजनल ॲडमिशन शुल्क रुपये १०००/- भरणे अनिवार्य आहे.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">८. जातीचा दाखला (राखीव प्रवर्ग):</strong> कौन्सिलिंग राऊंडसाठी येताना ज्या विद्यार्थ्यांनी राखीव जागांसाठी दावा केला आहे, त्यांनी सक्षम प्राधिकृत अधिकाऱ्याने दिलेला आपला राखीव प्रवर्गातील मूळ जातीचा दाखला सोबत आणणे बंधनकारक आहे.
+        </p>
+        <p style="margin: 0; color: #1e293b; font-size: 13px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">९. अंतिम प्रवेश निश्चिती:</strong> कौन्सिलिंग राऊंडद्वारे दिलेले प्रवेश हे पूर्णपणे तात्पुरत्या स्वरूपाचे असतील. विद्यार्थ्यांनी आपल्या पदवी अभ्यासक्रम उत्तीर्ण केल्याचे ओरिजिनल गुणपत्रक आणि महाविद्यालयातून प्राप्त झालेले ओरिजिनल ट्रान्सफर सर्टिफिकेट सादर केल्यानंतरच आपला महाविद्यालयातील पदव्युत्तर वर्गाचा प्रवेश निश्चित केला जाईल.
+        </p>
+        <div style="margin-top: 20px; text-align: right;">
+          <p style="margin: 0 0 4px; color: #1e293b; font-size: 14px; font-weight: bold;">प्रा. अरुण गांगर्डे</p>
+          <p style="margin: 0; color: #475569; font-size: 12px;">प्रमुख, CASAS</p>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+      
       <div style="background: #ecfdf5; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
         <h3 style="margin: 0 0 8px; font-size: 14px; color: #047857;">🎉 WhatsApp Community</h3>
         <p style="color: #065f46; font-size: 13px; line-height: 1.6; margin: 0 0 12px 0;">
@@ -436,6 +476,56 @@ export const EmailTemplates = {
 
       <div style="text-align: center; margin-top: 20px;">
         <p style="color: #64748b; font-size: 12px;">If you have any concerns regarding your result, please contact the CET Examination Cell.</p>
+      </div>
+    `)
+  // 8. Official Entrance Notification (Marathi)
+  entranceNotification: (name) => ({
+    subject: `📢 महत्त्वाची प्रवेश सूचना: एम.एस्सी. प्रवेश परीक्षा २०२६`,
+    html: wrapEmail(`
+      <h2 style="margin: 0 0 16px; color: #dc2626; font-size: 20px; text-align: center;">📢 महत्त्वाची प्रवेश सूचना: एम.एस्सी. प्रवेश परीक्षा २०२६ 📢</h2>
+      
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        प्रिय <strong style="color: #0f172a;">${name}</strong>,
+      </p>
+      
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        न्यू आर्ट्स, कॉमर्स अँड सायन्स कॉलेज, अहमदनगर येथील कॅसस (Center For Advanced Studies in Applied Sciences) विभागातील M.Sc. Computer Science आणि M.Sc. Computer Applications या अभ्यासक्रमांसाठी अर्ज केलेल्या सर्व विद्यार्थ्यांसाठी प्रवेश प्रक्रियेचे नियम आणि सविस्तर वेळापत्रक खालीलप्रमाणे आहे:
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">१. प्रवेशाचा मुख्य निकष:</strong> M.Sc. चे सर्व प्रवेश हे फक्त आणि फक्त प्रवेश परीक्षेमध्ये मिळालेल्या गुणांच्या आधारावरच गुणवत्ता यादी (Merit List) तयार केली जाईल.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">२. परीक्षेचा दिनांक आणि वेळ:</strong> प्रवेश परीक्षा गुरुवार दिनांक २५ जून २०२६ रोजी सकाळी ०९:३० ते ११:०० या वेळेत होईल.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">३. रिपोर्टिंग वेळ आणि ठिकाण:</strong> सर्व विद्यार्थ्यांनी गुरुवार दिनांक २५ जून रोजी सकाळी ठीक ०९:०० वाजता कॅसस (CASAS) विभाग, प्रशासकीय इमारतीमधील पहिल्या मजल्यावर ऑफलाइन परीक्षेसाठी समक्ष उपस्थित राहणे अनिवार्य आहे.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">४. प्रवेश परीक्षेचे स्वरूप व उत्तरपत्रिका:</strong> सदर परीक्षा पूर्णपणे ऑफलाइन पद्धतीने होणार असून एकूण १०० गुणांची असेल. परीक्षेमध्ये एकूण ७५ प्रश्न विचारले जातील, ज्यामध्ये ५० प्रश्न प्रत्येकी १ गुणाचे आणि २५ प्रश्न प्रत्येकी २ गुणांचे असतील. विद्यार्थ्यांना सर्व प्रश्न उत्तरपत्रिकेवर (Answer Sheet) सोडवायचे आहेत, याची विद्यार्थ्यांनी नोंद घ्यावी.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">५. उपस्थितीची अनिवार्यता:</strong> या प्रवेश परीक्षेसाठी उपस्थित राहून परीक्षा देणाऱ्या विद्यार्थ्यांचाच प्रवेशासाठी विचार केला जाईल. प्रवेश परीक्षेस गैरहजर राहिल्यास विद्यार्थ्याचा प्रवेशावरील दावा पूर्णपणे संपुष्टात येईल, याची गंभीर नोंद घ्यावी.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">६. गुणवत्ता यादी व कौन्सिलिंग:</strong> प्रवेश परीक्षा संपल्यानंतर लगेचच विद्यार्थ्यांची प्रवेश परीक्षा गुणांनुसार गुणवत्ता यादी तयार केली जाईल. त्यानंतर याच गुणवत्ता यादीनुसार त्याच दिवशी दुपारी ठीक ०१:०० वाजता कौन्सिलिंग राऊंडद्वारे विद्यार्थ्यांचे प्रवेश केले जातील.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">७. तात्पुरते प्रवेश शुल्क:</strong> गुणवत्तेनुसार प्रवेश मिळालेल्या विद्यार्थ्यांनी जागेवरच प्रोव्हिजनल ॲडमिशन शुल्क रुपये १०००/- भरणे अनिवार्य आहे.
+        </p>
+        <p style="margin: 0 0 12px; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">८. जातीचा दाखला (राखीव प्रवर्ग):</strong> कौन्सिलिंग राऊंडसाठी येताना ज्या विद्यार्थ्यांनी राखीव जागांसाठी दावा केला आहे, त्यांनी सक्षम प्राधिकृत अधिकाऱ्याने दिलेला आपला राखीव प्रवर्गातील मूळ जातीचा दाखला सोबत आणणे बंधनकारक आहे.
+        </p>
+        <p style="margin: 0; color: #1e293b; font-size: 14px; line-height: 1.7;">
+          <strong style="color: #b91c1c;">९. अंतिम प्रवेश निश्चिती:</strong> कौन्सिलिंग राऊंडद्वारे दिलेले प्रवेश हे पूर्णपणे तात्पुरत्या स्वरूपाचे असतील. विद्यार्थ्यांनी आपल्या पदवी अभ्यासक्रम उत्तीर्ण केल्याचे ओरिजिनल गुणपत्रक आणि महाविद्यालयातून प्राप्त झालेले ओरिजिनल ट्रान्सफर सर्टिफिकेट सादर केल्यानंतरच आपला महाविद्यालयातील पदव्युत्तर वर्गाचा प्रवेश निश्चित केला जाईल.
+        </p>
+      </div>
+
+      <div style="margin-top: 30px; text-align: right;">
+        <p style="margin: 0 0 4px; color: #1e293b; font-size: 15px; font-weight: bold;">प्रा. अरुण गांगर्डे</p>
+        <p style="margin: 0; color: #475569; font-size: 13px;">प्रमुख, CASAS</p>
+        <p style="margin: 0; color: #475569; font-size: 12px;">(Center For Advanced Studies in Applied Sciences)</p>
       </div>
     `)
   })

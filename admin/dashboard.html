@@ -273,6 +273,9 @@
                   <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 Contacts</button>
                   <button onclick="syncPendingFormsToSupabase()" id="btnSyncCloud" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Sync local forms to Supabase">☁️ Sync to Cloud</button>
                 </div>
+                <div class="flex border border-red-500 rounded-lg overflow-hidden h-10">
+                  <button onclick="sendEntranceNotificationToAll()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">✉️ Send Official Notice</button>
+                </div>
                 <div class="flex border border-blue-500 rounded-lg overflow-hidden h-10">
                   <button onclick="openMassEmailModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">📢 Mass Email</button>
                 </div>
@@ -6459,6 +6462,39 @@
         window.closeQuestionUploadModal();
     };
   </script>
+<script>
+window.sendEntranceNotificationToAll = async function() {
+  if (!confirm('Are you absolutely sure you want to send the Official Entrance Exam Notification (Marathi) to ALL students?')) return;
+  const data = window._currentApplicationsData || [];
+  if (data.length === 0) return alert('No students found.');
+  
+  try {
+      const EmailSvc = (await import('../js/email-service.js')).default;
+      let count = 0;
+      let failed = 0;
+      
+      const studentsToNotify = data.filter(st => st.email);
+      if (!confirm(`This will send the notification to ${studentsToNotify.length} students. Proceed?`)) return;
+
+      for (let st of studentsToNotify) {
+          try {
+              const tmpl = EmailSvc.EmailTemplates.entranceNotification(st.fullName || st.name);
+              await EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html);
+              count++;
+              console.log(`Sent notice to ${st.email} (${count}/${studentsToNotify.length})`);
+          } catch(e) {
+              console.error(`Failed to send to ${st.email}`, e);
+              failed++;
+          }
+          await new Promise(r => setTimeout(r, 200)); // Small delay to avoid rate limits
+      }
+      alert(`Successfully sent notification to ${count} students. Failed: ${failed}`);
+  } catch(e) {
+      alert('Error sending notifications: ' + e.message);
+  }
+};
+</script>
+
 <!-- Mass Email Modal -->
 <div id="massEmailModal" class="hidden" style="position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem;">
   <div style="background-color: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); width: 100%; max-width: 32rem; overflow: hidden; position: relative;">
@@ -6497,6 +6533,37 @@
 </div>
 
 <script>
+window.sendEntranceNotificationToAll = async function() {
+  if (!confirm('Are you absolutely sure you want to send the Official Entrance Exam Notification (Marathi) to ALL students?')) return;
+  const data = window._currentApplicationsData || [];
+  if (data.length === 0) return alert('No students found.');
+  
+  try {
+      const EmailSvc = (await import('../js/email-service.js')).default;
+      let count = 0;
+      let failed = 0;
+      
+      const studentsToNotify = data.filter(st => st.email);
+      if (!confirm(`This will send the notification to ${studentsToNotify.length} students. Proceed?`)) return;
+
+      for (let st of studentsToNotify) {
+          try {
+              const tmpl = EmailSvc.EmailTemplates.entranceNotification(st.fullName || st.name);
+              await EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html);
+              count++;
+              console.log(`Sent notice to ${st.email} (${count}/${studentsToNotify.length})`);
+          } catch(e) {
+              console.error(`Failed to send to ${st.email}`, e);
+              failed++;
+          }
+          await new Promise(r => setTimeout(r, 200)); // Small delay to avoid rate limits
+      }
+      alert(`Successfully sent notification to ${count} students. Failed: ${failed}`);
+  } catch(e) {
+      alert('Error sending notifications: ' + e.message);
+  }
+};
+
 window.openMassEmailModal = async function() {
   document.getElementById('massEmailModal').style.display = 'flex';
   const statsDiv = document.getElementById('massEmailStats');
