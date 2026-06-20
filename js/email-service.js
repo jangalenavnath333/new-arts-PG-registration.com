@@ -478,6 +478,8 @@ export const EmailTemplates = {
         <p style="color: #64748b; font-size: 12px;">If you have any concerns regarding your result, please contact the CET Examination Cell.</p>
       </div>
     `)
+  }),
+
   // 8. Official Entrance Notification (Marathi)
   entranceNotification: (name) => ({
     subject: `📢 महत्त्वाची प्रवेश सूचना: एम.एस्सी. प्रवेश परीक्षा २०२६`,
