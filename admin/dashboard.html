@@ -4590,7 +4590,7 @@
     }
 
     window.deleteResultModal = async function(idx) {
-        if (!confirm('Are you sure you want to delete this result? This will reset the student\\'s exam status and allow them to take the exam again.')) return;
+        if (!confirm("Are you sure you want to delete this result? This will reset the student's exam status and allow them to take the exam again.")) return;
         
         const r = window._allResults && window._allResults[idx];
         if (!r) { alert('No result data found.'); return; }
