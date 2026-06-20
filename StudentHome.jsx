@@ -19,41 +19,182 @@ const StudentHome = () => {
         setLoading(false);
     }, []);
 
-    const handleDownloadHallTicket = () => {
+    const handleDownloadHallTicket = async () => {
         if (!student || student.status !== 'approved') {
             alert("⚠️ Your application is not yet approved. Hall ticket is only available for approved candidates.");
             return;
         }
 
-        // Logic to generate a PDF Mockup (using window.print or a dummy blob for this UI demo)
-        const hallTicketContent = `
-            ==================================================
-            ENTRANCE EXAM HALL TICKET - 2026
-            New Arts, Commerce and Science College, Ahmednagar
-            ==================================================
+        try {
+            const { jsPDF } = await import('jspdf');
+            const doc = new jsPDF('p', 'mm', 'a4');
             
-            Name: ${student.fullName}
-            Candidate ID: ${student.studentId}
-            Exam Date: ${schedule?.date || 'To be announced'}
-            Exam Time: ${schedule?.time || 'To be announced'}
-            Course: ${student.courseApplied}
+            // Photo handling
+            let photoData = null;
+            const sid = student.id || student.studentId;
+            // Fetch photo from supabase if possible
+            try {
+                const { getClient } = await import('../js/supabase-db.js');
+                const supaClient = getClient();
+                if (supaClient && sid) {
+                    const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo']).limit(1).maybeSingle();
+                    if (data && data.file_url) photoData = data.file_url;
+                }
+            } catch(e) { console.log(e); }
             
-            [Photo of ${student.fullName}]
-            
-            --------------------------------------------------
-            Instructions:
-            - Carry this ticket to the exam center.
-            - Bring original ID proof.
-            ==================================================
-        `;
+            if (!photoData) {
+                photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && student.application_documents.passport_photo) || (student.uploadedFiles && student.uploadedFiles.photoFile) || localStorage.getItem('cet_student_photo_' + sid) || null;
+            }
 
-        const element = document.createElement("a");
-        const file = new Blob([hallTicketContent], {type: 'text/plain'});
-        element.href = URL.createObjectURL(file);
-        element.download = `HallTicket_${student.studentId}.txt`;
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+            let examDateStr = '25 June 2026';
+            let examTimeStr = 'Morning';
+            let durationStr = '60 Minutes';
+            
+            // Outer Borders
+            doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
+
+            // Header Yellow Box
+            doc.setFillColor(255, 252, 230); // light yellow
+            doc.rect(15, 15, 180, 25, 'F');
+            
+            const loadImage = async (src) => {
+               try {
+                  let res = await fetch(src);
+                  if (!res.ok) throw new Error('Network response was not ok');
+                  const blob = await res.blob();
+                  return new Promise((resolve) => {
+                     const reader = new FileReader();
+                     reader.onloadend = () => resolve(reader.result);
+                     reader.onerror = () => resolve(null);
+                     reader.readAsDataURL(blob);
+                  });
+               } catch(e) {
+                  console.warn('Direct image fetch failed, trying proxy...', src);
+                  try {
+                     const proxySrc = 'https://corsproxy.io/?' + encodeURIComponent(src);
+                     let res = await fetch(proxySrc);
+                     const blob = await res.blob();
+                     return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = () => resolve(null);
+                        reader.readAsDataURL(blob);
+                     });
+                  } catch (err) {
+                     return null;
+                  }
+               }
+            };
+
+            const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+            const lData = await loadImage(logoUrl);
+            if (lData) {
+               doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
+            }
+            
+            // Header Text
+            doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+            doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+            doc.setFontSize(14); doc.setTextColor(180, 0, 0); // Dark Red
+            doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+            doc.setFontSize(12);
+            doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+            doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+            doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+            
+            // Blue banner
+            doc.setFillColor(30, 58, 138); // blue
+            doc.rect(15, 40, 180, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+            doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
+            
+            // Title
+            doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+            doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
+            doc.setFontSize(12);
+            doc.text(student.courseApplied ? student.courseApplied.toUpperCase() : "M.SC. COMPUTER SCIENCE", 105, 62, { align: "center" });
+            
+            // Outer border for table
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5);
+            doc.rect(15, 66, 180, 80);
+            
+            // Photo Area vertical line
+            doc.line(145, 66, 145, 146); 
+            
+            // Draw rows
+            const rows = [
+               ["Full Name:", student.fullName || ''],
+               ["Roll No / CET ID:", student.studentId || ''],
+               ["Mobile Number:", student.mobile || ''],
+               ["Exam Date:", examDateStr],
+               ["Exam Time:", examTimeStr],
+               ["Duration:", durationStr],
+               ["Login ID:", student.email || student.mobile],
+               ["Password:", student.password_hash || student.mobile]
+            ];
+            
+            let yLine = 66;
+            rows.forEach((r, i) => {
+               doc.setFontSize(10);
+               doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 6);
+               doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 6);
+               
+               yLine += 10;
+               if (i < 7) {
+                  doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine); // Horizontal line
+               }
+            });
+            
+            doc.line(70, 66, 70, 146);
+            
+            // Draw Photo
+            if (photoData) {
+               const pData = await loadImage(photoData);
+               if (pData) doc.addImage(pData, 'JPEG', 150, 75, 40, 50);
+               doc.rect(150, 75, 40, 50); // photo border
+            } else {
+               doc.rect(150, 75, 40, 50);
+               doc.setFontSize(9); doc.setTextColor(150, 150, 150); doc.text("Photograph", 170, 100, {align:"center"}); doc.setTextColor(0,0,0);
+            }
+            doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
+            doc.text("Photograph", 170, 130, {align:"center"});
+
+            // Add Important Notice in English (translated from Marathi)
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(180, 0, 0); // Dark Red
+            doc.text("IMPORTANT NOTICE:", 15, 155);
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const noticeText = "The entrance examination will be held OFFLINE on Thursday, 25 June 2026 morning at the college's 'Center for Advanced Studies in Applied Sciences' (CASAS). On the same day afternoon, immediate admissions will be granted via a Counseling Round based on merit from the exam marks. All students should note today's deadline and fill the form urgently.";
+            const splitNotice = doc.splitTextToSize(noticeText, 180);
+            doc.text(splitNotice, 15, 162);
+            
+            // Add Student Signature box
+            doc.rect(20, 195, 50, 15);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text("Student's Signature", 28, 216);
+
+            // Add Authority Signature
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("Prof. Arun Gangarde", 130, 205);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text("Head, CASAS", 130, 210);
+            doc.text("(Center for Advanced Studies in", 130, 215);
+            doc.text("Applied Sciences)", 130, 220);
+
+            doc.save(`CET_AdmitCard_${student.studentId || 'Pending'}.pdf`);
+        } catch(error) {
+            console.error("Error generating hall ticket:", error);
+            alert("Error generating hall ticket. Please try again.");
+        }
     };
 
     if (loading) return <div className="p-10 text-center">Loading Portal...</div>;

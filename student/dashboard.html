@@ -1445,23 +1445,24 @@
       }
 
       let photoData = null;
-      if (supaClient) {
+      const sid = student.id || student.studentId;
+      if (supaClient && sid) {
          try {
-            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', student.id).in('doc_type', ['photoFile', 'passport_photo']).limit(1).maybeSingle();
+            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo']).limit(1).maybeSingle();
             if (data && data.file_url) photoData = data.file_url;
          } catch(e) { console.error(e); }
       }
       
       if (!photoData) {
-         photoData = student.photoData || student.passportPhotoUrl || localStorage.getItem('cet_student_photo_' + student.id) || null;
+         photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && student.application_documents.passport_photo) || (student.uploadedFiles && student.uploadedFiles.photoFile) || localStorage.getItem('cet_student_photo_' + sid) || null;
       }
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
       let config = DB.getSchedule(student.courseApplied || 'M.Sc. Computer Science') || {};
-      let examDateStr = config.examDate ? new Date(`${config.examDate}`).toLocaleDateString() : '24 June 2026';
-      let examTimeStr = config.startTime ? new Date(`${config.examDate}T${config.startTime}`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '10:00 AM';
+      let examDateStr = '25 June 2026';
+      let examTimeStr = 'Morning';
       let durationStr = config.durationMinutes ? `${config.durationMinutes} Minutes` : '60 Minutes';
       
       // Outer Borders
@@ -1578,8 +1579,36 @@
       doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
       doc.text("Photograph", 170, 130, {align:"center"});
 
-      // Remove instructions as requested by user
+      // Add Important Notice in English (translated from Marathi)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(180, 0, 0); // Dark Red
+      doc.text("IMPORTANT NOTICE:", 15, 155);
       
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      
+      const noticeText = "The entrance examination will be held OFFLINE on Thursday, 25 June 2026 morning at the college's 'Center for Advanced Studies in Applied Sciences' (CASAS). On the same day afternoon, immediate admissions will be granted via a Counseling Round based on merit from the exam marks. All students should note today's deadline and fill the form urgently.";
+      const splitNotice = doc.splitTextToSize(noticeText, 180);
+      doc.text(splitNotice, 15, 162);
+      
+      // Add Student Signature box
+      doc.rect(20, 195, 50, 15);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("Student's Signature", 28, 216);
+
+      // Add Authority Signature
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Prof. Arun Gangarde", 130, 205);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text("Head, CASAS", 130, 210);
+      doc.text("(Center for Advanced Studies in", 130, 215);
+      doc.text("Applied Sciences)", 130, 220);
+
       // Save locally
       const fileName = `CET_AdmitCard_${student.studentId || 'Pending'}.pdf`;
       doc.save(fileName);

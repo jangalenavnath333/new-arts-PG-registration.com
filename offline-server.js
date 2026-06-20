@@ -7,8 +7,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Redirect root to offline mode BEFORE static files catch it
+app.get('/', (req, res) => {
+  res.redirect('/student/login.html?offline=true');
+});
+
 // Serve static files from dist directory (built UI)
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/models', express.static(path.join(__dirname, 'models')));
+app.use('/css', express.static(path.join(__dirname, 'css')));
+
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  if (req.method === 'POST') console.log(`[BODY]`, req.body);
+  next();
+});
 
 // Ensure data file exists
 const DB_FILE = path.join(__dirname, 'offline_data.json');
@@ -17,8 +31,17 @@ if (!fs.existsSync(DB_FILE)) {
   process.exit(1);
 }
 
-function loadDB() { return JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-function saveDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); }
+let dbCache = null;
+function loadDB() {
+  if (!dbCache) {
+    dbCache = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  }
+  return dbCache;
+}
+function saveDB(data) {
+  dbCache = data;
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
 
 // ============================================
 // MOCK SUPABASE REST API
@@ -109,7 +132,8 @@ app.post('/rest/v1/rpc/submit_final_exam', (req, res) => {
   const student = db.students.find(s => s.id === payload.p_student_uuid);
   if (student) {
     student.has_attempted = true;
-    student.exam_status = payload.p_submit_status.includes('Terminated') ? 'TERMINATED' : 'COMPLETED';
+    const submitStatus = payload.p_submit_status || '';
+    student.exam_status = submitStatus.includes('Terminated') ? 'TERMINATED' : 'COMPLETED';
   }
   
   saveDB(db);
@@ -172,10 +196,7 @@ app.get('/rest/v1/question_sets', (req, res) => {
   res.json(result);
 });
 
-// 9. Redirect root to offline mode
-app.get('/', (req, res) => {
-  res.redirect('/student/login.html?offline=true');
-});
+
 
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
@@ -195,4 +216,12 @@ app.listen(PORT, '0.0.0.0', () => {
     }
   }
   console.log(`\nMake sure to append "?offline=true" if it doesn't automatically redirect!\n`);
+});
+
+// Prevent server crash from unhandled errors
+process.on('uncaughtException', (err) => {
+  console.error('❌ Caught exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
 });
