@@ -2139,7 +2139,9 @@
        if (!btn) return;
        if (!supabase) { alert('Supabase client not initialized. Check your .env file.'); return; }
        
-       const localApps = window.getApplications();
+       let localApps = [];
+       try { localApps = JSON.parse(localStorage.getItem('cetApplications')) || []; } catch(e){}
+       
        if (!localApps || localApps.length === 0) {
           alert('No local applications found to sync.');
           return;
