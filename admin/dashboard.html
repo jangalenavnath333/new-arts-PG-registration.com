@@ -1850,12 +1850,66 @@
          if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { alert('PDF library loading... please retry.'); return; }
          const { jsPDF } = window.jspdf || window;
          const doc = new jsPDF({ orientation: 'landscape' });
-         doc.text('Payment Report', 14, 15);
+         doc.text('Comprehensive Payment & Settlement Report', 14, 15);
+         
+         let totalCollected = 0;
+         let successCount = 0;
+         
          const tableRows = data.map(p => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
-           return [p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
+           const isSuccess = (p.payment_status || '').toUpperCase() === 'SUCCESS';
+           const amt = parseFloat(p.payment_amount) || (isSuccess ? 500 : 0);
+           if (isSuccess) {
+               totalCollected += amt;
+               successCount++;
+           }
+           return [p.full_name||'', p.email||'', p.course_applied||'', amt ? `Rs.${amt}` : '--', p.payment_utr||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
          });
-         doc.autoTable({ startY: 25, head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], body: tableRows });
+         
+         doc.autoTable({ 
+             startY: 25, 
+             head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], 
+             body: tableRows,
+             theme: 'grid',
+             headStyles: { fillColor: [79, 70, 229] }
+         });
+         
+         // Razorpay Settlement Calculations
+         const feeRate = 0.02; // 2%
+         const gstRate = 0.18; // 18% on fee
+         const totalFee = totalCollected * feeRate;
+         const totalGst = totalFee * gstRate;
+         const totalDeduction = totalFee + totalGst;
+         const finalSettlement = totalCollected - totalDeduction;
+         
+         let finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 150;
+         
+         if (finalY > 180) {
+             doc.addPage();
+             finalY = 20;
+         }
+         
+         doc.setFontSize(12);
+         doc.setTextColor(0, 0, 0);
+         doc.setFont("helvetica", "bold");
+         doc.text("Razorpay Settlement Summary (Estimated)", 14, finalY);
+         
+         doc.setFontSize(10);
+         doc.setFont("helvetica", "normal");
+         
+         doc.text(`Total Successful Transactions: ${successCount}`, 14, finalY + 10);
+         doc.text(`Total Gross Amount Collected: Rs. ${totalCollected.toFixed(2)}`, 14, finalY + 16);
+         
+         doc.setTextColor(220, 38, 38); // Red
+         doc.text(`Razorpay Fee (2%): - Rs. ${totalFee.toFixed(2)}`, 14, finalY + 22);
+         doc.text(`GST on Fee (18%): - Rs. ${totalGst.toFixed(2)}`, 14, finalY + 28);
+         doc.text(`Total Tax & Deductions: - Rs. ${totalDeduction.toFixed(2)}`, 14, finalY + 34);
+         
+         doc.setTextColor(22, 163, 74); // Green
+         doc.setFont("helvetica", "bold");
+         doc.setFontSize(12);
+         doc.text(`Actual Settlement Amount (Net to College Bank): Rs. ${finalSettlement.toFixed(2)}`, 14, finalY + 44);
+         
          doc.save(`Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`);
        } else if (format === 'word') {
          let content = 'PAYMENT REPORT\n\nStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
