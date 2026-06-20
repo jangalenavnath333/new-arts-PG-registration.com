@@ -1448,13 +1448,13 @@
       const sid = student.id || student.studentId;
       if (supaClient && sid) {
          try {
-            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo']).limit(1).maybeSingle();
+            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
             if (data && data.file_url) photoData = data.file_url;
          } catch(e) { console.error(e); }
       }
       
       if (!photoData) {
-         photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && student.application_documents.passport_photo) || (student.uploadedFiles && student.uploadedFiles.photoFile) || localStorage.getItem('cet_student_photo_' + sid) || null;
+         photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && (student.application_documents.passport_photo || student.application_documents.photo || student.application_documents.photoFile)) || (student.uploadedFiles && (student.uploadedFiles.photoFile || student.uploadedFiles.photo)) || localStorage.getItem('cet_student_photo_' + sid) || null;
       }
 
       const { jsPDF } = window.jspdf;
