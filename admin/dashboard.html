@@ -2149,7 +2149,7 @@
 
        // Ensure we have latest from Supabase to prevent duplicates
        await window.fetchApplicationsFromSupabase();
-       const cloudApps = _supabaseAppsCache || [];
+       const cloudApps = (_supabaseAppsCache || []).filter(a => a.applicationStatus !== 'DELETED');
        const cloudEmails = cloudApps.map(a => (a.email || '').toLowerCase());
        const cloudStudentIds = cloudApps.map(a => a.studentId);
 
