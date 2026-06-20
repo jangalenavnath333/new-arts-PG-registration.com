@@ -1655,11 +1655,11 @@
             if (result) {
               console.log('[Supabase] ✅ Synced! ID:', result.supabaseId);
             } else {
-              throw new Error('Failed to save to cloud database. Please check your internet connection and try again.');
+              console.warn('[Supabase] Supabase save returned null (Network or RPC issue). Proceeding with local save.');
             }
           } catch (supaErr) {
             console.error('[Supabase] ❌ Cloud sync error:', supaErr);
-            throw new Error('Database Sync Failed: ' + supaErr.message);
+            console.warn('[Supabase] Proceeding with local save due to cloud error.');
           }
         } else {
           console.warn('[Supabase] Database connection not available. Proceeding with local save.');

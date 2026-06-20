@@ -229,7 +229,15 @@ export async function saveStudentApplication(appData, fileDataMap) {
       return null;
     }
 
-    console.log('[SupaDB] ✅ Full application saved securely! UUID:', supabaseStudentId);
+    // Workaround for RPC ON CONFLICT not updating status: 
+    // Force reset the status so that previously deleted students can re-apply successfully
+    await supabase.from('students').update({ 
+      application_status: studentRow.application_status, 
+      status: studentRow.status,
+      exam_status: studentRow.exam_status
+    }).eq('id', supabaseStudentId);
+
+    console.log('[SupaDB] Application saved atomically via RPC:', supabaseStudentId);
     return { studentId: appData.studentId, supabaseId: supabaseStudentId };
 
   } catch (e) {

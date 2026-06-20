@@ -2531,7 +2531,10 @@
       
       console.log('[TRACE] Before Render:', apps.length);
 
-      if (filter) apps = apps.filter(s => (s.applicationStatus || 'Submitted') === filter);
+      if (filter) apps = apps.filter(s => {
+          const stat = (s.applicationStatus || 'Submitted').toUpperCase();
+          return stat === filter.toUpperCase();
+      });
       if (courseFilter) apps = apps.filter(s => {
           const c = (s.academicDetails && s.academicDetails.courseApplied) ? s.academicDetails.courseApplied : (s.courseApplied || '');
           return c.includes(courseFilter);
