@@ -78,7 +78,7 @@ app.post('/rest/v1/rpc/check_eligibility', (req, res) => {
       email: student.email, status: student.status, application_status: student.application_status,
       exam_status: student.exam_status, has_attempted: student.has_attempted,
       active_violations: student.active_violations || 0, course_applied: student.course_applied,
-      category: student.category
+      category: student.category, photoData: student.photoData
     }]);
   } else {
     res.json([]);

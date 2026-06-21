@@ -6,7 +6,7 @@
   <title>High-Security Exam Protocol | CET Portal</title>
   
   <link rel="stylesheet" href="../css/tailwind.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /> -->
   <script defer src="../js/face-api.min.js"></script>
   
   <style>
@@ -62,6 +62,7 @@
     window.timeOffset = 0;
     window.getNow = function() { return new Date(Date.now() + window.timeOffset); };
     async function syncGlobalTime() {
+       if (window.location.search.includes('offline=true') || localStorage.getItem('OFFLINE_API_URL')) return;
        try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 3500);
@@ -177,6 +178,29 @@
         </div>
         
         <div class="p-5 flex-1 overflow-y-auto">
+          <div class="mb-5 bg-slate-900/50 rounded-xl p-3 border border-slate-700">
+             <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-slate-400">Total Questions:</span>
+                <span class="text-sm font-bold text-white" id="statTotal">--</span>
+             </div>
+             <div class="flex justify-between items-center mb-2">
+                <span class="text-xs text-slate-400">Total Marks:</span>
+                <span class="text-sm font-bold text-indigo-400" id="statMarks">--</span>
+             </div>
+             <div class="h-px bg-slate-700 my-2"></div>
+             <div class="flex items-center gap-2 mb-1.5">
+                <div class="w-3 h-3 rounded bg-emerald-500/50 border border-emerald-500"></div>
+                <span class="text-xs text-slate-300">Answered: <strong id="statAnswered" class="text-emerald-400">0</strong></span>
+             </div>
+             <div class="flex items-center gap-2 mb-1.5">
+                <div class="w-3 h-3 rounded bg-slate-700 border border-slate-600"></div>
+                <span class="text-xs text-slate-300">Not Answered: <strong id="statPending" class="text-slate-400">0</strong></span>
+             </div>
+             <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded bg-indigo-600 border border-indigo-400"></div>
+                <span class="text-xs text-slate-300">Current Question</span>
+             </div>
+          </div>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">Question Map</p>
           <div id="qMapGrid" class="grid grid-cols-5 gap-2"></div>
         </div>
@@ -253,6 +277,11 @@
     };
 
     window.addEventListener('DOMContentLoaded', async () => {
+      // Offline fast-path bypass
+      if (localStorage.getItem('OFFLINE_API_URL') || window.location.search.includes('offline=true')) {
+          ExamSupa.isReady = () => false;
+      }
+      
       // 0. Wait for time sync to complete to prevent timezone bugs
       if (window.timeSyncPromise) {
         try { await window.timeSyncPromise; } catch(e) {}
@@ -756,10 +785,26 @@
     }
 
     function updateUIMap() {
+      let answeredCount = 0;
+      let totalMarks = 0;
+      examData.forEach((q, i) => {
+         totalMarks += parseInt(q.marks || 1);
+         if (answersStore[i] !== undefined && answersStore[i] !== '' && (!Array.isArray(answersStore[i]) || answersStore[i].length > 0)) {
+            answeredCount++;
+         }
+      });
+      
+      const totalQ = examData.length;
+      document.getElementById('statTotal').textContent = totalQ;
+      document.getElementById('statMarks').textContent = totalMarks;
+      document.getElementById('statAnswered').textContent = answeredCount;
+      document.getElementById('statPending').textContent = totalQ - answeredCount;
+
       const grid = document.getElementById('qMapGrid');
       grid.innerHTML = examData.map((_, i) => {
         let stateClass = 'bg-slate-700 text-slate-400 border-slate-600 hover:border-slate-400';
-        if(answersStore[i] !== undefined) stateClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
+        const hasAnswer = (answersStore[i] !== undefined && answersStore[i] !== '' && (!Array.isArray(answersStore[i]) || answersStore[i].length > 0));
+        if(hasAnswer) stateClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
         if(currentIdx === i) stateClass = 'bg-indigo-600 text-white border-indigo-400';
         return `<button onclick="currentIdx=${i}; renderCurrentQuestion(); updateUIMap();" class="h-10 rounded border text-xs font-bold transition-all ${stateClass}">${i+1}</button>`;
       }).join('');

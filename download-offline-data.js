@@ -44,6 +44,28 @@ async function downloadData() {
   const { data: students, error: errStudents } = await supabase.from('students').select('*');
   if (errStudents) console.error("Error fetching students:", errStudents.message);
 
+  console.log("✅ Fetching Student Photos for Offline Mode... This may take a minute.");
+  if (students) {
+      for (let i = 0; i < students.length; i++) {
+         const student = students[i];
+         if (student.uploaded_files && student.uploaded_files.photoFile) {
+            try {
+               const res = await fetch(student.uploaded_files.photoFile);
+               if (res.ok) {
+                  const buffer = await res.arrayBuffer();
+                  const base64 = Buffer.from(buffer).toString('base64');
+                  const contentType = res.headers.get('content-type') || 'image/jpeg';
+                  student.photoData = `data:${contentType};base64,${base64}`;
+                  process.stdout.write('.');
+               }
+            } catch(e) {
+               process.stdout.write('x');
+            }
+         }
+      }
+      console.log("\n✅ Photos embedded.");
+  }
+
   // Fetch Exam Config
   const { data: examConfig, error: errConfig } = await supabase.from('exam_config').select('*');
   if (errConfig) console.error("Error fetching exam config:", errConfig.message);

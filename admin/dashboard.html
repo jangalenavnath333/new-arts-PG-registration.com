@@ -1676,6 +1676,25 @@
         return matchCourse && matchStatus;
       });
 
+      // HIDE Rejected Manual transactions to remove duplicates
+      filtered = filtered.filter(p => {
+          const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
+          const isManual = pid.includes('manual') || pid.includes('bank') || pid.includes('utr') || !pid.startsWith('pay_');
+          if (isManual && p.payment_status === 'REJECTED') return false; // Hide completely
+          return true;
+      });
+
+      // Sort: Razorpay first, then Manual Bank UTRs
+      const razorpayPayments = [];
+      const manualPayments = [];
+      filtered.forEach(p => {
+          const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
+          const isRazorpay = pid.startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
+          if (isRazorpay) razorpayPayments.push(p);
+          else manualPayments.push(p);
+      });
+      filtered = [...razorpayPayments, ...manualPayments];
+
       // Calculate Statistics based on filtered records
       const totalApps = filtered.length;
       const expectedCollection = totalApps * 500;
@@ -1685,10 +1704,19 @@
       const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
       
       let collectedAmount = 0;
+      let totalPaidOriginalCount = 0;
+      
       paidRecords.forEach(p => {
-         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(parseFloat(amt))) collectedAmount += parseFloat(amt);
-         else collectedAmount += 500; // default assumption if empty
+         const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
+         const isRazorpay = pid.startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
+         
+         // ONLY count Razorpay original amounts in the Collected sum!
+         if (isRazorpay) {
+             totalPaidOriginalCount++;
+             let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+             if (amt && !isNaN(parseFloat(amt))) collectedAmount += parseFloat(amt);
+             else collectedAmount += 500; // default assumption if empty
+         }
       });
       
       let pendingAmount = 0;
@@ -1698,15 +1726,20 @@
          else pendingAmount += 500;
       });
       
-      // Calculate today's collection
+      // Calculate today's collection (Razorpay only)
       let todayCollected = 0;
       const todayDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
       paidRecords.forEach(p => {
-         const dateStr = p.payment_date || p.submitted_at || p.created_at;
-         if (dateStr && new Date(dateStr).toLocaleDateString('en-CA') === todayDate) {
-             let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-             if (amt && !isNaN(parseFloat(amt))) todayCollected += parseFloat(amt);
-             else todayCollected += 500;
+         const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
+         const isRazorpay = pid.startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
+         
+         if (isRazorpay) {
+             const dateStr = p.payment_date || p.submitted_at || p.created_at;
+             if (dateStr && new Date(dateStr).toLocaleDateString('en-CA') === todayDate) {
+                 let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+                 if (amt && !isNaN(parseFloat(amt))) todayCollected += parseFloat(amt);
+                 else todayCollected += 500;
+             }
          }
       });
       
@@ -1717,7 +1750,7 @@
       document.getElementById('fin-pending').textContent = '₹' + pendingAmount.toLocaleString('en-IN');
       document.getElementById('fin-rejected-count').textContent = rejectedRecords.length;
       
-      document.getElementById('pay-total-paid').textContent = paidRecords.length;
+      document.getElementById('pay-total-paid').textContent = totalPaidOriginalCount;
       document.getElementById('pay-pending-students').textContent = pendingRecords.length;
       document.getElementById('pay-today-amount').textContent = '₹' + todayCollected.toLocaleString('en-IN');
       document.getElementById('pay-verified').textContent = filtered.filter(p => p.payment_status === 'VERIFIED').length;
@@ -1732,7 +1765,7 @@
       
       window._currentPaymentsData = filtered; // For exports
 
-      tbody.innerHTML = filtered.map(p => {
+      tbody.innerHTML = filtered.map((p, idx) => {
         let statusColor = 'bg-slate-100 text-slate-600 border-slate-200';
         const st = p.payment_status || 'PENDING';
         if (st === 'VERIFIED') statusColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
@@ -1751,10 +1784,15 @@
         const date = p.payment_date ? new Date(p.payment_date).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : (p.submitted_at ? new Date(p.submitted_at).toLocaleString() : '--');
         const course = p.course_applied || '--';
 
+        const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_');
+
         return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-          <td class="p-4">
-            <p class="font-bold text-slate-800">${p.full_name || '--'}</p>
-            <p class="text-[10px] text-slate-500 font-mono">${p.email || '--'}</p>
+          <td class="p-4 flex gap-3 items-center">
+            <span class="text-xs font-bold text-slate-400 w-6">#${idx + 1}</span>
+            <div>
+              <p class="font-bold text-slate-800">${p.full_name || '--'}</p>
+              <p class="text-[10px] text-slate-500 font-mono">${p.email || '--'}</p>
+            </div>
           </td>
           <td class="p-4">
             <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-indigo-100">${course}</span>
@@ -1763,8 +1801,8 @@
             <p class="font-bold text-slate-700">₹${p.payment_amount || '0'}</p>
           </td>
           <td class="p-4">
-            <p class="text-xs font-mono font-bold text-slate-600">${p.payment_utr || 'N/A'}</p>
-            ${(p.payment_utr || '').startsWith('pay_') ? '<span class="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">Razorpay</span>' : '<span class="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">Bank UTR</span>'}
+            <p class="text-xs font-mono font-bold text-slate-600">${p.payment_utr || p.payment_id || 'N/A'}</p>
+            ${isRazorpay ? '<span class="text-[9px] bg-blue-100 text-blue-700 px-1 rounded">Razorpay</span>' : '<span class="text-[9px] bg-amber-100 text-amber-700 px-1 rounded">Bank UTR</span>'}
           </td>
           <td class="p-4 text-xs font-bold text-slate-500">${date}</td>
           <td class="p-4">${statusBadge}</td>
@@ -1836,11 +1874,11 @@
        if (data.length === 0) { alert('No data to export.'); return; }
        if (format === 'excel') {
          if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
-         const wsData = [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']];
-         data.forEach(p => {
+         const wsData = [['Sr No.', 'Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']];
+         data.forEach((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
            let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
-           wsData.push([p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||'', p.payment_status||'', date]);
+           wsData.push([idx + 1, p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||p.payment_id||'', p.payment_status||'', date]);
          });
          const wb = XLSX.utils.book_new();
          const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1855,20 +1893,24 @@
          let totalCollected = 0;
          let successCount = 0;
          
-         const tableRows = data.map(p => {
+         const tableRows = data.map((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
-           const isSuccess = (p.payment_status || '').toUpperCase() === 'SUCCESS';
-           const amt = parseFloat(p.payment_amount) || (isSuccess ? 500 : 0);
-           if (isSuccess) {
+           const isPaid = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes((p.payment_status || '').toUpperCase());
+           const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
+           
+           let amtStr = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
+           const amt = parseFloat(amtStr) || (isPaid ? 500 : 0);
+           
+           if (isPaid && isRazorpay) {
                totalCollected += amt;
                successCount++;
            }
-           return [p.full_name||'', p.email||'', p.course_applied||'', amt ? `Rs.${amt}` : '--', p.payment_utr||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
+           return [idx + 1, p.full_name||'', p.email||'', p.course_applied||'', amt ? `Rs.${amt}` : '--', p.payment_utr||p.payment_id||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
          });
          
          doc.autoTable({ 
              startY: 25, 
-             head: [['Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], 
+             head: [['Sr No.', 'Student Name', 'Email', 'Course', 'Amount', 'Transaction ID', 'Status', 'Date']], 
              body: tableRows,
              theme: 'grid',
              headStyles: { fillColor: [79, 70, 229] }
@@ -1912,11 +1954,11 @@
          
          doc.save(`Payment_Report_${new Date().toISOString().split('T')[0]}.pdf`);
        } else if (format === 'word') {
-         let content = 'PAYMENT REPORT\n\nStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
-         data.forEach(p => {
+         let content = 'PAYMENT REPORT\n\nSr No.\tStudent Name\tEmail\tCourse\tAmount\tTransaction ID\tStatus\tDate\n';
+         data.forEach((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
            let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
-           content += `${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||''}\t${p.payment_status||''}\t${date}\n`;
+           content += `${idx + 1}\t${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||p.payment_id||''}\t${p.payment_status||''}\t${date}\n`;
          });
          const blob = new Blob([content], { type: 'application/msword' });
          const url = URL.createObjectURL(blob);

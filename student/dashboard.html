@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Dashboard | CET Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" /> -->
   <link rel="stylesheet" href="../css/main.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -24,6 +24,7 @@
     window.timeOffset = 0;
     window.getNow = function() { return new Date(Date.now() + window.timeOffset); };
     async function syncGlobalTime() {
+       if (window.location.search.includes('offline=true') || localStorage.getItem('OFFLINE_API_URL')) return;
        try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 3500);
@@ -135,7 +136,7 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; z-index: 1; position: relative; flex-wrap: wrap; gap: 24px;">
               <div style="flex: 1; min-width: 250px;">
                 <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
-                   <img id="headerStudentPhoto" src="https://ui-avatars.com/api/?name=Student&background=random" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary-light); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                   <img id="headerStudentPhoto" src="https://ui-avatars.com/api/?name=Student&background=random" onerror="this.src='../images/logo.png'" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--primary-light); object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
                    <div>
                      <p style="color: var(--primary-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; margin-bottom: 4px;">CET Exam Portal</p>
                      <h1 style="font-size: 32px; font-weight: 800; font-family: 'Space Grotesk', sans-serif; margin: 0; color: var(--white); line-height: 1.2;">Welcome, <span id="headerStudentName" style="color: var(--primary-light);">Student</span></h1>
@@ -455,6 +456,9 @@
 
       // 2. Fetch latest truth from Supabase (to fix race conditions/stale caches)
       try {
+        if (localStorage.getItem('OFFLINE_API_URL') || window.location.search.includes('offline=true')) {
+            throw new Error("Offline mode active. Skipping Supabase sync.");
+        }
         const { isReady, getClient } = await import('../js/supabase-db.js');
         const ExamSupa = (await import('../js/supabase-exam.js')).default;
         
@@ -611,12 +615,19 @@
         if (btn) btn.style.display = 'flex';
       }
 
-      // Sidebar
+      // Sidebar and Header Identity
       try {
         document.getElementById('sidebarName').textContent = student.fullName ? student.fullName.split(' ')[0] : 'Student';
         document.getElementById('sidebarId').textContent = student.studentId || 'Pending';
         document.getElementById('sidebarAvatar').textContent = student.fullName ? student.fullName[0].toUpperCase() : 'S';
-      } catch (e) { console.error("Sidebar render error", e); }
+        document.getElementById('headerStudentName').textContent = student.fullName || 'Student';
+        document.getElementById('headerCourse').textContent = student.courseApplied || '--';
+        
+        const photoSrc = student.photoData || student.uploadedFiles?.photoFile || student.passportPhotoUrl;
+        if (photoSrc) {
+            document.getElementById('headerStudentPhoto').src = photoSrc;
+        }
+      } catch (e) { console.error("Sidebar/Header render error", e); }
 
       // Header status badge
       try {
