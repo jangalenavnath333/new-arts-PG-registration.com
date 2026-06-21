@@ -838,17 +838,15 @@
                </div>
                <div style="position: relative; z-index: 10;">
                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; mb-4">
-                    <h3 style="font-size: 14px; font-weight: bold; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Razorpay Settlement Summary</h3>
+                    <h3 style="font-size: 14px; font-weight: bold; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Razorpay Settlement Summary (Estimated)</h3>
                     <div style="font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px;">
-                       <strong style="color: white;" id="set-razorpay-count">0</strong> via Razorpay &nbsp;|&nbsp; 
-                       <strong style="color: white;" id="set-manual-count">0</strong> via Manual Bank UTR &nbsp;|&nbsp; 
-                       <strong style="color: white;" id="set-total-count">0</strong> Total Paid
+                       <strong style="color: white;" id="set-total-count">0</strong> Total Paid Students
                     </div>
                  </div>
                  
                  <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
                     <div style="flex: 1; min-width: 120px;">
-                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Gross (Razorpay Only)</p>
+                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Gross Amount</p>
                        <p style="font-size: 20px; font-weight: bold; color: white; margin: 0;" id="set-gross">₹0</p>
                     </div>
                     <div style="flex: 1; min-width: 120px;">
@@ -1745,13 +1743,10 @@
       const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
       
       let collectedAmount = 0;
-      let razorpayCollectedAmount = 0;
       
       paidRecords.forEach(p => {
-         const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
          // Force 500 for ALL paid records
          collectedAmount += 500;
-         if (isRazorpay) razorpayCollectedAmount += 500;
       });
       
       let pendingAmount = 0;
@@ -1781,23 +1776,18 @@
       document.getElementById('pay-today-amount').textContent = '₹' + todayCollected.toLocaleString('en-IN');
       document.getElementById('pay-verified').textContent = filtered.filter(p => p.payment_status === 'VERIFIED').length;
       
-      // Update Settlement UI (Only for Razorpay Transactions)
+      // Update Settlement UI (For ALL Transactions since manual are Razorpay recoveries)
       const feeRate = 0.02; // 2%
       const gstRate = 0.18; // 18% on fee
-      const totalFee = razorpayCollectedAmount * feeRate;
+      const totalFee = collectedAmount * feeRate;
       const totalGst = totalFee * gstRate;
       const totalDeduction = totalFee + totalGst;
-      const finalSettlement = razorpayCollectedAmount - totalDeduction;
-      
-      const razorpayStudents = razorpayCollectedAmount / 500;
-      const manualStudents = paidRecords.length - razorpayStudents;
+      const finalSettlement = collectedAmount - totalDeduction;
 
       if (document.getElementById('set-gross')) {
-         document.getElementById('set-razorpay-count').textContent = razorpayStudents;
-         document.getElementById('set-manual-count').textContent = manualStudents;
          document.getElementById('set-total-count').textContent = paidRecords.length;
          
-         document.getElementById('set-gross').textContent = '₹' + razorpayCollectedAmount.toLocaleString('en-IN');
+         document.getElementById('set-gross').textContent = '₹' + collectedAmount.toLocaleString('en-IN');
          document.getElementById('set-fee').textContent = '-₹' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
          document.getElementById('set-gst').textContent = '-₹' + totalGst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
          document.getElementById('set-deductions').textContent = '-₹' + totalDeduction.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -1951,11 +1941,10 @@
          const tableRows = data.map((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
            const isPaid = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes((p.payment_status || '').toUpperCase());
-           const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
            const amt = isPaid ? 500 : 0;
            
            if (isPaid) {
-               if (isRazorpay) totalCollected += amt;
+               totalCollected += amt;
                successCount++;
            }
            return [idx + 1, p.full_name||'', p.email||'', p.course_applied||'', isPaid ? `Rs.500` : '--', p.payment_utr||p.payment_id||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
