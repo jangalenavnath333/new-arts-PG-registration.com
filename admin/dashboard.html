@@ -4078,8 +4078,7 @@
       // Supabase dual-write: sync question sets
       if (supabase) {
         sets.forEach(set => {
-          const row = { name: set.name, is_active: set.isActive || false, questions: set.questions || [] };
-          // We'd ideally add a course column to Supabase question_sets here, but keeping it simple for now
+          const row = { name: set.name, is_active: set.isActive || false, questions: set.questions || [], course: course };
           supabase.from('question_sets').upsert({ ...row, id: set.supabaseId || undefined }, { onConflict: 'id' })
             .then(({ error }) => { if (error) console.warn('[Supabase] Question set sync error:', error.message); });
         });

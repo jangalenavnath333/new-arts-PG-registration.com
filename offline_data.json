@@ -1181,46 +1181,6 @@
       "created_at": "2026-06-05T10:13:57.530465+00:00"
     },
     {
-      "id": "8ea46d35-bd1a-4182-9139-743922164ec2",
-      "auth_user_id": null,
-      "student_id": "MSC-CS-2026-6924",
-      "full_name": "Yash Nandkumar Magar",
-      "email": "yashmagar9544yash@gmail.com",
-      "mobile": "9359812231",
-      "dob": "2005-12-27",
-      "address": "Chetana Colony, Navnagapur, Taluka: Nagar, District: Ahilyanagar, Maharashtra, PIN: 414111",
-      "category": "SEBC",
-      "status": "PENDING_APPROVAL",
-      "application_status": "APPROVED",
-      "exam_status": "NOT_SCHEDULED",
-      "has_attempted": false,
-      "active_violations": 0,
-      "lock_reason": null,
-      "exam_time_left": null,
-      "payment_status": "Payment Done",
-      "payment_utr": "pay_Sxwgchxsw0P4FZ",
-      "payment_date": null,
-      "payment_amount": "Rs.500",
-      "transaction_id": "pay_Sxwgchxsw0P4FZ",
-      "course_applied": "M.Sc. Computer Science",
-      "stream": null,
-      "academic_details": {
-        "syMarks": "74.30",
-        "tyMarks": "",
-        "mathsMarks": "51",
-        "syBackground": "B.Sc. Computer Science",
-        "tyBackground": "B.Sc. Computer Science",
-        "casteCategory": "SEBC",
-        "courseApplied": "M.Sc. Computer Science",
-        "twelfthPercent": "50.17",
-        "tyResultStatus": "Appearing / Result Not Declared"
-      },
-      "password_hash": "9359812231",
-      "submitted_at": "2026-06-05T12:13:02.970624+00:00",
-      "applied_at": "2026-06-05T12:13:02.970624+00:00",
-      "created_at": "2026-06-05T12:13:02.970624+00:00"
-    },
-    {
       "id": "0408ea0f-ae9d-4a44-adf1-ec81bc2a31ef",
       "auth_user_id": null,
       "student_id": "MSC-CS-2026-7029",
@@ -1459,6 +1419,46 @@
       "submitted_at": "2026-06-05T17:17:51.133659+00:00",
       "applied_at": "2026-06-05T17:17:51.133659+00:00",
       "created_at": "2026-06-05T17:17:51.133659+00:00"
+    },
+    {
+      "id": "8ea46d35-bd1a-4182-9139-743922164ec2",
+      "auth_user_id": null,
+      "student_id": "MSC-CS-2026-6924",
+      "full_name": "Yash Nandkumar Magar",
+      "email": "yashmagar9544yash@gmail.com",
+      "mobile": "9359812231",
+      "dob": "2005-12-27",
+      "address": "Chetana Colony, Navnagapur, Taluka: Nagar, District: Ahilyanagar, Maharashtra, PIN: 414111",
+      "category": "SEBC",
+      "status": "PENDING_APPROVAL",
+      "application_status": "APPROVED",
+      "exam_status": "NOT_SCHEDULED",
+      "has_attempted": false,
+      "active_violations": 0,
+      "lock_reason": null,
+      "exam_time_left": null,
+      "payment_status": "PAID",
+      "payment_utr": "pay_Sxwgchxsw0P4FZ",
+      "payment_date": null,
+      "payment_amount": "Rs.500",
+      "transaction_id": "pay_Sxwgchxsw0P4FZ",
+      "course_applied": "M.Sc. Computer Science",
+      "stream": null,
+      "academic_details": {
+        "syMarks": "74.30",
+        "tyMarks": "",
+        "mathsMarks": "51",
+        "syBackground": "B.Sc. Computer Science",
+        "tyBackground": "B.Sc. Computer Science",
+        "casteCategory": "SEBC",
+        "courseApplied": "M.Sc. Computer Science",
+        "twelfthPercent": "50.17",
+        "tyResultStatus": "Appearing / Result Not Declared"
+      },
+      "password_hash": "9359812231",
+      "submitted_at": "2026-06-05T12:13:02.970624+00:00",
+      "applied_at": "2026-06-05T12:13:02.970624+00:00",
+      "created_at": "2026-06-05T12:13:02.970624+00:00"
     },
     {
       "id": "b9e2a43d-a17e-4979-8925-64fb67777ed9",
@@ -8307,49 +8307,6 @@
       "created_at": "2026-06-20T03:11:46.169176+00:00"
     },
     {
-      "id": "afc28edb-a095-45e5-9023-e3306abaf3d8",
-      "auth_user_id": null,
-      "student_id": "MSC-CS-2026-2069",
-      "full_name": "ADITYA DHOTRE",
-      "email": "adityadhotre1515@gmail.com",
-      "mobile": "9730011724",
-      "dob": "2026-06-01",
-      "address": "maka tel Nevasa Dist Ahmednagar road Ahmednagar, Ahmednagar, Taluka: ahmednagar, District: ahmednagar, Maharashtra, PIN: 414501",
-      "category": "Open / General",
-      "status": "APPROVED",
-      "application_status": "APPROVED",
-      "exam_status": "COMPLETED",
-      "has_attempted": true,
-      "active_violations": 0,
-      "lock_reason": null,
-      "exam_time_left": null,
-      "payment_status": "Payment Done",
-      "payment_utr": "pay_SxWG6l6C2bFrtK",
-      "payment_date": null,
-      "payment_amount": "Rs.2",
-      "transaction_id": "pay_SxWG6l6C2bFrtK",
-      "course_applied": "M.Sc. Computer Science",
-      "stream": null,
-      "academic_details": {
-        "syMarks": "98",
-        "tyMarks": "",
-        "examDate": "2026-06-20|11:22",
-        "mathsMarks": "96",
-        "syBackground": "B.Sc. Computer Science",
-        "tyBackground": "B.Sc. Computer Science",
-        "casteCategory": "Open / General",
-        "courseApplied": "M.Sc. Computer Science",
-        "rescheduleDate": "2026-06-20",
-        "rescheduleTime": "11:22",
-        "twelfthPercent": "99",
-        "tyResultStatus": "Appearing / Result Not Declared"
-      },
-      "password_hash": "9730011724",
-      "submitted_at": "2026-06-04T10:21:53.949723+00:00",
-      "applied_at": "2026-06-04T10:21:53.949723+00:00",
-      "created_at": "2026-06-04T10:21:53.949723+00:00"
-    },
-    {
       "id": "7e29a7f4-f3c9-420b-8435-2f700acac93e",
       "auth_user_id": null,
       "student_id": "MSC-CS-2026-2433",
@@ -8956,7 +8913,7 @@
       "active_violations": 0,
       "lock_reason": null,
       "exam_time_left": null,
-      "payment_status": "Payment Done",
+      "payment_status": "PAYMENT_PENDING",
       "payment_utr": "MANUAL_ADMIN_ADD",
       "payment_date": null,
       "payment_amount": "Rs.500",
@@ -9138,6 +9095,49 @@
       "submitted_at": "2026-06-20T17:06:39.115495+00:00",
       "applied_at": "2026-06-20T17:06:39.115495+00:00",
       "created_at": "2026-06-20T17:06:39.115495+00:00"
+    },
+    {
+      "id": "afc28edb-a095-45e5-9023-e3306abaf3d8",
+      "auth_user_id": null,
+      "student_id": "MSC-CS-2026-2069",
+      "full_name": "ADITYA DHOTRE",
+      "email": "adityadhotre1515@gmail.com",
+      "mobile": "9730011724",
+      "dob": "2026-06-01",
+      "address": "maka tel Nevasa Dist Ahmednagar road Ahmednagar, Ahmednagar, Taluka: ahmednagar, District: ahmednagar, Maharashtra, PIN: 414501",
+      "category": "Open / General",
+      "status": "PENDING_APPROVAL",
+      "application_status": "APPROVED",
+      "exam_status": "COMPLETED",
+      "has_attempted": true,
+      "active_violations": 0,
+      "lock_reason": null,
+      "exam_time_left": null,
+      "payment_status": "PAID",
+      "payment_utr": "pay_SxWG6l6C2bFrtK",
+      "payment_date": null,
+      "payment_amount": "Rs.2",
+      "transaction_id": "pay_SxWG6l6C2bFrtK",
+      "course_applied": "M.Sc. Computer Science",
+      "stream": null,
+      "academic_details": {
+        "syMarks": "98",
+        "tyMarks": "",
+        "examDate": "2026-06-20|11:22",
+        "mathsMarks": "96",
+        "syBackground": "B.Sc. Computer Science",
+        "tyBackground": "B.Sc. Computer Science",
+        "casteCategory": "Open / General",
+        "courseApplied": "M.Sc. Computer Science",
+        "rescheduleDate": "2026-06-20",
+        "rescheduleTime": "11:22",
+        "twelfthPercent": "99",
+        "tyResultStatus": "Appearing / Result Not Declared"
+      },
+      "password_hash": "9730011724",
+      "submitted_at": "2026-06-04T10:21:53.949723+00:00",
+      "applied_at": "2026-06-04T10:21:53.949723+00:00",
+      "created_at": "2026-06-04T10:21:53.949723+00:00"
     }
   ],
   "exam_config": [
@@ -9389,7 +9389,8 @@
         }
       ],
       "created_at": "2026-06-04T10:27:25.868113+00:00",
-      "updated_at": "2026-06-04T10:27:25.868113+00:00"
+      "updated_at": "2026-06-04T10:27:25.868113+00:00",
+      "course": "All Courses"
     },
     {
       "id": "2c8a376d-de42-4126-ab55-a3484bbfa305",
@@ -9593,7 +9594,8 @@
         }
       ],
       "created_at": "2026-06-05T12:35:58.397984+00:00",
-      "updated_at": "2026-06-05T12:35:58.397984+00:00"
+      "updated_at": "2026-06-05T12:35:58.397984+00:00",
+      "course": "All Courses"
     },
     {
       "id": "c0ed948f-2407-4830-aaf8-91f569cdcff4",
@@ -9797,7 +9799,8 @@
         }
       ],
       "created_at": "2026-06-05T12:36:30.718014+00:00",
-      "updated_at": "2026-06-05T12:36:30.718014+00:00"
+      "updated_at": "2026-06-05T12:36:30.718014+00:00",
+      "course": "All Courses"
     },
     {
       "id": "d75bf3b8-292e-449f-a73b-ac01863cff90",
@@ -9805,7 +9808,8 @@
       "is_active": false,
       "questions": [],
       "created_at": "2026-06-05T12:36:30.755171+00:00",
-      "updated_at": "2026-06-05T12:36:30.755171+00:00"
+      "updated_at": "2026-06-05T12:36:30.755171+00:00",
+      "course": "All Courses"
     },
     {
       "id": "dc762253-ae5a-44ed-af87-4ede3fd26040",
@@ -10009,7 +10013,8 @@
         }
       ],
       "created_at": "2026-06-10T11:54:29.379701+00:00",
-      "updated_at": "2026-06-10T11:54:29.379701+00:00"
+      "updated_at": "2026-06-10T11:54:29.379701+00:00",
+      "course": "All Courses"
     },
     {
       "id": "56ca43ff-9f63-4a26-bd65-9d6b101ef9b3",
@@ -10017,7 +10022,8 @@
       "is_active": true,
       "questions": [],
       "created_at": "2026-06-10T11:54:29.379706+00:00",
-      "updated_at": "2026-06-10T11:54:29.379706+00:00"
+      "updated_at": "2026-06-10T11:54:29.379706+00:00",
+      "course": "All Courses"
     },
     {
       "id": "5c3a4e1d-d03e-4878-90e8-f00026dfcf70",
@@ -10221,7 +10227,8 @@
         }
       ],
       "created_at": "2026-06-10T11:54:36.66497+00:00",
-      "updated_at": "2026-06-10T11:54:36.66497+00:00"
+      "updated_at": "2026-06-10T11:54:36.66497+00:00",
+      "course": "All Courses"
     },
     {
       "id": "bd7a2254-3275-4344-80b2-9970748ab930",
@@ -10229,7 +10236,8 @@
       "is_active": false,
       "questions": [],
       "created_at": "2026-06-10T11:54:36.666997+00:00",
-      "updated_at": "2026-06-10T11:54:36.666997+00:00"
+      "updated_at": "2026-06-10T11:54:36.666997+00:00",
+      "course": "All Courses"
     },
     {
       "id": "241905b0-a8da-4215-b883-5a3846596b45",
@@ -10433,7 +10441,8 @@
         }
       ],
       "created_at": "2026-06-16T09:37:45.205166+00:00",
-      "updated_at": "2026-06-16T09:37:45.205166+00:00"
+      "updated_at": "2026-06-16T09:37:45.205166+00:00",
+      "course": "All Courses"
     },
     {
       "id": "19f819b4-56ce-46ed-a358-493dc6365331",
@@ -10637,7 +10646,8 @@
         }
       ],
       "created_at": "2026-06-18T05:06:23.588668+00:00",
-      "updated_at": "2026-06-18T05:06:23.588668+00:00"
+      "updated_at": "2026-06-18T05:06:23.588668+00:00",
+      "course": "All Courses"
     },
     {
       "id": "cb307bc8-5d55-4a7b-96f1-5e1cfdc2ea26",
@@ -10645,7 +10655,8 @@
       "is_active": false,
       "questions": [],
       "created_at": "2026-06-19T08:09:25.820912+00:00",
-      "updated_at": "2026-06-19T08:09:25.820912+00:00"
+      "updated_at": "2026-06-19T08:09:25.820912+00:00",
+      "course": "All Courses"
     },
     {
       "id": "e2da3eea-1b9a-4f77-89f4-768a7fb17413",
@@ -10852,7 +10863,8 @@
         }
       ],
       "created_at": "2026-06-19T08:09:25.82541+00:00",
-      "updated_at": "2026-06-19T08:09:25.82541+00:00"
+      "updated_at": "2026-06-19T08:09:25.82541+00:00",
+      "course": "All Courses"
     },
     {
       "id": "a35b04c5-e158-4ac8-8593-863a7623464e",
@@ -10860,7 +10872,8 @@
       "is_active": true,
       "questions": [],
       "created_at": "2026-06-19T13:58:09.18827+00:00",
-      "updated_at": "2026-06-19T13:58:09.18827+00:00"
+      "updated_at": "2026-06-19T13:58:09.18827+00:00",
+      "course": "All Courses"
     },
     {
       "id": "cb3a01db-3516-4f05-96b6-b5d18d910486",
@@ -11079,7 +11092,8 @@
         }
       ],
       "created_at": "2026-06-19T13:58:56.743596+00:00",
-      "updated_at": "2026-06-19T13:58:56.743596+00:00"
+      "updated_at": "2026-06-19T13:58:56.743596+00:00",
+      "course": "All Courses"
     },
     {
       "id": "385f1bde-7fbc-478a-b162-fae8dca5e953",
@@ -11087,7 +11101,8 @@
       "is_active": false,
       "questions": [],
       "created_at": "2026-06-19T14:24:37.870011+00:00",
-      "updated_at": "2026-06-19T14:24:37.870011+00:00"
+      "updated_at": "2026-06-19T14:24:37.870011+00:00",
+      "course": "All Courses"
     },
     {
       "id": "9fe034bf-43d9-40ea-9ed5-e14d015ece91",
@@ -11504,7 +11519,8 @@
         }
       ],
       "created_at": "2026-06-19T14:24:37.908664+00:00",
-      "updated_at": "2026-06-19T14:24:37.908664+00:00"
+      "updated_at": "2026-06-19T14:24:37.908664+00:00",
+      "course": "All Courses"
     },
     {
       "id": "c6fb719d-3bd5-4d54-8362-57ee121237b8",
@@ -11921,7 +11937,8 @@
         }
       ],
       "created_at": "2026-06-19T14:24:45.377506+00:00",
-      "updated_at": "2026-06-19T14:24:45.377506+00:00"
+      "updated_at": "2026-06-19T14:24:45.377506+00:00",
+      "course": "All Courses"
     },
     {
       "id": "92834329-d44c-4550-8085-4762b9a16441",
@@ -11929,7 +11946,8 @@
       "is_active": true,
       "questions": [],
       "created_at": "2026-06-19T14:24:45.378542+00:00",
-      "updated_at": "2026-06-19T14:24:45.378542+00:00"
+      "updated_at": "2026-06-19T14:24:45.378542+00:00",
+      "course": "All Courses"
     },
     {
       "id": "4cd6d844-7d6c-4f94-be1f-a082653a41ae",
@@ -12556,7 +12574,8 @@
         }
       ],
       "created_at": "2026-06-19T14:24:59.775603+00:00",
-      "updated_at": "2026-06-19T14:24:59.775603+00:00"
+      "updated_at": "2026-06-19T14:24:59.775603+00:00",
+      "course": "All Courses"
     },
     {
       "id": "1c43bd90-2e7a-41d2-8482-6154f0061953",
@@ -12564,7 +12583,8 @@
       "is_active": true,
       "questions": [],
       "created_at": "2026-06-19T14:24:59.780503+00:00",
-      "updated_at": "2026-06-19T14:24:59.780503+00:00"
+      "updated_at": "2026-06-19T14:24:59.780503+00:00",
+      "course": "All Courses"
     },
     {
       "id": "bc66b1c3-9db3-4d80-bac0-c17be96c67b0",
@@ -12572,7 +12592,8 @@
       "is_active": true,
       "questions": [],
       "created_at": "2026-06-19T14:25:19.830649+00:00",
-      "updated_at": "2026-06-19T14:25:19.830649+00:00"
+      "updated_at": "2026-06-19T14:25:19.830649+00:00",
+      "course": "All Courses"
     },
     {
       "id": "bc0161eb-c415-4c59-b4f2-209d392ef6e0",
@@ -12791,7 +12812,8 @@
         }
       ],
       "created_at": "2026-06-19T14:25:32.341972+00:00",
-      "updated_at": "2026-06-19T14:25:32.341972+00:00"
+      "updated_at": "2026-06-19T14:25:32.341972+00:00",
+      "course": "All Courses"
     },
     {
       "id": "129d3009-f904-4388-b928-e8e2f0d1c3d6",
@@ -13010,7 +13032,8 @@
         }
       ],
       "created_at": "2026-06-19T14:26:00.745212+00:00",
-      "updated_at": "2026-06-19T14:26:00.745212+00:00"
+      "updated_at": "2026-06-19T14:26:00.745212+00:00",
+      "course": "All Courses"
     },
     {
       "id": "e4b0c3fe-ae0f-4a07-b580-20a54060bf1a",
@@ -13214,7 +13237,8 @@
         }
       ],
       "created_at": "2026-06-19T14:26:00.798674+00:00",
-      "updated_at": "2026-06-19T14:26:00.798674+00:00"
+      "updated_at": "2026-06-19T14:26:00.798674+00:00",
+      "course": "All Courses"
     },
     {
       "id": "37594b9a-9767-4340-987a-237ebbb9bac5",
@@ -13418,7 +13442,8 @@
         }
       ],
       "created_at": "2026-06-19T18:56:28.757194+00:00",
-      "updated_at": "2026-06-19T18:56:28.757194+00:00"
+      "updated_at": "2026-06-19T18:56:28.757194+00:00",
+      "course": "All Courses"
     },
     {
       "id": "90c524fb-a55a-4a02-b0d4-ce0c99345dad",
@@ -13637,7 +13662,8 @@
         }
       ],
       "created_at": "2026-06-20T04:03:38.310726+00:00",
-      "updated_at": "2026-06-20T04:03:38.310726+00:00"
+      "updated_at": "2026-06-20T04:03:38.310726+00:00",
+      "course": "All Courses"
     },
     {
       "id": "b4672463-6b94-4ab8-b455-030fb7720d6a",
@@ -14066,7 +14092,8 @@
         }
       ],
       "created_at": "2026-06-20T09:57:07.861586+00:00",
-      "updated_at": "2026-06-20T09:57:07.861586+00:00"
+      "updated_at": "2026-06-20T09:57:07.861586+00:00",
+      "course": "All Courses"
     }
   ],
   "exam_attempts": [],

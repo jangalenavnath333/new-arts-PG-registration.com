@@ -46,19 +46,28 @@ export async function checkEligibility(studentId, email) {
 // 2. ACTIVE QUESTION SET: Fetch from Supabase
 // Returns { questions: [...], setId, setName } or null
 // =============================================
-export async function fetchActiveQuestionSet() {
+export async function fetchActiveQuestionSet(course = null) {
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('question_sets')
       .select('id, name, questions, is_active')
-      .eq('is_active', true)
-      .limit(1)
-      .single();
-    if (error) { console.warn('[ExamSupa] Question set fetch error:', error.message); return null; }
-    if (!data || !data.questions || data.questions.length === 0) return null;
-    console.log('[ExamSupa] ✅ Loaded question set:', data.name, '—', data.questions.length, 'questions');
-    return { questions: data.questions, setId: data.id, setName: data.name };
+      .eq('is_active', true);
+
+    if (course) {
+      const { data, error } = await query.eq('course', course).limit(1).single();
+      if (!error && data && data.questions && data.questions.length > 0) {
+        console.log(`[ExamSupa] ✅ Loaded course-specific question set for ${course}:`, data.name);
+        return { questions: data.questions, setId: data.id, setName: data.name };
+      }
+    }
+
+    // Fallback if course specific is not found
+    const { data: fbData, error: fbError } = await supabase.from('question_sets').select('id, name, questions, is_active').eq('is_active', true).limit(1).single();
+    if (fbError) { console.warn('[ExamSupa] Question set fetch error:', fbError.message); return null; }
+    if (!fbData || !fbData.questions || fbData.questions.length === 0) return null;
+    console.log('[ExamSupa] ✅ Loaded fallback question set:', fbData.name, '—', fbData.questions.length, 'questions');
+    return { questions: fbData.questions, setId: fbData.id, setName: fbData.name };
   } catch (e) {
     console.warn('[ExamSupa] Question set fetch error:', e);
     return null;

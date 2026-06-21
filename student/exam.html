@@ -567,7 +567,7 @@
         let questionsLoaded = false;
         let rawData = [];
         if (ExamSupa.isReady()) {
-          const supaSet = await ExamSupa.fetchActiveQuestionSet();
+          const supaSet = await ExamSupa.fetchActiveQuestionSet(course);
           if (supaSet && supaSet.questions.length > 0) {
             rawData = supaSet.questions;
             questionsLoaded = true;

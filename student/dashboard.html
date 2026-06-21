@@ -610,10 +610,11 @@
       DB.setCurrentStudent(student);
       localStorage.setItem('studentData', JSON.stringify(student));
       
-      if (student.status === 'approved' && DB.getSchedule()?.examDate) {
-        const btn = document.getElementById('downloadAdmitCardBtn');
-        if (btn) btn.style.display = 'flex';
-      }
+      // Always show Admit Card download for all students unconditionally
+      const btn1 = document.getElementById('headerAdmitCardBtn');
+      const btn2 = document.getElementById('premiumAdmitCardBtn');
+      if (btn1) btn1.style.display = 'flex';
+      if (btn2) btn2.style.display = 'block';
 
       // Sidebar and Header Identity
       try {
@@ -809,13 +810,7 @@
          // Admit Card Button Logic
          const admitBtn = document.getElementById('premiumAdmitCardBtn');
          const headerAdmitBtn = document.getElementById('headerAdmitCardBtn');
-         if (admitBtn) {
-            admitBtn.style.display = 'block';
-            admitBtn.onclick = (e) => downloadAdmitCard(e);
-         }
-         if (headerAdmitBtn) {
-            headerAdmitBtn.style.display = 'inline-flex';
-         }
+         if (admitBtn) admitBtn.onclick = (e) => downloadAdmitCard(e);
       } catch (e) {
          console.warn('DOM update error in renderOverview', e);
       }
@@ -1468,6 +1463,12 @@
          photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && (student.application_documents.passport_photo || student.application_documents.photo || student.application_documents.photoFile)) || (student.uploadedFiles && (student.uploadedFiles.photoFile || student.uploadedFiles.photo)) || localStorage.getItem('cet_student_photo_' + sid) || null;
       }
 
+      // Final fallback: Try to grab it from the header image if it's not the default avatar
+      const headerImg = document.getElementById('headerStudentPhoto');
+      if (!photoData && headerImg && headerImg.src && !headerImg.src.includes('ui-avatars.com')) {
+         photoData = headerImg.src;
+      }
+
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
@@ -1558,7 +1559,7 @@
                 } catch(e) {
                     console.warn('[AdmitCard] Direct fetch failed, trying proxy...', src);
                     try {
-                        // Fallback 3: Proxy
+                        // Fallback 3: Proxy 1
                         const proxySrc = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(src);
                         const res2 = await fetch(proxySrc);
                         if (!res2.ok) throw new Error('Proxy failed');
@@ -1566,7 +1567,17 @@
                         const objectUrl2 = URL.createObjectURL(blob2);
                         processImage(objectUrl2, false);
                     } catch(e2) {
-                        resolve(null);
+                        try {
+                           // Fallback 4: Proxy 2
+                           const proxySrc3 = 'https://corsproxy.io/?' + encodeURIComponent(src);
+                           const res3 = await fetch(proxySrc3);
+                           if (!res3.ok) throw new Error('Proxy 2 failed');
+                           const blob3 = await res3.blob();
+                           const objectUrl3 = URL.createObjectURL(blob3);
+                           processImage(objectUrl3, false);
+                        } catch(e3) {
+                           resolve(null);
+                        }
                     }
                 }
             };
