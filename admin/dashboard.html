@@ -830,34 +830,42 @@
               <p class="text-2xl font-bold text-slate-800" id="pay-verified">0</p>
             </div>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="col-span-2 md:col-span-4 rounded-xl p-5 shadow-lg relative overflow-hidden" style="background: linear-gradient(to right, #1e293b, #312e81); color: white; border: 1px solid #312e81;">
+          <div class="mb-6">
+            <div class="rounded-xl p-5 shadow-lg relative overflow-hidden" style="background: linear-gradient(to right, #1e293b, #312e81); color: white; border: 1px solid #312e81;">
                <!-- Settlement UI -->
-               <div class="absolute top-0 right-0 p-4 opacity-10">
-                  <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.11-1.36-3.11-2.92v-.08c0-1.75 1.54-2.82 3.65-3.32l1.19-.28c1.33-.31 1.86-.74 1.86-1.36 0-.67-.65-1.16-1.57-1.16-.94 0-1.63.48-1.68 1.25h-2.58c.07-1.92 1.51-3.26 3.16-3.69V4h2.67v1.95c1.69.41 2.92 1.48 2.92 2.97v.08c0 1.69-1.42 2.76-3.56 3.25l-1.16.27c-1.4.32-2.02.79-2.02 1.45 0 .66.72 1.23 1.7 1.23 1.09 0 1.85-.49 1.94-1.35h2.55c-.13 2.11-1.72 3.48-3.44 3.86z"/></svg>
+               <div style="position: absolute; top: 0; right: 0; padding: 1rem; opacity: 0.05; pointer-events: none;">
+                  <svg style="width: 150px; height: 150px;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.11-1.36-3.11-2.92v-.08c0-1.75 1.54-2.82 3.65-3.32l1.19-.28c1.33-.31 1.86-.74 1.86-1.36 0-.67-.65-1.16-1.57-1.16-.94 0-1.63.48-1.68 1.25h-2.58c.07-1.92 1.51-3.26 3.16-3.69V4h2.67v1.95c1.69.41 2.92 1.48 2.92 2.97v.08c0 1.69-1.42 2.76-3.56 3.25l-1.16.27c-1.4.32-2.02.79-2.02 1.45 0 .66.72 1.23 1.7 1.23 1.09 0 1.85-.49 1.94-1.35h2.55c-.13 2.11-1.72 3.48-3.44 3.86z"/></svg>
                </div>
-               <div class="relative z-10">
-                 <h3 class="text-sm font-bold text-indigo-200 uppercase tracking-wider mb-4 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Razorpay Settlement Summary</h3>
-                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div>
-                       <p class="text-[10px] text-indigo-300 uppercase font-semibold">Gross Collected</p>
-                       <p class="text-xl font-bold text-white" id="set-gross">₹0</p>
+               <div style="position: relative; z-index: 10;">
+                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; mb-4">
+                    <h3 style="font-size: 14px; font-weight: bold; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Razorpay Settlement Summary</h3>
+                    <div style="font-size: 12px; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px;">
+                       <strong style="color: white;" id="set-razorpay-count">0</strong> via Razorpay &nbsp;|&nbsp; 
+                       <strong style="color: white;" id="set-manual-count">0</strong> via Manual Bank UTR &nbsp;|&nbsp; 
+                       <strong style="color: white;" id="set-total-count">0</strong> Total Paid
                     </div>
-                    <div>
-                       <p class="text-[10px] text-indigo-300 uppercase font-semibold">Razorpay Fee (2%)</p>
-                       <p class="text-xl font-bold text-red-300" id="set-fee">-₹0</p>
+                 </div>
+                 
+                 <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+                    <div style="flex: 1; min-width: 120px;">
+                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Gross (Razorpay Only)</p>
+                       <p style="font-size: 20px; font-weight: bold; color: white; margin: 0;" id="set-gross">₹0</p>
                     </div>
-                    <div>
-                       <p class="text-[10px] text-indigo-300 uppercase font-semibold">GST on Fee (18%)</p>
-                       <p class="text-xl font-bold text-red-300" id="set-gst">-₹0</p>
+                    <div style="flex: 1; min-width: 120px;">
+                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Razorpay Fee (2%)</p>
+                       <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0;" id="set-fee">-₹0</p>
                     </div>
-                    <div>
-                       <p class="text-[10px] text-indigo-300 uppercase font-semibold">Total Deductions</p>
-                       <p class="text-xl font-bold text-red-400" id="set-deductions">-₹0</p>
+                    <div style="flex: 1; min-width: 120px;">
+                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">GST on Fee (18%)</p>
+                       <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0;" id="set-gst">-₹0</p>
                     </div>
-                    <div class="p-2 rounded-lg" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
-                       <p class="text-[10px] text-emerald-300 uppercase font-bold">Net to Bank Account</p>
-                       <p class="text-2xl font-bold text-emerald-400" id="set-net">₹0</p>
+                    <div style="flex: 1; min-width: 120px;">
+                       <p style="font-size: 11px; color: #a5b4fc; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">Total Deductions</p>
+                       <p style="font-size: 20px; font-weight: bold; color: #f87171; margin: 0;" id="set-deductions">-₹0</p>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                       <p style="font-size: 11px; color: #6ee7b7; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Net to Bank Account</p>
+                       <p style="font-size: 24px; font-weight: bold; color: #34d399; margin: 0;" id="set-net">₹0</p>
                     </div>
                  </div>
                </div>
@@ -1780,8 +1788,15 @@
       const totalGst = totalFee * gstRate;
       const totalDeduction = totalFee + totalGst;
       const finalSettlement = razorpayCollectedAmount - totalDeduction;
+      
+      const razorpayStudents = razorpayCollectedAmount / 500;
+      const manualStudents = paidRecords.length - razorpayStudents;
 
       if (document.getElementById('set-gross')) {
+         document.getElementById('set-razorpay-count').textContent = razorpayStudents;
+         document.getElementById('set-manual-count').textContent = manualStudents;
+         document.getElementById('set-total-count').textContent = paidRecords.length;
+         
          document.getElementById('set-gross').textContent = '₹' + razorpayCollectedAmount.toLocaleString('en-IN');
          document.getElementById('set-fee').textContent = '-₹' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
          document.getElementById('set-gst').textContent = '-₹' + totalGst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
