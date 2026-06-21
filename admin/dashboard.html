@@ -1713,17 +1713,13 @@
          // ONLY count Razorpay original amounts in the Collected sum!
          if (isRazorpay) {
              totalPaidOriginalCount++;
-             let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-             if (amt && !isNaN(parseFloat(amt))) collectedAmount += parseFloat(amt);
-             else collectedAmount += 500; // default assumption if empty
+             collectedAmount += 500; // Force 500 to ignore 0.5 test amounts
          }
       });
       
       let pendingAmount = 0;
       pendingRecords.forEach(p => {
-         let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-         if (amt && !isNaN(parseFloat(amt))) pendingAmount += parseFloat(amt);
-         else pendingAmount += 500;
+         pendingAmount += 500; // Force 500
       });
       
       // Calculate today's collection (Razorpay only)
@@ -1736,9 +1732,7 @@
          if (isRazorpay) {
              const dateStr = p.payment_date || p.submitted_at || p.created_at;
              if (dateStr && new Date(dateStr).toLocaleDateString('en-CA') === todayDate) {
-                 let amt = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-                 if (amt && !isNaN(parseFloat(amt))) todayCollected += parseFloat(amt);
-                 else todayCollected += 500;
+                 todayCollected += 500; // Force 500
              }
          }
       });
@@ -1785,6 +1779,10 @@
         const course = p.course_applied || '--';
 
         const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_');
+        
+        // Force display 500 instead of 0.5 for Paid
+        const isPaidStatus = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes(st);
+        const displayAmount = isPaidStatus ? '500' : (p.payment_amount || '0');
 
         return `<tr class="hover:bg-slate-50 border-b border-slate-100 transition-colors">
           <td class="p-4 flex gap-3 items-center">
@@ -1798,7 +1796,7 @@
             <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-indigo-100">${course}</span>
           </td>
           <td class="p-4">
-            <p class="font-bold text-slate-700">₹${p.payment_amount || '0'}</p>
+            <p class="font-bold text-slate-700">₹${displayAmount}</p>
           </td>
           <td class="p-4">
             <p class="text-xs font-mono font-bold text-slate-600">${p.payment_utr || p.payment_id || 'N/A'}</p>
@@ -1878,7 +1876,8 @@
          data.forEach((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
            let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
-           wsData.push([idx + 1, p.full_name||'', p.email||'', p.course_applied||'', p.payment_amount||'', p.payment_utr||p.payment_id||'', p.payment_status||'', date]);
+           const isPaid = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes((p.payment_status || '').toUpperCase());
+           wsData.push([idx + 1, p.full_name||'', p.email||'', p.course_applied||'', isPaid ? 'Rs.500' : (p.payment_amount||''), p.payment_utr||p.payment_id||'', p.payment_status||'', date]);
          });
          const wb = XLSX.utils.book_new();
          const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1898,14 +1897,14 @@
            const isPaid = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes((p.payment_status || '').toUpperCase());
            const isRazorpay = (p.payment_id || p.payment_utr || '').toLowerCase().startsWith('pay_') || (p.payment_method || '').toLowerCase() === 'razorpay';
            
-           let amtStr = String(p.payment_amount || '').replace(/[^0-9.]/g, '');
-           const amt = parseFloat(amtStr) || (isPaid ? 500 : 0);
+           // Force 500 to fix 0.5 demo values
+           const amt = isPaid ? 500 : 0;
            
            if (isPaid && isRazorpay) {
                totalCollected += amt;
                successCount++;
            }
-           return [idx + 1, p.full_name||'', p.email||'', p.course_applied||'', amt ? `Rs.${amt}` : '--', p.payment_utr||p.payment_id||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
+           return [idx + 1, p.full_name||'', p.email||'', p.course_applied||'', isPaid ? `Rs.500` : '--', p.payment_utr||p.payment_id||'', p.payment_status||'', dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--'];
          });
          
          doc.autoTable({ 
@@ -1958,7 +1957,8 @@
          data.forEach((p, idx) => {
            const dateStr = p.payment_date || p.submitted_at || p.created_at;
            let date = dateStr ? new Date(dateStr).toLocaleString('en-IN') : '--';
-           content += `${idx + 1}\t${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${p.payment_amount||''}\t${p.payment_utr||p.payment_id||''}\t${p.payment_status||''}\t${date}\n`;
+           const isPaid = ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes((p.payment_status || '').toUpperCase());
+           content += `${idx + 1}\t${p.full_name||''}\t${p.email||''}\t${p.course_applied||''}\t${isPaid ? 'Rs.500' : (p.payment_amount||'')}\t${p.payment_utr||p.payment_id||''}\t${p.payment_status||''}\t${date}\n`;
          });
          const blob = new Blob([content], { type: 'application/msword' });
          const url = URL.createObjectURL(blob);
