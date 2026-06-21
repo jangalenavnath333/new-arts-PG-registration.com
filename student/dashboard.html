@@ -610,11 +610,11 @@
       DB.setCurrentStudent(student);
       localStorage.setItem('studentData', JSON.stringify(student));
       
-      // Always show Admit Card download for all students unconditionally
+      // Hide Admit Card download for students until officially enabled
       const btn1 = document.getElementById('headerAdmitCardBtn');
       const btn2 = document.getElementById('premiumAdmitCardBtn');
-      if (btn1) btn1.style.display = 'flex';
-      if (btn2) btn2.style.display = 'block';
+      if (btn1) btn1.style.display = 'none';
+      if (btn2) btn2.style.display = 'none';
 
       // Sidebar and Header Identity
       try {
