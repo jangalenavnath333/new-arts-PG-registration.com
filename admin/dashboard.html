@@ -3941,7 +3941,16 @@
                  st.full_name || st.name || 'Student', date, time, duration, course, st.student_id || st.id, portalUrl, examUrl, st.email
               );
               
-              return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html).then((success) => {
+              return window.generateBase64AdmitCard(st, date, time, duration).then(base64Pdf => {
+                  let attachments = null;
+                  if (base64Pdf) {
+                      attachments = [{
+                          filename: `CET_AdmitCard_${st.student_id || st.id || 'Student'}.pdf`,
+                          content: base64Pdf.split('base64,')[1] || base64Pdf,
+                          encoding: 'base64'
+                      }];
+                  }
+                  return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html, attachments).then((success) => {
                  // Store email history in Supabase
                  if (success && supabase) {
                     supabase.from('security_logs').insert({
@@ -5519,6 +5528,157 @@
        }
     }
 
+    window.generateBase64AdmitCard = async function(student, examDateStr, examTimeStr, durationStr) {
+        try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            let photoData = null;
+            const targetId = student.supabaseId || student.studentId || student.id;
+            if (supabase && targetId) {
+                try {
+                   const { data } = await supabase.from('student_documents').select('file_url').eq('student_id', targetId).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
+                   if (data && data.file_url) photoData = data.file_url;
+                } catch(e) {}
+            }
+            if (!photoData) {
+                photoData = student.photoData || student.passportPhotoUrl || (student.uploadedFiles && student.uploadedFiles.photoFile);
+            }
+            
+            // Outer Borders
+            doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
+
+            // Header Box
+            doc.setFillColor(255, 252, 230);
+            doc.rect(15, 15, 180, 25, 'F');
+            
+            const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+            try {
+                const lData = await new Promise((resolve) => {
+                    const img = new Image(); img.crossOrigin = 'Anonymous';
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width; canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                        ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = logoUrl;
+                });
+                if (lData) doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
+            } catch(e) {}
+            
+            // Header Text
+            doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+            doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+            doc.setFontSize(14); doc.setTextColor(180, 0, 0);
+            doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+            doc.setFontSize(12); doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+            doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+            doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+            
+            // Blue banner
+            doc.setFillColor(30, 58, 138); doc.rect(15, 40, 180, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+            doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
+            
+            // Title & Courses
+            doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+            doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
+            
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+            doc.line(145, 66, 145, 134); 
+            doc.line(70, 66, 70, 134);
+            
+            const rows = [
+               ["Applied Course:", (student.courseApplied || '').toUpperCase()],
+               ["Full Name:", student.fullName || student.name || ''],
+               ["Roll No / CET ID:", student.studentId || student.id || ''],
+               ["Mobile Number:", student.mobile || ''],
+               ["Exam Date:", examDateStr],
+               ["Reporting Time:", "09:00 AM"],
+               ["Exam Time:", examTimeStr],
+               ["Duration:", durationStr]
+            ];
+            
+            let yLine = 66;
+            rows.forEach((r, i) => {
+               doc.setFontSize(10);
+               doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
+               doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
+               yLine += 8.5;
+               if (i < 7) {
+                  doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
+               }
+            });
+            
+            // Draw Photo
+            if (photoData) {
+               try {
+                   const pData = await new Promise((resolve) => {
+                       const img = new Image(); img.crossOrigin = 'Anonymous';
+                       img.onload = () => {
+                           const canvas = document.createElement('canvas');
+                           canvas.width = img.width; canvas.height = img.height;
+                           const ctx = canvas.getContext('2d');
+                           ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                           ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                       };
+                       img.onerror = () => resolve(null);
+                       img.src = photoData.startsWith('data:') ? photoData : photoData + '?cb=' + Date.now();
+                   });
+                   if (pData) doc.addImage(pData, 'JPEG', 150, 75, 40, 50);
+               } catch(e) {}
+            }
+            doc.rect(150, 75, 40, 50);
+            doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.text("Photograph", 170, 130, {align:"center"});
+
+            // Instructions
+            doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(180, 0, 0);
+            doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 160);
+            
+            doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
+            const instructions = [
+               "1. Admission Criteria: Admissions are strictly based on the merit list generated from exam scores.",
+               "2. Exam Date & Time: Thursday, 25 June 2026, from 09:30 AM to 11:00 AM.",
+               "3. Reporting Time & Venue: Report exactly at 09:00 AM at the CASAS Department, 1st Floor, Admin Building.",
+               "4. Exam Format: Entirely offline, 100 marks (75 questions: 50 Qs of 1 mark, 25 Qs of 2 marks).",
+               "   Answers must be written on the provided Answer Sheet.",
+               "5. Mandatory Attendance: Only students present will be considered. Absence forfeits admission claims.",
+               "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 01:00 PM same day.",
+               "7. Provisional Admission Fee: Selected students must pay a provisional fee of Rs. 1000/- on the spot.",
+               "8. Caste Certificate: Reserved category students MUST bring their original caste certificate.",
+               "9. Final Admission: Confirmed only after submitting the original UG marksheet and Transfer Certificate."
+            ];
+            
+            let instY = 168;
+            instructions.forEach(inst => {
+               doc.text(inst, 15, instY);
+               instY += 6;
+            });
+            
+            doc.setDrawColor(0,0,0); doc.rect(20, 235, 50, 15);
+            doc.setFontSize(10); doc.text("Student's Signature", 28, 256);
+
+            doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+            doc.text("Prof. Arun Gangarde", 130, 245);
+            doc.setFontSize(9); doc.setFont("helvetica", "normal");
+            doc.text("Head, CASAS", 130, 250);
+            doc.text("(Center for Advanced Studies in", 130, 255);
+            doc.text("Applied Sciences)", 130, 260);
+
+            return doc.output('datauristring');
+        } catch (err) {
+            console.error("Base64 Hall Ticket Error:", err);
+            return null;
+        }
+    }
+
     window.openDocumentsModal = async function(id) {
       console.log('[Docs] clicked, student id:', id);
       const s = getStudentForModal(id);
@@ -5816,7 +5976,18 @@
         import('../js/email-service.js').then(({ default: EmailSvc }) => {
           const emailHtml = EmailSvc.EmailTemplates.scheduleUpdate(s.fullName, date, time).html;
           const emailSubject = EmailSvc.EmailTemplates.scheduleUpdate(s.fullName, date, time).subject;
-          EmailSvc.sendEmail(s.email, emailSubject, emailHtml);
+          
+          window.generateBase64AdmitCard(s, date, time, '90 Minutes').then(base64Pdf => {
+             let attachments = null;
+             if (base64Pdf) {
+                 attachments = [{
+                     filename: `CET_AdmitCard_${s.studentId || s.id || 'Student'}.pdf`,
+                     content: base64Pdf.split('base64,')[1] || base64Pdf,
+                     encoding: 'base64'
+                 }];
+             }
+             EmailSvc.sendEmail(s.email, emailSubject, emailHtml, attachments);
+          });
         }).catch(err => console.warn('Email service import failed', err));
       }
 

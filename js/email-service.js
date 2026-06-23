@@ -5,7 +5,7 @@
 // Official College Branding
 // ============================================
 
-export async function sendEmail(to, subject, html, maxRetries = 3) {
+export async function sendEmail(to, subject, html, attachments = null, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`[Email Service] Sending email to: ${to} (Attempt ${attempt}/${maxRetries})`);
@@ -15,10 +15,13 @@ export async function sendEmail(to, subject, html, maxRetries = 3) {
         ? 'http://localhost:3000/api/send-email' 
         : '/api/send-email';
 
+      const payload = { to, subject, html };
+      if (attachments) payload.attachments = attachments;
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, subject, html }),
+        body: JSON.stringify(payload),
       });
 
       const status = response.status;

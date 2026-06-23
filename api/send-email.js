@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { to, subject, html } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { to, subject, html, attachments } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
     if (!to || !subject || !html) {
       return res.status(400).json({ error: 'Missing required fields: to, subject, html' });
@@ -61,12 +61,18 @@ module.exports = async function handler(req, res) {
     // Verify SMTP connection (optional but good for diagnostics, skipped to avoid latency for every email, but we validate config above)
     // Actually we can just wait for sendMail to throw on auth error
 
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: sender,
       to,
       subject,
-      html,
-    });
+      html
+    };
+
+    if (attachments && Array.isArray(attachments)) {
+      mailOptions.attachments = attachments;
+    }
+
+    const info = await transporter.sendMail(mailOptions);
 
     console.log(`\n========== Server Email Diagnostic Report ==========`);
     console.log(`- Recipient: ${to}`);
