@@ -3310,25 +3310,28 @@
       }
       
       let emailsPromises = [];
-      allDbStudents.forEach(st => {
+      for (const st of allDbStudents) {
          if (st.email) {
-            const p = import('../js/email-service.js').then(({ default: EmailSvc }) => {
-              const portalUrl = window.location.origin + '/student/login.html';
-              const examUrl = window.location.origin + '/exam/index.html';
-              const tpl = EmailSvc.EmailTemplates.scheduleUpdate(
-                 st.full_name || st.name || 'Student', 
-                 courseConfig.examDate, 
-                 courseConfig.startTime, 
-                 courseConfig.durationMinutes || 60, 
-                 courseConfig.course || 'M.Sc. Computer Science', 
-                 st.student_id || st.id, 
-                 portalUrl, examUrl, st.email
-              );
-              return EmailSvc.sendEmail(st.email, tpl.subject, tpl.html).then((success) => success === true);
-            }).catch(e => false);
-            emailsPromises.push(p);
+            try {
+               const EmailSvc = (await import('../js/email-service.js')).default;
+               const portalUrl = window.location.origin + '/student/login.html';
+               const examUrl = window.location.origin + '/exam/index.html';
+               const tpl = EmailSvc.EmailTemplates.scheduleUpdate(
+                  st.full_name || st.name || 'Student', 
+                  courseConfig.examDate, 
+                  courseConfig.startTime, 
+                  courseConfig.durationMinutes || 60, 
+                  courseConfig.course || 'M.Sc. Computer Science', 
+                  st.student_id || st.id, 
+                  portalUrl, examUrl, st.email
+               );
+               const success = await EmailSvc.sendEmail(st.email, tpl.subject, tpl.html);
+               emailsPromises.push(success === true);
+            } catch(e) {
+               emailsPromises.push(false);
+            }
          }
-      });
+      }
       
       Promise.all(emailsPromises).then(results => {
          const sentCount = results.filter(r => r === true).length;
@@ -3387,10 +3390,12 @@
                    }];
                }
                
-               const p = EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments).then((success) => success === true).catch(e => false);
-               emailsPromises.push(p);
+               
+               const success = await EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments);
+               emailsPromises.push(success === true);
             } catch(e) {
                console.warn("Error sending to " + st.email, e);
+               emailsPromises.push(false);
             }
          }
       }
@@ -3452,10 +3457,12 @@
                    }];
                }
                
-               const p = EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments).then((success) => success === true).catch(e => false);
-               emailsPromises.push(p);
+               
+               const success = await EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments);
+               emailsPromises.push(success === true);
             } catch(e) {
                console.warn("Error sending to " + st.email, e);
+               emailsPromises.push(false);
             }
          }
       }
