@@ -112,15 +112,13 @@ const StudentHome = () => {
             // Title
             doc.setTextColor(0, 0, 0); doc.setFontSize(14);
             doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
-            doc.setFontSize(12);
-            doc.text(student.courseApplied ? student.courseApplied.toUpperCase() : "M.SC. COMPUTER SCIENCE", 105, 62, { align: "center" });
             
             // Outer border for table
             doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5);
-            doc.rect(15, 66, 180, 80);
+            doc.rect(15, 66, 180, 60);
             
             // Photo Area vertical line
-            doc.line(145, 66, 145, 146); 
+            doc.line(145, 66, 145, 126); 
             
             // Draw rows
             const rows = [
@@ -129,9 +127,7 @@ const StudentHome = () => {
                ["Mobile Number:", student.mobile || ''],
                ["Exam Date:", examDateStr],
                ["Exam Time:", examTimeStr],
-               ["Duration:", durationStr],
-               ["Login ID:", student.email || student.mobile],
-               ["Password:", student.password_hash || student.mobile]
+               ["Duration:", durationStr]
             ];
             
             let yLine = 66;
@@ -141,12 +137,12 @@ const StudentHome = () => {
                doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 6);
                
                yLine += 10;
-               if (i < 7) {
+               if (i < 5) {
                   doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine); // Horizontal line
                }
             });
             
-            doc.line(70, 66, 70, 146);
+            doc.line(70, 66, 70, 126);
             
             // Draw Photo
             if (photoData) {

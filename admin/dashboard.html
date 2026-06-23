@@ -3538,13 +3538,11 @@
       doc.setTextColor(0, 0, 0); doc.setFontSize(14);
       doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
       
-      // Highlight BOTH courses in the heading
-      doc.setFontSize(12); doc.setTextColor(30, 58, 138);
-      doc.text("M.Sc. Computer Science & M.Sc. Computer Applications", 105, 62, { align: "center" });
+      // Highlight BOTH courses in the heading - REMOVED
       
-      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 85);
-      doc.line(145, 66, 145, 151); 
-      doc.line(70, 66, 70, 151);
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+      doc.line(145, 66, 145, 134); 
+      doc.line(70, 66, 70, 134);
       
       const rows = [
          ["Applied Course:", (student.courseApplied || '').toUpperCase()],
@@ -3554,9 +3552,7 @@
          ["Exam Date:", examDateStr],
          ["Reporting Time:", "09:00 AM"],
          ["Exam Time:", examTimeStr],
-         ["Duration:", durationStr],
-         ["Login ID:", student.email || student.mobile],
-         ["Password:", student.password_hash || student.mobile]
+         ["Duration:", durationStr]
       ];
       
       let yLine = 66;
@@ -3565,7 +3561,7 @@
          doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
          doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
          yLine += 8.5;
-         if (i < 9) {
+         if (i < 7) {
             doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
          }
       });
@@ -3594,7 +3590,7 @@
          "4. Exam Format: Entirely offline, 100 marks (75 questions: 50 Qs of 1 mark, 25 Qs of 2 marks).",
          "   Answers must be written on the provided Answer Sheet.",
          "5. Mandatory Attendance: Only students present will be considered. Absence forfeits admission claims.",
-         "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 12:00 PM same day.",
+         "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 01:00 PM same day.",
          "7. Provisional Admission Fee: Selected students must pay a provisional fee of Rs. 1000/- on the spot.",
          "8. Caste Certificate: Reserved category students MUST bring their original caste certificate.",
          "9. Final Admission: Confirmed only after submitting the original UG marksheet and Transfer Certificate."
@@ -5427,13 +5423,9 @@
            doc.setTextColor(0, 0, 0); doc.setFontSize(14);
            doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
            
-           // Highlight BOTH courses in the heading
-           doc.setFontSize(12); doc.setTextColor(30, 58, 138);
-           doc.text("M.Sc. Computer Science & M.Sc. Computer Applications", 105, 62, { align: "center" });
-           
-           doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 85);
-           doc.line(145, 66, 145, 151); 
-           doc.line(70, 66, 70, 151);
+           doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+           doc.line(145, 66, 145, 134); 
+           doc.line(70, 66, 70, 134);
            
            const rows = [
               ["Applied Course:", (student.courseApplied || '').toUpperCase()],
@@ -5443,9 +5435,7 @@
               ["Exam Date:", examDateStr],
               ["Reporting Time:", "09:00 AM"],
               ["Exam Time:", examTimeStr],
-              ["Duration:", durationStr],
-              ["Login ID:", student.email || student.mobile],
-              ["Password:", student.password_hash || student.mobile]
+              ["Duration:", durationStr]
            ];
            
            let yLine = 66;
@@ -5454,7 +5444,7 @@
               doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
               doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
               yLine += 8.5;
-              if (i < 9) {
+              if (i < 7) {
                  doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
               }
            });
@@ -5494,7 +5484,7 @@
               "4. Exam Format: Entirely offline, 100 marks (75 questions: 50 Qs of 1 mark, 25 Qs of 2 marks).",
               "   Answers must be written on the provided Answer Sheet.",
               "5. Mandatory Attendance: Only students present will be considered. Absence forfeits admission claims.",
-              "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 12:00 PM same day.",
+              "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 01:00 PM same day.",
               "7. Provisional Admission Fee: Selected students must pay a provisional fee of Rs. 1000/- on the spot.",
               "8. Caste Certificate: Reserved category students MUST bring their original caste certificate.",
               "9. Final Admission: Confirmed only after submitting the original UG marksheet and Transfer Certificate."
