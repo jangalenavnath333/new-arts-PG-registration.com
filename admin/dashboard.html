@@ -397,6 +397,9 @@
               <button onclick="sendSelectedInvites()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 h-12">
                 ✉️ Send Invite Emails
               </button>
+              <button onclick="sendSelectedHallTickets()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 h-12">
+                🎓 Send Hall Tickets
+              </button>
             </div>
           </div>
           
@@ -3328,6 +3331,72 @@
          const sentCount = results.filter(r => r === true).length;
          showToast(`Successfully sent ${sentCount} invite emails!`, 'success');
          if(btn) { btn.disabled = false; btn.innerHTML = '✉️ Send Invite Emails'; }
+      });
+    };
+
+    window.sendSelectedHallTickets = async function() {
+      const selected = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+      if(selected.length === 0) {
+        showToast('Please select at least one student to send Hall Tickets.', 'error');
+        return;
+      }
+      
+      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+      const courseConfig = configObj['M.Sc. Computer Science'] || configObj;
+      const examDateStr = courseConfig.examDate || "25 June 2026";
+      const examTimeStr = courseConfig.startTime || "09:30 AM";
+      const durationStr = (courseConfig.durationMinutes || 90) + " Minutes";
+
+      if(!confirm(`Are you sure you want to send Hall Ticket PDFs to ${selected.length} selected students?`)) return;
+      
+      const btn = document.querySelector('button[onclick="sendSelectedHallTickets()"]');
+      if(btn) { btn.disabled = true; btn.innerHTML = 'Sending...'; }
+      
+      showToast(`Generating and sending ${selected.length} PDFs. Please wait...`, 'info');
+      
+      let allDbStudents = [];
+      if(supabase) {
+         const {data} = await supabase.from('students').select('*').in('id', selected);
+         if(data) allDbStudents = data;
+      } else {
+         const local = DB.getStudents() || [];
+         allDbStudents = local.filter(s => selected.includes(s.id || s.supabaseId));
+      }
+      
+      let emailsPromises = [];
+      for (const st of allDbStudents) {
+         if (st.email) {
+            try {
+               const EmailSvc = (await import('../js/email-service.js')).default;
+               const tmpl = EmailSvc.EmailTemplates.hallTicketEmail(
+                  st.full_name || st.name || 'Student', 
+                  st.student_id || st.id, 
+                  st.courseApplied || 'M.Sc.'
+               );
+               
+               const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
+               let attachments = null;
+               if (base64Pdf) {
+                   attachments = [{
+                       filename: `CET_AdmitCard_${st.student_id || st.id || 'Student'}.pdf`,
+                       content: base64Pdf.split('base64,')[1] || base64Pdf,
+                       encoding: 'base64'
+                   }];
+               }
+               
+               const p = EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments).then((success) => success === true).catch(e => false);
+               emailsPromises.push(p);
+            } catch(e) {
+               console.warn("Error sending to " + st.email, e);
+            }
+         }
+      }
+      
+      Promise.all(emailsPromises).then(results => {
+         const sentCount = results.filter(r => r === true).length;
+         showToast(`Successfully sent ${sentCount} Hall Ticket emails!`, 'success');
+         if(btn) { btn.disabled = false; btn.innerHTML = '🎓 Send Hall Tickets'; }
+         document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = false);
       });
     };
 

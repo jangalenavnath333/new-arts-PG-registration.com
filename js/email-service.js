@@ -449,6 +449,41 @@ export const EmailTemplates = {
     `)
   }),
 
+  // 6b. Hall Ticket Dedicated Email
+  hallTicketEmail: (name, cetId, course) => ({
+    subject: `🎓 Your Admit Card (Hall Ticket) – CET Examination`,
+    html: wrapEmail(`
+      <h2 style="margin: 0 0 4px; color: #1e40af; font-size: 20px;">🎓 Admit Card Available</h2>
+      <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">Your official Hall Ticket is attached to this email.</p>
+
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        Dear <strong style="color: #0f172a;">${name}</strong>,
+      </p>
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        Please find your <strong>Admit Card (Hall Ticket)</strong> attached as a PDF document for the upcoming CET Examination.
+      </p>
+
+      ${detailsBox([
+        ['👨‍🎓 Name', `<strong>${name}</strong>`],
+        ['🆔 CET ID', `<strong>${cetId}</strong>`],
+        ['📚 Course', `<strong>${course || 'M.Sc.'}</strong>`]
+      ])}
+
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="margin: 0 0 8px; color: #1e40af; font-size: 14px; font-weight: 700;">📌 Important Action Required:</p>
+        <ul style="margin: 0; padding-left: 18px; color: #334155; font-size: 13px; line-height: 1.8;">
+          <li>Please download the attached PDF file.</li>
+          <li>You MUST bring a <strong>printed hard copy</strong> of this Admit Card to the examination center.</li>
+          <li>Read all the instructions printed on the Admit Card carefully.</li>
+        </ul>
+      </div>
+
+      <p style="color: #334155; font-size: 14px; line-height: 1.7; text-align: center; margin-top: 20px;">
+        🍀 We wish you the very best for your examination!
+      </p>
+    `)
+  }),
+
   // 7. Result Published
   resultPublished: (name, score, total) => ({
     subject: `📊 CET Exam Result Published – Check Your Score`,
