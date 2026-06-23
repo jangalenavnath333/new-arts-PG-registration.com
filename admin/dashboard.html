@@ -3375,9 +3375,9 @@
             try {
                const EmailSvc = (await import('../js/email-service.js')).default;
                const tmpl = EmailSvc.EmailTemplates.hallTicketEmail(
-                  st.full_name || st.name || 'Student', 
-                  st.student_id || st.id, 
-                  st.courseApplied || 'M.Sc.'
+                  st.fullName || st.full_name || st.name || 'Student', 
+                  st.studentId || st.student_id || st.id, 
+                  st.courseApplied || st.course_applied || 'M.Sc.'
                );
                
                const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
@@ -3442,9 +3442,9 @@
             try {
                const EmailSvc = (await import('../js/email-service.js')).default;
                const tmpl = EmailSvc.EmailTemplates.hallTicketEmail(
-                  st.full_name || st.name || 'Student', 
-                  st.student_id || st.id, 
-                  st.courseApplied || 'M.Sc.'
+                  st.fullName || st.full_name || st.name || 'Student', 
+                  st.studentId || st.student_id || st.id, 
+                  st.courseApplied || st.course_applied || 'M.Sc.'
                );
                
                const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
@@ -5739,11 +5739,16 @@
             doc.line(145, 66, 145, 134); 
             doc.line(70, 66, 70, 134);
             
+            const courseVal = student.courseApplied || student.course_applied || '';
+            const nameVal = student.fullName || student.full_name || student.name || '';
+            const rollVal = student.studentId || student.student_id || student.id || '';
+            const mobileVal = student.mobile || '';
+
             const rows = [
-               ["Applied Course:", (student.courseApplied || '').toUpperCase()],
-               ["Full Name:", student.fullName || student.name || ''],
-               ["Roll No / CET ID:", student.studentId || student.id || ''],
-               ["Mobile Number:", student.mobile || ''],
+               ["Applied Course:", courseVal.toUpperCase()],
+               ["Full Name:", nameVal],
+               ["Roll No / CET ID:", rollVal],
+               ["Mobile Number:", mobileVal],
                ["Exam Date:", examDateStr],
                ["Reporting Time:", "09:00 AM"],
                ["Exam Time:", examTimeStr],
