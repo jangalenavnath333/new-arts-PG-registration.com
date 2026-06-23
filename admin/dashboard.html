@@ -5518,7 +5518,7 @@
            const doc = new jsPDF('p', 'mm', 'a4');
            
            let photoData = null;
-           const targetId = student.supabaseId || student.studentId || student.id;
+           const targetId = student.id || student.supabaseId;
            if (supabase && targetId) {
                try {
                   const { data } = await supabase.from('student_documents').select('file_url').eq('student_id', targetId).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
@@ -5681,7 +5681,7 @@
             const doc = new jsPDF('p', 'mm', 'a4');
             
             let photoData = null;
-            const targetId = student.supabaseId || student.studentId || student.id;
+            const targetId = student.id || student.supabaseId;
             if (supabase && targetId) {
                 try {
                    const { data } = await supabase.from('student_documents').select('file_url').eq('student_id', targetId).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
