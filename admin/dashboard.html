@@ -1127,7 +1127,10 @@
               Excel
             </button>
             <button onclick="downloadDetailedCategoryMeritList('pdf')" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-rose-500/20">
-              PDF
+              PDF (Combined)
+            </button>
+            <button onclick="downloadSeparateDetailedPDFs()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-indigo-500/20">
+              Separate PDFs
             </button>
             <button onclick="downloadDetailedCategoryMeritList('word')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow shadow-blue-500/20">
               Word
@@ -6517,6 +6520,77 @@
           const a = document.createElement('a'); a.href = url; a.download = `Detailed_Caste_Merit_List_${new Date().toISOString().split('T')[0]}.doc`; a.click();
           URL.revokeObjectURL(url);
        }
+    };
+
+    window.downloadSeparateDetailedPDFs = function() {
+       const apps = window.getApplications ? window.getApplications() : [];
+       if (!apps || apps.length === 0) { alert('No applications to export.'); return; }
+       if (typeof jspdf === 'undefined') { alert('PDF library still loading, please retry.'); return; }
+       
+       const grouped = {};
+       apps.forEach(app => {
+           let course = app.courseApplied || (app.academicDetails && app.academicDetails.courseApplied) || 'Unknown_Course';
+           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown_Category';
+           let key = course + '___' + category;
+           if (!grouped[key]) grouped[key] = { course, category, apps: [] };
+           grouped[key].apps.push(app);
+       });
+       
+       const groups = Object.values(grouped);
+       if(groups.length === 0) return;
+       
+       alert(`Generating ${groups.length} separate PDFs. Please allow multiple downloads if your browser asks.`);
+       
+       let delay = 0;
+       groups.forEach((group, index) => {
+           setTimeout(() => {
+               const doc = new jspdf.jsPDF({ orientation: 'landscape' });
+               let currentY = 15;
+               
+               doc.setFontSize(16);
+               doc.setTextColor(51, 65, 85);
+               doc.text(`Detailed Merit List`, 14, currentY);
+               currentY += 8;
+               
+               doc.setFontSize(12);
+               doc.setTextColor(79, 70, 229);
+               doc.text(`Course: ${group.course} | Category: ${group.category} | Total Students: ${group.apps.length}`, 14, currentY);
+               currentY += 10;
+               
+               const tableData = group.apps.map(a => {
+                  return [
+                     a.applicationId || '',
+                     a.studentId || '',
+                     a.fullName || a.name || '',
+                     a.mobile || '',
+                     a.email || '',
+                     a.gender || (a.personalDetails && a.personalDetails.gender) || '',
+                     a.applicationStatus || a.status || '',
+                     a.paymentStatus || '',
+                     a.score !== undefined ? a.score : '-'
+                  ];
+               });
+               
+               doc.autoTable({
+                  startY: currentY,
+                  head: [['App ID', 'Student ID', 'Applicant Name', 'Mobile', 'Email', 'Gender', 'App Status', 'Payment', 'Score']],
+                  body: tableData,
+                  theme: 'grid',
+                  headStyles: { fillColor: [79, 70, 229], fontSize: 9 },
+                  bodyStyles: { fontSize: 8 },
+                  margin: { left: 14, right: 14 }
+               });
+               
+               let safeC = group.course.replace(/[^a-zA-Z0-9]/g, '_');
+               let safeCat = group.category.replace(/[^a-zA-Z0-9]/g, '_');
+               doc.save(`${safeC}_${safeCat}_Merit_List.pdf`);
+               
+               if(index === groups.length - 1) {
+                  if(typeof showAdminToast === 'function') showAdminToast('All PDFs generated successfully!', 'success');
+               }
+           }, delay);
+           delay += 600;
+       });
     };
 
     window.downloadApplications = function(format) {
