@@ -152,9 +152,6 @@
                     <span style="font-size: 16px;">🆔</span>
                     <span id="headerCetId" style="font-size: 13px; color: var(--light); font-weight: 700; font-family: monospace;">--</span>
                   </div>
-                  <button onclick="downloadAdmitCard(event)" id="headerAdmitCardBtn" class="btn" style="background: rgba(99,102,241,0.2); border: 1px solid var(--primary); color: var(--white); padding: 6px 16px; font-weight: 700; border-radius: 8px; font-size: 13px; display: none; transition: all 0.2s ease; cursor: pointer;">
-                    📄 Download Admit Card
-                  </button>
                 </div>
                 
                 <div id="headerStatus"></div>
@@ -226,9 +223,7 @@
                 <span style="margin-right: 8px;">🚀</span> START EXAM NOW
               </button>
               
-              <button onclick="downloadAdmitCard(event)" id="premiumAdmitCardBtn" class="btn" style="width: 100%; max-width: 300px; display: none; background: rgba(99,102,241,0.1); border: 1px solid var(--primary); color: var(--primary-light); padding: 12px 24px; font-weight: 600; border-radius: 12px; transition: all 0.2s ease;">
-                📄 Download Admit Card
-              </button>
+
             </div>
           </div>
         </div>
@@ -1608,25 +1603,25 @@
       doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
       doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
       
-      // Title
+      // Title & Courses
       doc.setTextColor(0, 0, 0); doc.setFontSize(14);
       doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
-      doc.setFontSize(12);
-      doc.text(student.courseApplied ? student.courseApplied.toUpperCase() : "M.SC. COMPUTER SCIENCE", 105, 62, { align: "center" });
       
-      // Outer border for table
-      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5);
-      doc.rect(15, 66, 180, 80);
+      // Highlight BOTH courses in the heading
+      doc.setFontSize(12); doc.setTextColor(30, 58, 138);
+      doc.text("M.Sc. Computer Science & M.Sc. Computer Applications", 105, 62, { align: "center" });
       
-      // Photo Area vertical line
-      doc.line(145, 66, 145, 146); 
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 85);
+      doc.line(145, 66, 145, 151); 
+      doc.line(70, 66, 70, 151);
       
-      // Draw rows (8 rows, 10 height each)
       const rows = [
-         ["Full Name:", student.fullName || ''],
-         ["Roll No / CET ID:", student.studentId || ''],
+         ["Applied Course:", (student.courseApplied || '').toUpperCase()],
+         ["Full Name:", student.fullName || student.name || ''],
+         ["Roll No / CET ID:", student.studentId || student.id || ''],
          ["Mobile Number:", student.mobile || ''],
          ["Exam Date:", examDateStr],
+         ["Reporting Time:", "09:00 AM"],
          ["Exam Time:", examTimeStr],
          ["Duration:", durationStr],
          ["Login ID:", student.email || student.mobile],
@@ -1636,17 +1631,13 @@
       let yLine = 66;
       rows.forEach((r, i) => {
          doc.setFontSize(10);
-         doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 6);
-         doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 6);
-         
-         yLine += 10;
-         if (i < 7) {
-            doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine); // Horizontal line
+         doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
+         doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
+         yLine += 8.5;
+         if (i < 9) {
+            doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
          }
       });
-      
-      // Vertical line separating labels and values
-      doc.line(70, 66, 70, 146);
       
       // Draw Photo
       if (photoData) {
@@ -1660,46 +1651,45 @@
       doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0,0,0);
       doc.text("Photograph", 170, 130, {align:"center"});
 
-      // Add Important Instructions
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(180, 0, 0);
-      doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 155);
+      // Instructions
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(180, 0, 0);
+      doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 160);
       
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
       const instructions = [
-         "1. Schedule: Offline Exam on 25 June 2026 (09:30 AM to 11:00 AM).",
-         "   Report strictly at 09:00 AM at CASAS Dept (1st Floor, Admin Building).",
-         "2. Format: Offline mode. Total 100 Marks (75 Questions).",
-         "3. Counseling: Merit list and Counseling Round will be on the same day at 01:00 PM.",
-         "4. Admission: Selected students must pay Rs. 1000/- provisional fee on the spot.",
-         "5. Documents: Bring Original Caste Certificate (if applicable) and valid ID proof."
+         "1. Admission Criteria: Admissions are strictly based on the merit list generated from exam scores.",
+         "2. Exam Date & Time: Thursday, 25 June 2026, from 09:30 AM to 11:00 AM.",
+         "3. Reporting Time & Venue: Report exactly at 09:00 AM at the CASAS Department, 1st Floor, Admin Building.",
+         "4. Exam Format: Entirely offline, 100 marks (75 questions: 50 Qs of 1 mark, 25 Qs of 2 marks).",
+         "   Answers must be written on the provided Answer Sheet.",
+         "5. Mandatory Attendance: Only students present will be considered. Absence forfeits admission claims.",
+         "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 12:00 PM same day.",
+         "7. Provisional Admission Fee: Selected students must pay a provisional fee of Rs. 1000/- on the spot.",
+         "8. Caste Certificate: Reserved category students MUST bring their original caste certificate.",
+         "9. Final Admission: Confirmed only after submitting the original UG marksheet and Transfer Certificate."
       ];
       
-      let instY = 162;
+      let instY = 168;
       instructions.forEach(inst => {
          doc.text(inst, 15, instY);
-         instY += 5.5;
+         instY += 6;
       });
       
       // Add Student Signature box
-      doc.rect(20, 195, 50, 15);
+      doc.rect(20, 235, 50, 15);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text("Student's Signature", 28, 216);
+      doc.text("Student's Signature", 28, 256);
 
       // Add Authority Signature
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.text("Prof. Arun Gangarde", 130, 205);
+      doc.text("Prof. Arun Gangarde", 130, 245);
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text("Head, CASAS", 130, 210);
-      doc.text("(Center for Advanced Studies in", 130, 215);
-      doc.text("Applied Sciences)", 130, 220);
+      doc.text("Head, CASAS", 130, 250);
+      doc.text("(Center for Advanced Studies in", 130, 255);
+      doc.text("Applied Sciences)", 130, 260);
 
       // Save locally
       const fileName = `CET_AdmitCard_${student.studentId || 'Pending'}.pdf`;

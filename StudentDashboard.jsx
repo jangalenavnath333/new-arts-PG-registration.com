@@ -5,7 +5,6 @@ const StudentDashboard = () => {
 
   const menuItems = [
     { name: 'My Profile', icon: '👤' },
-    { name: 'Download Hall Ticket', icon: '🎫' },
     { name: 'Mock Test', icon: '📝' },
     { name: 'View Results', icon: '📊' }
   ];
@@ -97,11 +96,7 @@ const StudentDashboard = () => {
             </div>
 
             {/* Quick Access Grid Items */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-300 transition-colors group">
-                <div className="text-2xl mb-4 p-3 bg-blue-50 w-fit rounded-xl group-hover:bg-indigo-50 transition-colors">📄</div>
-                <h4 className="font-bold mb-1">Hall Ticket</h4>
-                <p className="text-xs text-slate-500 leading-relaxed">Available for download from April 20th.</p>
-            </div>
+
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-300 transition-colors group">
                 <div className="text-2xl mb-4 p-3 bg-purple-50 w-fit rounded-xl group-hover:bg-indigo-50 transition-colors">🎯</div>

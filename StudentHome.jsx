@@ -248,7 +248,7 @@ const StudentHome = () => {
                 </div>
 
                 {/* Dashboard Responsive Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Card 1: Application Status */}
                     <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
@@ -262,32 +262,6 @@ const StudentHome = () => {
                         <div className="pt-4 border-t border-slate-100 font-bold text-indigo-600 text-sm cursor-pointer hover:underline">
                             View Full Application Details →
                         </div>
-                    </div>
-
-                    {/* Card 2: Download Hall Ticket */}
-                    <div className={`p-8 rounded-3xl shadow-sm border transition-all ${
-                        student?.status === 'approved' 
-                        ? 'bg-white border-slate-200 hover:border-indigo-300' 
-                        : 'bg-slate-50 border-slate-100 opacity-60'
-                    }`}>
-                        <div className={`w-12 h-12 flex items-center justify-center rounded-2xl mb-6 text-2xl ${
-                            student?.status === 'approved' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'
-                        }`}>🎫</div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Download Hall Ticket</h3>
-                        <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                            Official admit card for the computer science department entrance examination.
-                        </p>
-                        <button 
-                            onClick={handleDownloadHallTicket}
-                            disabled={student?.status !== 'approved'}
-                            className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-                                student?.status === 'approved'
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 active:scale-95'
-                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            }`}
-                        >
-                            {student?.status === 'approved' ? 'Download PDF Admit Card' : 'Unavailable (Pending Approval)'}
-                        </button>
                     </div>
 
                     {/* Card 3: Upcoming Exam */}
