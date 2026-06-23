@@ -6527,69 +6527,104 @@
        if (!apps || apps.length === 0) { alert('No applications to export.'); return; }
        if (typeof jspdf === 'undefined') { alert('PDF library still loading, please retry.'); return; }
        
-       const grouped = {};
+       // Group by Course
+       const groupedByCourse = {};
        apps.forEach(app => {
            let course = app.courseApplied || (app.academicDetails && app.academicDetails.courseApplied) || 'Unknown_Course';
-           let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown_Category';
-           let key = course + '___' + category;
-           if (!grouped[key]) grouped[key] = { course, category, apps: [] };
-           grouped[key].apps.push(app);
+           if (!groupedByCourse[course]) groupedByCourse[course] = [];
+           groupedByCourse[course].push(app);
        });
        
-       const groups = Object.values(grouped);
-       if(groups.length === 0) return;
+       const courses = Object.keys(groupedByCourse);
+       if(courses.length === 0) return;
        
-       alert(`Generating ${groups.length} separate PDFs. Please allow multiple downloads if your browser asks.`);
+       alert(`Generating ${courses.length} separate PDFs (one for each course). Please wait.`);
        
        let delay = 0;
-       groups.forEach((group, index) => {
+       courses.forEach((course, index) => {
            setTimeout(() => {
                const doc = new jspdf.jsPDF({ orientation: 'landscape' });
                let currentY = 15;
+               const courseApps = groupedByCourse[course];
                
-               doc.setFontSize(16);
-               doc.setTextColor(51, 65, 85);
-               doc.text(`Detailed Merit List`, 14, currentY);
+               // Main Header
+               doc.setFontSize(18);
+               doc.setTextColor(30, 58, 138); // Blue 900
+               doc.text(`Detailed Applications Report`, 14, currentY);
                currentY += 8;
                
+               doc.setFontSize(14);
+               doc.setTextColor(15, 23, 42); // Slate 900
+               doc.text(`Course: ${course}`, 14, currentY);
+               currentY += 6;
+               
                doc.setFontSize(12);
-               doc.setTextColor(79, 70, 229);
-               doc.text(`Course: ${group.course} | Category: ${group.category} | Total Students: ${group.apps.length}`, 14, currentY);
+               doc.setTextColor(71, 85, 105); // Slate 500
+               doc.text(`Total Applications: ${courseApps.length}`, 14, currentY);
                currentY += 10;
                
-               const tableData = group.apps.map(a => {
-                  return [
-                     a.applicationId || '',
-                     a.studentId || '',
-                     a.fullName || a.name || '',
-                     a.mobile || '',
-                     a.email || '',
-                     a.gender || (a.personalDetails && a.personalDetails.gender) || '',
-                     a.applicationStatus || a.status || '',
-                     a.paymentStatus || '',
-                     a.score !== undefined ? a.score : '-'
-                  ];
+               // Group by Category within this Course
+               const groupedByCategory = {};
+               courseApps.forEach(app => {
+                   let category = app.category || (app.academicDetails && app.academicDetails.casteCategory) || 'Unknown_Category';
+                   if(!groupedByCategory[category]) groupedByCategory[category] = [];
+                   groupedByCategory[category].push(app);
                });
                
-               doc.autoTable({
-                  startY: currentY,
-                  head: [['App ID', 'Student ID', 'Applicant Name', 'Mobile', 'Email', 'Gender', 'App Status', 'Payment', 'Score']],
-                  body: tableData,
-                  theme: 'grid',
-                  headStyles: { fillColor: [79, 70, 229], fontSize: 9 },
-                  bodyStyles: { fontSize: 8 },
-                  margin: { left: 14, right: 14 }
+               const categories = Object.keys(groupedByCategory).sort();
+               
+               categories.forEach(category => {
+                   const catApps = groupedByCategory[category];
+                   
+                   // Check if page break is needed before category header
+                   if(currentY > 170) {
+                       doc.addPage();
+                       currentY = 15;
+                   }
+                   
+                   // Category Subheader
+                   doc.setFontSize(13);
+                   doc.setTextColor(255, 255, 255);
+                   doc.setFillColor(79, 70, 229); // Indigo 600
+                   doc.rect(14, currentY, 269, 8, 'F');
+                   doc.text(`Category: ${category} (Total: ${catApps.length})`, 16, currentY + 6);
+                   currentY += 12;
+                   
+                   const tableData = catApps.map(a => {
+                      return [
+                         a.applicationId || '',
+                         a.studentId || '',
+                         a.fullName || a.name || '',
+                         a.mobile || '',
+                         a.email || '',
+                         a.gender || (a.personalDetails && a.personalDetails.gender) || '',
+                         a.applicationStatus || a.status || '',
+                         a.paymentStatus || '',
+                         a.score !== undefined ? a.score : '-'
+                      ];
+                   });
+                   
+                   doc.autoTable({
+                      startY: currentY,
+                      head: [['App ID', 'Student ID', 'Applicant Name', 'Mobile', 'Email', 'Gender', 'App Status', 'Payment', 'Score']],
+                      body: tableData,
+                      theme: 'grid',
+                      headStyles: { fillColor: [148, 163, 184], textColor: [255, 255, 255], fontSize: 9 }, // Slate 400
+                      bodyStyles: { fontSize: 8 },
+                      margin: { left: 14, right: 14 }
+                   });
+                   
+                   currentY = doc.lastAutoTable.finalY + 10;
                });
                
-               let safeC = group.course.replace(/[^a-zA-Z0-9]/g, '_');
-               let safeCat = group.category.replace(/[^a-zA-Z0-9]/g, '_');
-               doc.save(`${safeC}_${safeCat}_Merit_List.pdf`);
+               let safeC = course.replace(/[^a-zA-Z0-9]/g, '_');
+               doc.save(`${safeC}_Detailed_List.pdf`);
                
-               if(index === groups.length - 1) {
-                  if(typeof showAdminToast === 'function') showAdminToast('All PDFs generated successfully!', 'success');
+               if(index === courses.length - 1) {
+                  if(typeof showAdminToast === 'function') showAdminToast('All Course PDFs generated successfully!', 'success');
                }
            }, delay);
-           delay += 600;
+           delay += 1000; // 1 second delay
        });
     };
 
