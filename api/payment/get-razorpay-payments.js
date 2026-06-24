@@ -29,9 +29,17 @@ module.exports = async function handler(req, res) {
       key_secret: keySecret
     });
 
-    // Fetch the last 100 payments
-    const paymentsResponse = await razorpay.payments.all({ count: 100, skip: 0 });
-    const successfulPayments = paymentsResponse.items.filter(p => p.status === 'captured');
+    // Fetch up to 1000 payments
+    let allItems = [];
+    let skip = 0;
+    while(allItems.length < 1000) {
+        const response = await razorpay.payments.all({ count: 100, skip: skip });
+        if(!response.items || response.items.length === 0) break;
+        allItems = allItems.concat(response.items);
+        if(response.items.length < 100) break; // Reached the end
+        skip += 100;
+    }
+    const successfulPayments = allItems.filter(p => p.status === 'captured');
 
     // Only return safe fields to frontend
     const safePayments = successfulPayments.map(p => ({
