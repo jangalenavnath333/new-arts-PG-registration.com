@@ -1504,7 +1504,7 @@
                } catch(e) { resolve(null); }
             };
             img.onerror = () => { clearTimeout(timeout); resolve(null); };
-            img.src = src.startsWith('data:') ? src : src + (src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+            img.src = src;
          });
       };
       
@@ -1535,7 +1535,15 @@
              doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
           }
           
-
+          // Header Text
+          doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+          doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+          doc.setFontSize(14); doc.setTextColor(180, 0, 0); // Dark Red
+          doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+          doc.setFontSize(12);
+          doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+          doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+          doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
           
           // Blue banner
           doc.setFillColor(30, 58, 138); // blue
