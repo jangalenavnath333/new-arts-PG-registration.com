@@ -1627,15 +1627,15 @@
           });
           
           // Bottom Signatures
-          doc.setLineWidth(0.5); doc.line(15, 250, 195, 250);
-          doc.setFontSize(10); doc.setFont("helvetica", "bold");
-          
-          doc.text("Candidate's Signature", 40, 265, { align: "center" });
-          doc.text("Invigilator's Signature", 105, 265, { align: "center" });
-          
-          doc.text("Dr. A. K. Gangarde", 175, 260, { align: "center" });
-          doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-          doc.text("Head, CASAS", 175, 265, { align: "center" });
+          doc.setDrawColor(0,0,0); doc.rect(20, 235, 50, 15);
+          doc.setFontSize(10); doc.text("Student's Signature", 28, 256);
+
+          doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+          doc.text("Prof. Arun Gangarde", 130, 245);
+          doc.setFontSize(9); doc.setFont("helvetica", "normal");
+          doc.text("Head, CASAS", 130, 250);
+          doc.text("(Center for Advanced Studies in", 130, 255);
+          doc.text("Applied Sciences)", 130, 260);
       }
       
       // Save locally
