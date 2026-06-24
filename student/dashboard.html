@@ -223,6 +223,10 @@
                 <span style="margin-right: 8px;">🚀</span> START EXAM NOW
               </button>
               
+              <button id="premiumAdmitCardBtn" class="btn btn-outline" style="width: 100%; max-width: 300px; padding: 16px 24px; font-size: 16px; font-weight: 700; border-radius: 12px; border: 1px solid rgba(99,102,241,0.5); color: var(--primary-light); background: rgba(99,102,241,0.1); cursor: pointer; transition: all 0.2s ease; margin-bottom: 16px;">
+                📄 Download Admit Card
+              </button>
+              
 
             </div>
           </div>
@@ -605,11 +609,9 @@
       DB.setCurrentStudent(student);
       localStorage.setItem('studentData', JSON.stringify(student));
       
-      // Hide Admit Card download for students until officially enabled
-      const btn1 = document.getElementById('headerAdmitCardBtn');
+      // Admit Card download is now enabled for all students
       const btn2 = document.getElementById('premiumAdmitCardBtn');
-      if (btn1) btn1.style.display = 'none';
-      if (btn2) btn2.style.display = 'none';
+      if (btn2) btn2.style.display = 'block';
 
       // Sidebar and Header Identity
       try {
