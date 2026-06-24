@@ -145,6 +145,13 @@
   </style>
 </head>
 <body>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (!params.get('edit_app_id') && !params.get('admin_bypass')) {
+      alert("Admission Link is now Closed. Form filling is no longer allowed.");
+      window.location.href = "../index.html";
+    }
+  </script>
   <div class="bg-particles"></div>
 
   <!-- Top bar (Login link) -->

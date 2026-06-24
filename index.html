@@ -104,14 +104,13 @@
         A fully secure, AI-monitored examination platform with real-time proctoring, automated scheduling, and instant results.
       </p>
       <div class="hero-actions">
-        <a href="#" class="btn-hero-primary" id="btnApplyNow" onclick="document.getElementById('courseSelectionBox').classList.toggle('active'); return false;">
+        <a href="#" class="btn-hero-primary" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; cursor: not-allowed;" onclick="alert('Admission link is now closed.'); return false;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <line x1="19" y1="8" x2="19" y2="14"/>
-            <line x1="22" y1="11" x2="16" y2="11"/>
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
           </svg>
-          Apply Now
+          Admissions Closed
         </a>
         <a href="student/login.html" class="btn-hero-secondary">
           Student Login &rarr;
@@ -181,21 +180,7 @@
           font-size: 12px;
         }
       </style>
-      <div class="course-selection-box" id="courseSelectionBox">
-        <a href="student/apply.html?course=MSc_CS" class="course-card">
-          <div class="course-card-icon">CS</div>
-          <div class="course-card-content">
-            <h4>M.Sc. Computer Science</h4>
-            <p>2 Year Post Graduate Program</p>
-          </div>
-        </a>
-        <a href="student/apply.html?course=MSc_CA" class="course-card">
-          <div class="course-card-icon">CA</div>
-          <div class="course-card-content">
-            <h4>M.Sc. Computer Application</h4>
-            <p>2 Year Post Graduate Program</p>
-          </div>
-        </a>
+      <div class="course-selection-box" id="courseSelectionBox" style="display: none;">
       </div>
       <div class="hero-stats">
         <div class="stat-card">
