@@ -1604,18 +1604,26 @@
           
           const razorpayPayments = data.payments || [];
           
-          // 2. Fetch active applications from local cache (already filtered for deleted)
+          // 2. Fetch existing payments from Supabase to prevent duplicates
+          let existingOrderIds = new Set();
+          if (supabase) {
+              const { data: existData } = await supabase.from('payments').select('payment_utr');
+              if (existData) existingOrderIds = new Set(existData.map(p => p.payment_utr).filter(Boolean));
+          }
+          
+          // 3. Fetch active applications from local cache (already filtered for deleted)
           const activeApps = typeof window.getApplications === 'function' ? window.getApplications() : [];
           const activeEmails = new Set(activeApps.map(a => (a.email || '').toLowerCase()));
           const activePhones = new Set(activeApps.map(a => a.mobile || ''));
           
-          // 3. Find missing
+          // 4. Find missing
           const missing = [];
           for (const p of razorpayPayments) {
-             const pEmail = p.email;
+             const pEmail = (p.email || '').toLowerCase();
              const pPhone = p.contact;
              
-             if (!activeEmails.has(pEmail) && !activePhones.has(pPhone)) {
+             // Check if not in active applications AND not already synced in payments table
+             if (!activeEmails.has(pEmail) && !activePhones.has(pPhone) && !existingOrderIds.has(p.order_id)) {
                 missing.push(p);
              }
           }
@@ -1623,59 +1631,82 @@
           if (missing.length === 0) {
              alert('✅ No missing payments found! All students who paid in Razorpay are present in the system.');
           } else {
-             const wantDownload = prompt(`⚠️ FOUND ${missing.length} MISSING STUDENTS!\n\nType "excel" to download an Excel sheet, "pdf" for a PDF report, or leave blank to just view them here:`);
-             const format = (wantDownload || '').trim().toLowerCase();
+             const wantSync = confirm(`⚠️ FOUND ${missing.length} MISSING STUDENTS who paid on Razorpay but have no application form!\n\nDo you want to add them to the database so you can search and view them in the Payment Verification table?`);
              
-             if (format === 'excel') {
-                if (typeof XLSX === 'undefined') {
-                   // Fallback to CSV if XLSX is not loaded
-                   let csv = 'Email,Phone,Amount,Transaction ID,Payment ID,Date\n';
-                   missing.forEach(m => {
-                      csv += `${m.email},${m.contact},${m.amount},${m.order_id},${m.id},${new Date(m.created_at * 1000).toLocaleString()}\n`;
-                   });
-                   const blob = new Blob([csv], { type: 'text/csv' });
-                   const url = URL.createObjectURL(blob);
-                   const a = document.createElement('a'); a.href = url; a.download = `Missing_Students_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-                   URL.revokeObjectURL(url);
-                } else {
-                   const wsData = [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']];
-                   missing.forEach(m => {
-                      wsData.push([m.email, m.contact, m.amount, m.order_id, m.id, new Date(m.created_at * 1000).toLocaleString('en-IN')]);
-                   });
-                   const wb = XLSX.utils.book_new();
-                   const ws = XLSX.utils.aoa_to_sheet(wsData);
-                   XLSX.utils.book_append_sheet(wb, ws, 'Missing Students');
-                   XLSX.writeFile(wb, `Missing_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
-                }
-             } else if (format === 'pdf') {
-                if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { 
-                    alert('PDF library loading... please retry.'); 
-                } else {
-                    const { jsPDF } = window.jspdf || window;
-                    const doc = new jsPDF({ orientation: 'landscape' });
-                    doc.text('Missing Students Report (Paid but no Form)', 14, 15);
-                    const tableRows = missing.map(m => [
-                       m.email || 'N/A', 
-                       m.contact || 'N/A', 
-                       `Rs.${m.amount}`, 
-                       m.order_id, 
-                       m.id, 
-                       new Date(m.created_at * 1000).toLocaleString('en-IN')
-                    ]);
-                    doc.autoTable({ 
-                       startY: 25, 
-                       head: [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']], 
-                       body: tableRows 
-                    });
-                    doc.save(`Missing_Students_${new Date().toISOString().split('T')[0]}.pdf`);
-                }
-             } else {
-                 let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS (Top 10):\n\n`;
-                 missing.slice(0, 10).forEach((m, idx) => {
-                    msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
-                 });
-                 if(missing.length > 10) msg += `...and ${missing.length - 10} more.`;
-                 alert(msg);
+             if (wantSync && supabase) {
+                 if (btn) btn.innerHTML = '<span>⏳ Syncing...</span>';
+                 const newRecords = missing.map(m => ({
+                     full_name: 'Missing Application',
+                     email: m.email,
+                     course_applied: 'Unknown Course',
+                     payment_status: 'MISSING_APP',
+                     payment_amount: String(m.amount),
+                     payment_utr: m.order_id,
+                     payment_date: new Date(m.created_at * 1000).toISOString()
+                 }));
+                 
+                 const { error } = await supabase.from('payments').insert(newRecords);
+                 if (error) {
+                     alert('Failed to sync missing payments: ' + error.message);
+                 } else {
+                     alert(`✅ Successfully added ${missing.length} missing payments to the Payment Verification table!`);
+                     if (typeof window.renderPayments === 'function') window.renderPayments();
+                 }
+             } else if (!wantSync) {
+                 const wantDownload = prompt(`Type "excel" to download an Excel sheet, "pdf" for a PDF report, or leave blank to just view them here:`);
+                 const format = (wantDownload || '').trim().toLowerCase();
+                 
+                 if (format === 'excel') {
+                    if (typeof XLSX === 'undefined') {
+                       // Fallback to CSV if XLSX is not loaded
+                       let csv = 'Email,Phone,Amount,Transaction ID,Payment ID,Date\n';
+                       missing.forEach(m => {
+                          csv += `${m.email},${m.contact},${m.amount},${m.order_id},${m.id},${new Date(m.created_at * 1000).toLocaleString()}\n`;
+                       });
+                       const blob = new Blob([csv], { type: 'text/csv' });
+                       const url = URL.createObjectURL(blob);
+                       const a = document.createElement('a'); a.href = url; a.download = `Missing_Students_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+                       URL.revokeObjectURL(url);
+                    } else {
+                       const wsData = [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']];
+                       missing.forEach(m => {
+                          wsData.push([m.email, m.contact, m.amount, m.order_id, m.id, new Date(m.created_at * 1000).toLocaleString('en-IN')]);
+                       });
+                       const wb = XLSX.utils.book_new();
+                       const ws = XLSX.utils.aoa_to_sheet(wsData);
+                       XLSX.utils.book_append_sheet(wb, ws, 'Missing Students');
+                       XLSX.writeFile(wb, `Missing_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    }
+                 } else if (format === 'pdf') {
+                    if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') { 
+                        alert('PDF library loading... please retry.'); 
+                    } else {
+                        const { jsPDF } = window.jspdf || window;
+                        const doc = new jsPDF({ orientation: 'landscape' });
+                        doc.text('Missing Students Report (Paid but no Form)', 14, 15);
+                        const tableRows = missing.map(m => [
+                           m.email || 'N/A', 
+                           m.contact || 'N/A', 
+                           `Rs.${m.amount}`, 
+                           m.order_id, 
+                           m.id, 
+                           new Date(m.created_at * 1000).toLocaleString('en-IN')
+                        ]);
+                        doc.autoTable({ 
+                           startY: 25, 
+                           head: [['Email', 'Phone', 'Amount', 'Order ID', 'Payment ID', 'Date']], 
+                           body: tableRows 
+                        });
+                        doc.save(`Missing_Students_${new Date().toISOString().split('T')[0]}.pdf`);
+                    }
+                 } else {
+                     let msg = `⚠️ FOUND ${missing.length} MISSING STUDENTS (Top 10):\n\n`;
+                     missing.slice(0, 10).forEach((m, idx) => {
+                        msg += `${idx+1}. Email: ${m.email}\nPhone: ${m.contact}\nAmount: ₹${m.amount}\nDate: ${new Date(m.created_at * 1000).toLocaleString()}\n\n`;
+                     });
+                     if(missing.length > 10) msg += `...and ${missing.length - 10} more.`;
+                     alert(msg);
+                 }
              }
           }
        } catch (err) {
@@ -1769,8 +1800,8 @@
         const pEmail = (p.email || '').toLowerCase();
         const pCetId = p.cet_student_id || p.student_id;
         
-        // Ensure the payment belongs to an active student
-        if (activeApps.length > 0 && !activeEmails.has(pEmail) && (!pCetId || !activeStudentIds.has(pCetId))) {
+        // Ensure the payment belongs to an active student (Except explicitly missing ones)
+        if (p.payment_status !== 'MISSING_APP' && activeApps.length > 0 && !activeEmails.has(pEmail) && (!pCetId || !activeStudentIds.has(pCetId))) {
            return false;
         }
 
@@ -1882,6 +1913,7 @@
         else if (st === 'REJECTED') statusColor = 'bg-red-100 text-red-700 border-red-200';
         else if (['PENDING', 'PENDING_VERIFICATION'].includes(st)) statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
         else if (st === 'REFUNDED') statusColor = 'bg-purple-100 text-purple-700 border-purple-200';
+        else if (st === 'MISSING_APP') statusColor = 'bg-red-600 text-white border-red-700 animate-pulse';
         
         const statusBadge = `<span class="${statusColor} text-[10px] font-bold px-2.5 py-1 rounded-full border">${st}</span>`;
 
