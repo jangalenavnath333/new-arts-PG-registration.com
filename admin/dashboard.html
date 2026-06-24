@@ -1857,22 +1857,11 @@
         return matchCourse && matchStatus;
       });
 
-      // HIDE explicit Test Users to remove duplicates and fix counts
+      // HIDE Rejected Manual transactions to remove duplicates
       filtered = filtered.filter(p => {
-          const pName = (p.full_name || '').toLowerCase().trim();
-          const pEmail = (p.email || '').toLowerCase().trim();
-          
-          // Hide explicit test accounts
-          if (pName.includes('aditya dhotre') || pEmail.includes('adityadhotre')) return false;
-          if (pName.includes('payal') || pEmail.includes('payaltest')) return false;
-          if (pName.includes('vipul zirape') || pEmail.includes('vipulzirape')) return false;
-          if (pName.includes('navnath babasaheb jangale') || pEmail.includes('jangalenavnath')) return false;
-          if (pEmail.includes('test_rpc')) return false;
-
           const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
           const isManual = pid.includes('manual') || pid.includes('bank') || pid.includes('utr') || !pid.startsWith('pay_');
           if (isManual && p.payment_status === 'REJECTED') return false; // Hide completely
-          
           return true;
       });
 
@@ -2262,21 +2251,9 @@
 
     // --- DATA SOURCE: Supabase-first, localStorage fallback ---
     window.getApplications = function() {
-      const filterFunc = a => {
-         if (a.applicationStatus === 'DELETED') return false;
-         const e = (a.email || '').toLowerCase().trim();
-         const n = (a.full_name || a.fullName || '').toLowerCase().trim();
-         if (n.includes('aditya dhotre') || e.includes('adityadhotre')) return false;
-         if (n.includes('payal') || e.includes('payaltest')) return false;
-         if (n.includes('vipul zirape') || e.includes('vipulzirape')) return false;
-         if (n.includes('navnath babasaheb jangale') || e.includes('jangalenavnath')) return false;
-         if (e.includes('test_rpc')) return false;
-         return true;
-      };
-
       // Return cached Supabase data if available
       if (_supabaseFetched && _supabaseAppsCache) {
-          return _supabaseAppsCache.filter(filterFunc);
+          return _supabaseAppsCache.filter(a => a.applicationStatus !== 'DELETED');
       }
 
       // Fallback: localStorage
@@ -2294,7 +2271,7 @@
         } catch(e){}
         localStorage.removeItem('cetApplication');
       }
-      return apps.filter(filterFunc);
+      return apps.filter(a => a.applicationStatus !== 'DELETED');
     }
 
     // Async fetch from Supabase — call once on tab switch, then use cache
