@@ -1880,15 +1880,21 @@
       const totalApps = filtered.length;
       const expectedCollection = totalApps * 500;
       
-      const paidRecords = filtered.filter(p => ['PAID', 'VERIFIED', 'SUCCESS', 'PAID_DEMO'].includes(p.payment_status));
+      // EXCLUDE PAID_DEMO so the count perfectly matches 234 Razorpay transactions
+      const paidRecords = filtered.filter(p => ['PAID', 'VERIFIED', 'SUCCESS'].includes(p.payment_status));
       const pendingRecords = filtered.filter(p => ['PENDING', 'PENDING_VERIFICATION'].includes(p.payment_status));
       const rejectedRecords = filtered.filter(p => p.payment_status === 'REJECTED');
       
       let collectedAmount = 0;
       
       paidRecords.forEach(p => {
-         // Force 500 for ALL paid records
-         collectedAmount += 500;
+         // Parse exact amount to match Razorpay settlement (including Aditya Dhotre's Rs.2)
+         let amt = 500;
+         if (p.payment_amount) {
+             const parsed = parseFloat(p.payment_amount.toString().replace(/[^\d.]/g, ''));
+             if (!isNaN(parsed) && parsed > 0) amt = parsed;
+         }
+         collectedAmount += amt;
       });
       
       let pendingAmount = 0;
