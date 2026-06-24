@@ -1857,8 +1857,12 @@
         return matchCourse && matchStatus;
       });
 
-      // HIDE Rejected Manual transactions to remove duplicates
+      // HIDE Rejected Manual transactions and explicit Test Users to remove duplicates and fix counts
       filtered = filtered.filter(p => {
+          const pEmail = (p.email || '').toLowerCase().trim();
+          const testEmails = ['payaltest@gmail.com', 'test_rpc_9999@example.com', 'test_rpc_9998@example.com', 'adityadhotre1515@gmail.com', 'vipulzirape@gmail.com', 'jangalenavnath333@gmail.com'];
+          if (testEmails.includes(pEmail)) return false; // Permanently hide test accounts
+
           const pid = (p.payment_id || p.payment_utr || '').toLowerCase();
           const isManual = pid.includes('manual') || pid.includes('bank') || pid.includes('utr') || !pid.startsWith('pay_');
           if (isManual && p.payment_status === 'REJECTED') return false; // Hide completely
