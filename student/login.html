@@ -89,7 +89,7 @@
             
             if (data && data.length > 0 && !error) {
               const studentsData = data.map(d => ({
-                id: 'STU' + Date.now() + Math.random(),
+                id: d.id || 'STU' + Date.now() + Math.random(),
                 studentId: d.student_id,
                 fullName: d.full_name,
                 name: d.full_name,

@@ -1466,7 +1466,15 @@
                supaClient = SupaDB.getClient();
             }
             if (supaClient) {
-               const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
+               let uuidSid = sid;
+               const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+               if (!uuidRegex.test(uuidSid)) {
+                   if (student.studentId) {
+                      const { data: stData } = await supaClient.from('student_applications').select('id').eq('student_id', student.studentId).limit(1).maybeSingle();
+                      if (stData && stData.id) uuidSid = stData.id;
+                   }
+               }
+               const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', uuidSid).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
                if (data && data.file_url) photoData = data.file_url;
             }
          } catch(e) { console.error(e); }
