@@ -1561,15 +1561,11 @@
           
           // Title & Courses
           doc.setTextColor(0, 0, 0); doc.setFontSize(14);
-          doc.text("ADMIT CARD (HALL TICKET)", 105, 53, { align: "center" });
+          doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
           
-          // Highlight BOTH courses in the heading
-          doc.setFontSize(10); doc.setTextColor(180, 0, 0); // Dark Red
-          doc.text("For Admission to: M.Sc. Computer Science & M.Sc. Computer Applications", 105, 59, { align: "center" });
-          
-          doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 63, 180, 68);
-          doc.line(145, 63, 145, 131); 
-          doc.line(70, 63, 70, 131);
+          doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+          doc.line(145, 66, 145, 134); 
+          doc.line(70, 66, 70, 134);
           
           const rows = [
              ["Applied Course:", (currentStudent.courseApplied || '').toUpperCase()],
@@ -1582,7 +1578,7 @@
              ["Duration:", durationStr]
           ];
           
-          let yLine = 63;
+          let yLine = 66;
           rows.forEach((r, i) => {
              doc.setFontSize(10);
              doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
