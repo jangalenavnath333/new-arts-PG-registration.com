@@ -552,6 +552,36 @@ export const EmailTemplates = {
         <p style="margin: 0; color: #475569; font-size: 12px;">न्यू आर्ट्स, कॉमर्स अँड सायन्स कॉलेज, अहमदनगर.</p>
       </div>
     `)
+  }),
+
+  // 9. Admit Card Correction Notification (Marathi)
+  correctionNotification: (name) => ({
+    subject: `⚠️ तातडीची सूचना: Admit Card (Hall Ticket) च्या तारखेबाबत दुरुस्ती`,
+    html: wrapEmail(`
+      <h2 style="margin: 0 0 16px; color: #dc2626; font-size: 20px; text-align: center;">⚠️ तातडीची सूचना ⚠️</h2>
+      
+      <p style="color: #334155; font-size: 14px; line-height: 1.7;">
+        प्रिय <strong style="color: #0f172a;">${name}</strong>,
+      </p>
+      
+      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="margin: 0 0 12px; color: #92400e; font-size: 14px; line-height: 1.7;">
+          आपली प्रवेश परीक्षा <strong>२५ जून २०२६</strong> रोजी होणार आहे, परंतु यापूर्वी पाठवण्यात आलेल्या Admit Card मध्ये तांत्रिक चुकीमुळे <strong>२० तारीख</strong> नमूद झाली होती. या चुकीबद्दल आम्ही दिलगिरी व्यक्त करतो.
+        </p>
+        <p style="margin: 0 0 12px; color: #92400e; font-size: 14px; line-height: 1.7;">
+          आता आम्ही तुम्हाला या ईमेलसोबत <strong>नवीन आणि सुधारित (Corrected) Admit Card</strong> पाठवले आहे, कृपया ते डाऊनलोड करून त्याचीच प्रिंट सोबत आणावी. तसेच, तुम्ही तुमच्या स्टुडंट लॉगिन (Student Login) मधून देखील हे नवीन Admit Card डाऊनलोड करू शकता.
+        </p>
+        <p style="margin: 0; color: #dc2626; font-size: 14px; font-weight: bold; line-height: 1.7;">
+          महत्त्वाची सूचना: या Admit Card मध्ये तुमचा फोटो छापून येणार नाही. तुम्हाला स्वतः तुमचा पासपोर्ट साईझ फोटो त्या दिलेल्या जागेवर चिकटवायचा आहे, याची सर्व विद्यार्थ्यांनी नोंद घ्यावी.
+        </p>
+      </div>
+
+      <div style="margin-top: 30px; text-align: right;">
+        <p style="margin: 0 0 4px; color: #1e293b; font-size: 15px; font-weight: bold;">- परीक्षा विभाग</p>
+        <p style="margin: 0; color: #475569; font-size: 13px;">कॅसास (Center For Advanced Studies in Applied Sciences)</p>
+        <p style="margin: 0; color: #475569; font-size: 12px;">न्यू आर्ट्स, कॉमर्स अँड सायन्स कॉलेज, अहमदनगर.</p>
+      </div>
+    `)
   })
 };
 

@@ -279,6 +279,9 @@
                 <div class="flex border border-blue-500 rounded-lg overflow-hidden h-10">
                   <button onclick="openMassEmailModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">📢 Mass Email</button>
                 </div>
+                <div class="flex border border-amber-500 rounded-lg overflow-hidden h-10">
+                  <button onclick="sendCorrectionNotificationToAll()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">⚠️ Send Date Correction</button>
+                </div>
                 <div class="flex border border-indigo-500 rounded-lg overflow-hidden h-10">
                   <a href="../student/apply.html?admin_bypass=true" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm font-bold transition flex items-center gap-2">➕ Add Student</a>
                 </div>
@@ -513,7 +516,7 @@
                 </div>
                 <div>
                   <label class="block text-sm font-semibold text-slate-700 mb-1">Duration (Min) *</label>
-                  <input type="number" id="examDuration" value="60" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
+                  <input type="number" id="examDuration" value="90" class="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:border-indigo-500" />
                 </div>
               </div>
               <button onclick="saveSchedule()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm w-full">Save Configuration</button>
@@ -4024,7 +4027,7 @@
       if (ampm === 'AM' && h === 12) h = 0;
       const time = h.toString().padStart(2, '0') + ':' + minStr;
       
-      const duration = parseInt(document.getElementById('examDuration').value) || 60;
+      const duration = parseInt(document.getElementById('examDuration').value) || 90;
       
       if(!date || !time) {
         showToast('Please select both Date and Start Time', 'error');
@@ -7434,6 +7437,59 @@ window.sendEntranceNotificationToAll = async function() {
       alert(`Successfully sent notification to ${count} students. Failed: ${failed}`);
   } catch(e) {
       alert('Error sending notifications: ' + e.message);
+  }
+};
+
+window.sendCorrectionNotificationToAll = async function() {
+  if (!confirm('Are you absolutely sure you want to send the Admit Card Correction Notification (Marathi) AND the new PDF Admit Card to ALL students?')) return;
+  const data = window._currentApplicationsData || [];
+  if (data.length === 0) return alert('No students found.');
+  
+  try {
+      const EmailSvc = (await import('../js/email-service.js')).default;
+      let count = 0;
+      let failed = 0;
+      
+      const studentsToNotify = data.filter(st => st.email);
+      if (!confirm(`This will send the correction notification and NEW PDF to ${studentsToNotify.length} students. Proceed?`)) return;
+
+      const btn = document.querySelector('button[onclick="sendCorrectionNotificationToAll()"]');
+      if(btn) { btn.disabled = true; btn.innerHTML = 'Sending Corrections...'; }
+
+      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
+
+      for (let st of studentsToNotify) {
+          try {
+              const tmpl = EmailSvc.EmailTemplates.correctionNotification(st.fullName || st.name);
+              
+              const courseConfig = configObj[st.courseApplied || st.course_applied || 'M.Sc. Computer Science'] || configObj;
+              const examDateStr = courseConfig.examDate || "25 June 2026";
+              const examTimeStr = courseConfig.startTime || "09:30 AM";
+              const durationStr = (courseConfig.durationMinutes || 90) + " Minutes";
+
+              const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
+              let attachments = null;
+              if (base64Pdf) {
+                  attachments = [{
+                      filename: `CET_AdmitCard_${st.student_id || st.id || 'Student'}.pdf`,
+                      content: base64Pdf.split('base64,')[1] || base64Pdf,
+                      encoding: 'base64'
+                  }];
+              }
+
+              await EmailSvc.sendEmail(st.email, tmpl.subject, tmpl.html, attachments);
+              count++;
+              console.log(`Sent correction notice + PDF to ${st.email} (${count}/${studentsToNotify.length})`);
+          } catch(e) {
+              console.error(`Failed to send correction to ${st.email}`, e);
+              failed++;
+          }
+          await new Promise(r => setTimeout(r, 200)); // Small delay to avoid rate limits
+      }
+      if(btn) { btn.disabled = false; btn.innerHTML = '⚠️ Send Date Correction'; }
+      alert(`Successfully sent correction notification + PDF to ${count} students. Failed: ${failed}`);
+  } catch(e) {
+      alert('Error sending correction notifications: ' + e.message);
   }
 };
 

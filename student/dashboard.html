@@ -731,7 +731,7 @@
           customTime = parts[1];
       }
       if (customDate && customTime) {
-         config = config || { durationMinutes: 60 };
+         config = config || { durationMinutes: 90 };
          config.examDate = customDate;
          config.startTime = customTime;
       }
@@ -751,7 +751,7 @@
             } else { start = new Date(`${config.examDate}T${config.startTime}`); }
          } catch(e) { start = new Date(`${config.examDate}T${config.startTime}`); }
          
-         config.durationMinutes = config.durationMinutes || 60;
+         config.durationMinutes = config.durationMinutes || 90;
          const duration = config.durationMinutes;
          const end = new Date(start.getTime() + (duration * 60000));
          const now = window.getNow ? window.getNow() : new Date();
@@ -919,7 +919,7 @@
       }
 
       if (customDate && customTime) {
-         config = config || { durationMinutes: 60 }; // fallback if no global config
+         config = config || { durationMinutes: 90 }; // fallback if no global config
          config.examDate = customDate;
          config.startTime = customTime;
          console.log('Using personal rescheduled time:', config);
@@ -1285,7 +1285,7 @@
           customTime = parts[1];
       }
       if (customDate && customTime) {
-         config = config || { durationMinutes: 60 };
+         config = config || { durationMinutes: 90 };
          config.examDate = customDate;
          config.startTime = customTime;
       }
@@ -1369,7 +1369,7 @@
         }
         if (customDate && customTime) {
            config = config || {};
-           config.durationMinutes = config.durationMinutes || 60;
+           config.durationMinutes = config.durationMinutes || 90;
            config.examDate = customDate;
            config.startTime = customTime;
         }
