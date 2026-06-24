@@ -1441,32 +1441,38 @@
          btn.disabled = true;
       }
 
-      // 1. Fetch Photo securely
-      let supaClient = null;
-      if (typeof supabase !== 'undefined') supaClient = supabase;
-      else if (window.supabase) supaClient = window.supabase;
-      else {
-         try {
-            const SupaDB = await import('../js/supabase-db.js');
-            supaClient = SupaDB.getClient();
-         } catch(e) {}
-      }
-
       let photoData = null;
       const sid = student.id || student.studentId;
-      if (supaClient && sid) {
-         try {
-            const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
-            if (data && data.file_url) photoData = data.file_url;
-         } catch(e) { console.error(e); }
+      
+      // 1. FASTEST: Get from the UI immediately
+      const headerImg = document.getElementById('headerStudentPhoto');
+      if (headerImg && headerImg.src && !headerImg.src.includes('ui-avatars.com') && !headerImg.src.includes('default')) {
+         photoData = headerImg.src;
       }
       
+      // 2. FAST: Local storage or object cache
       if (!photoData) {
          photoData = student.photoData || student.passportPhotoUrl || (student.application_documents && (student.application_documents.passport_photo || student.application_documents.photo || student.application_documents.photoFile)) || (student.uploadedFiles && (student.uploadedFiles.photoFile || student.uploadedFiles.photo)) || localStorage.getItem('cet_student_photo_' + sid) || null;
       }
 
-      // Final fallback: Try to grab it from the header image if it's not the default avatar
-      const headerImg = document.getElementById('headerStudentPhoto');      const { jsPDF } = window.jspdf;
+      // 3. SLOW: Query Supabase ONLY if we absolutely have to
+      if (!photoData && sid) {
+         try {
+            let supaClient = null;
+            if (typeof supabase !== 'undefined') supaClient = supabase;
+            else if (window.supabase) supaClient = window.supabase;
+            else {
+               const SupaDB = await import('../js/supabase-db.js');
+               supaClient = SupaDB.getClient();
+            }
+            if (supaClient) {
+               const { data } = await supaClient.from('student_documents').select('file_url').eq('student_id', sid).in('doc_type', ['photoFile', 'passport_photo', 'photo']).limit(1).maybeSingle();
+               if (data && data.file_url) photoData = data.file_url;
+            }
+         } catch(e) { console.error(e); }
+      }
+      
+      const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
       
       let appsToPrint = [student];
@@ -1477,14 +1483,39 @@
           }
       } catch(e) {}
       
+      // FAST Load Images Helper with 3 second timeout
+      const loadImageFast = async (src) => {
+         if (!src) return null;
+         return new Promise((resolve) => {
+            let timeout = setTimeout(() => resolve(null), 3000);
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+               clearTimeout(timeout);
+               try {
+                   const canvas = document.createElement('canvas');
+                   let w = img.width, h = img.height;
+                   if (w > 800 || h > 800) { let r = Math.min(800/w, 800/h); w*=r; h*=r; }
+                   canvas.width = w; canvas.height = h;
+                   const ctx = canvas.getContext('2d');
+                   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, w, h);
+                   ctx.drawImage(img, 0, 0, w, h);
+                   resolve(canvas.toDataURL('image/jpeg', 0.8));
+               } catch(e) { resolve(null); }
+            };
+            img.onerror = () => { clearTimeout(timeout); resolve(null); };
+            img.src = src.startsWith('data:') ? src : src + (src.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+         });
+      };
+      
+      // PRE-LOAD Images ONCE before loop
+      const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+      const [lData, pData] = await Promise.all([
+          loadImageFast(logoUrl),
+          loadImageFast(photoData)
+      ]);
+      
       for (let index = 0; index < appsToPrint.length; index++) {
-          const currentStudent = appsToPrint[index];
-          if (index > 0) doc.addPage();
-          
-          let examDateStr = '25 June 2026';
-          let examTimeStr = '09:30 AM to 11:00 AM';
-          let durationStr = '90 Minutes';
-          
           // Outer Borders
           doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
           doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
@@ -1493,22 +1524,11 @@
           doc.setFillColor(255, 252, 230); // light yellow
           doc.rect(15, 15, 180, 25, 'F');
           
-          // Load College Logo
-          const logoUrl = window.location.origin + '/images/maharaj.jpeg';
-          const lData = await loadImage(logoUrl);
           if (lData) {
              doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
           }
           
-          // Header Text
-          doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
-          doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
-          doc.setFontSize(14); doc.setTextColor(180, 0, 0); // Dark Red
-          doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
-          doc.setFontSize(12);
-          doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
-          doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
-          doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+
           
           // Blue banner
           doc.setFillColor(30, 58, 138); // blue
@@ -1551,9 +1571,8 @@
           });
           
           // Draw Photo
-          if (photoData) {
-             const pData = await loadImage(photoData);
-             if (pData) doc.addImage(pData, 'JPEG', 150, 72, 40, 50);
+          if (pData) {
+             doc.addImage(pData, 'JPEG', 150, 72, 40, 50);
              doc.rect(150, 72, 40, 50); // photo border
           } else {
              doc.rect(150, 72, 40, 50);
