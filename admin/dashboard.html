@@ -261,15 +261,15 @@
                 </div>
               </div>
 
-              <!-- Bottom Row: Action Buttons -->
-              <div class="flex flex-wrap items-center justify-end gap-3 w-full">
+<div class="flex flex-wrap items-center justify-end gap-3 w-full">
                 <div class="flex border border-slate-200 rounded-lg overflow-hidden h-10">
                   <button onclick="openCategoryReportModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 text-sm font-bold transition flex items-center gap-2">📊 Category Merit List</button>
                 </div>
                 <div class="flex border border-slate-200 rounded-lg overflow-hidden h-10">
                   <button onclick="downloadApplications('excel')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Excel</button>
                   <button onclick="downloadApplications('pdf')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">PDF</button>
-                  <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition">Word</button>
+                  <button onclick="downloadApplications('word')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 text-xs font-bold rounded-r-lg transition">Word</button>
+                  <button onclick="findMissingFromPdfs()" class="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 text-xs font-bold border border-red-200 transition ml-2 rounded-lg">Find Missing (PDF Check)</button>
                   <button onclick="downloadWhatsAppContacts()" class="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 text-xs font-bold border-r border-slate-200 transition flex items-center gap-1" title="Download VCF File for WhatsApp">📱 Contacts</button>
                   <button onclick="syncPendingFormsToSupabase()" id="btnSyncCloud" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 text-xs font-bold transition flex items-center gap-1" title="Sync local forms to Supabase">☁️ Sync to Cloud</button>
                 </div>
@@ -1757,6 +1757,45 @@
           if (btn) btn.innerHTML = '<span>⚠️ Find Missing</span>';
        }
     }
+
+    // --- MISSING STUDENTS FROM PDF LOGIC ---
+    window.findMissingFromPdfs = function() {
+       if (typeof XLSX === 'undefined') { alert('Excel library still loading, please retry.'); return; }
+       const pdfNames = ["dushing ashwini bhaurao","kirti mahadev gavkhare","sontakke ajay bandu","diksha sanjay rokade","giram divya mukesh","anand karale","manjiri vaijanath lokhande","priyanka gund","anjali anil jadhav","sonal ajay gunjal","khushi milam ghatane","anushka pradip kolapkar","karan ganesh walke","vaibhav balasaheb lokhande","chaure mansi balasaheb","pratiksha hanumant chavan","sawant indrajit namdeo","thorat vaishnavi balasaheb","gund rahul nanasaheb","shubham dhokane","yash nandkumar magar","shubham laxman borate","shinde pravin babasaheb ahmednagar jilha maratha vidya prasarak samaj's","akshada dhondiba shelke","neeraj girish upadhye","mane aditya pandit","ghadge avishkar vitthal","siddhant kasab","jadhav rushikesh sanjay","yash revannath jangam","shrutika santosh landge","akanksha bhaskar tarate","priti ajinath bhalsing","tushar kailas dhas","rushikesh rajendra chaware","harale renuka babasaheb","pawar shraddha rajendra","rahul bhausaheb kale","munaf sayyad","rohan dinkar chavan","rohan shivaji kandekar","vishal yuvraj ponde","tushar gangarde","anushka vilas jadhav","omkumar rajbali yadav","krishna ashok handore","sneha mohan gaikwad","ghorpade ajinkya rajendra","aditya taksal","saniya firoj shaikh","shinde srushti santosh","pooja bhanadas dethe","ankita dattatraya zade","payal subhas pawar","divya pund","chavan vaibhavi somnath","rushikesh sunil gore","rajashri raju konda","garad vaibhav shivdarshan","dhanwate utkarsha bharat","tejaswini ajinath shelke","yash babasaheb zarekar","prerana  sampat pathade","sakshi ajay shivsharan","sanchit surendra sathe","mangesh sharad gore","sagar ubale","shinde vrushali vikas","pranjal kailas ghodechor","ganesh santosh gavhane","deshmukh sneha ambadas","shravani pravin kale","shubham kakasaheb bade","krushna darunkar","vaibhav auti","samidha vijaykumar ugale","rahul sachin pawar","more vaishnavi vitthal","payal vikas udmale","sanket ravsaheb gunjal","sancheti rajendra chaudhari","sakshi anil dahifale","mhaske pooja rajaram","trupti sanjay puranik","aditya shankar kad","tanisha dnyaneshwar markali","ishwar bhimaji tupe","bohat yash sunil","rohan ambadas yethekar","nayan devidas argale","samruddhi ravindra shinde","aniket sunil gawali","satyam wakale","amod raskar","adhav apurva narendra","vaishnavi  macchhindra sayambar","jui darekar","apurva  vishnu khese","vedika manik gund","shravani kushinath kuldharan","sohan arun jadhav","purva rajendra kachare","agale ashwini rohidas","rushikesh uddhav bhagade","datta padre","sathe abhijit vilas","vaishnavi kale","dattatray sanjay bade","rohit keshav daund","rohan bandu sawant","shubham dattatray sabale","chothe prajakta ashok","akolkar pratap subhash","tejas adhav","gavhane tushar kumar","rohan vivek kashid","madhavi mhaske","navnath babasaheb jangale","jayesh londhe","hari mahadev walke","piyusha shivaji kawale","soha mohammed afaque shaikh","abhishek shankar bankar","girish madhukar sabale","ganesh rajendra gangarde","hrushali ajinath chavan","tekale adesh sambhaji","pratik sampat amale","jay ramesh kakade","vaibhav vilas chavan","aditya vijay todmal","vishal rajendra hapse","sarthak jayprakash kardile","shubhangi raskar","priti landge","snehal sandip dolas","aditya ghanshyam labade","indrajit anil todmal","swapnali navnath bhange","harshada rohidas bange","kshirsagar aishwarya sharad","pimparkar guruprasad ashok","kokate aaditi rajendra","monika rajaram jori","khushi dhiraj pandit","sayli tukaram darkunde","chaitany babasaheb zade","rohan babasaheb khandave","bhagat pankaj arun","imran shakur shaikh","amale asmita appasaheb","priya sharad sable","sandhya babasaheb thange","bhore shraddha vikas","vivek vishnu shinde","ritesh gorakshnath jarhad","amruta dnyaneshwar mane","garudkar neha sachin","akolkar rajashri balasaheb","harsh ratnakar jadhav","pankaj rajendra phalke","kachare pallavi goraksha","yashwant namdev kshirsagar","umesh balasaheb kasole","vaibhav nanabhau dhawale","snehal haridas darandale","kachare shubhangi arun","sayali raosaheb jagtap","deepak sanjay pote","sabale saurav dattatray","pratiksha laxman kadam","thorat bharati ramkisan","gayatri dipak tagad","ingale vaishnav amol","tanuja sudrik","gaurav haribhau darandale","dahatonde harshad bandu","vaibhav rajendra karbhal","prasad sambhaji hargude","trupti gulab gaikwad","pawar jayshri babasaheb","shourya shashank sherkar","shelke sayali sheshmal","jawale geeta tukaram","aditi deepak sonawane","gauri vidhyadhar sase","ghorpade rohan rajkumar","sumit sanjay adhav","shubham mali","chaitanya pandharinath nimase","sakshi shelke","shreya misal","vedant rajendra bolke","yewale suraj laxman","nikita sharad gavhane","daspute vaibhav dnyaneshwar","varsha ashok narvade","rohit rajendra diwate","kanse rahul bhausaheb","rushikesh bhausaheb shinde","bhawar rushikesh dattatray","shruti chandrakant kusalkar","sakshi nitin karle","shivam yuvraj jathot","vaibhav bharat nalawade","aniket jyotiram mutake","sanskruti gorakh wabale","mayur satish unde","kartik eknath bhagat","pallavi balasaheb bhandwalkar","gaurav arun warude","saurabh santosh dukale","swati nilesh lawande","shubham ramdas karale","sakshi ekanath nikam","shekhar sanjay dhamalahmednagar jilha maratha vidya prasarak samaj's","kasar vishal manohar","dipali jyotiba kshirsagar","rutuja sadashiv narale","payal dipak murumkar","sayyad shahid mubarak","kapadi rutuja sudin","sarthak machhindra satre","sumit kardile","ganesh shinde"];
+       const apps = getApplications().filter(a => a.applicationStatus !== 'DELETED');
+       
+       const isNameInPdf = (name) => {
+           const n = (name || '').toLowerCase().trim();
+           if (!n || n === 'unknown') return false;
+           if (pdfNames.includes(n)) return true;
+           const parts = n.split(' ');
+           for (const pName of pdfNames) {
+               if (pName.includes(n) || n.includes(pName)) return true;
+               if (parts.length >= 2 && pName.includes(parts[0]) && pName.includes(parts[parts.length - 1])) return true;
+           }
+           return false;
+       };
+
+       const missing = apps.filter(a => !isNameInPdf(a.fullName || a.full_name));
+       if (missing.length === 0) {
+           alert("All live students are already in the PDFs!");
+           return;
+       }
+       
+       const wb = XLSX.utils.book_new();
+       const wsData = missing.map(m => ({
+           "Student ID": m.studentId || m.student_id,
+           "Name": m.fullName || m.full_name,
+           "Email": m.email,
+           "Mobile": m.mobile,
+           "Course": m.course,
+           "Status": m.applicationStatus || m.status
+       }));
+       const ws = XLSX.utils.json_to_sheet(wsData);
+       XLSX.utils.book_append_sheet(wb, ws, "Missing Students");
+       XLSX.writeFile(wb, "Live_Missing_Students.xlsx");
+       alert(`Found ${missing.length} missing students! Excel downloaded.`);
+    };
 
     window.findDuplicatePayments = async function() {
        const btn = document.querySelector('button[onclick="findDuplicatePayments()"]');
