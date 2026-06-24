@@ -784,6 +784,9 @@
               <button type="button" onclick="findMissingPayments()" class="bg-red-50 hover:bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
                 <span>⚠️ Find Missing</span>
               </button>
+              <button type="button" onclick="findDuplicatePayments()" class="bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+                <span>🔍 Find Duplicates</span>
+              </button>
             </div>
           </div>
 
@@ -1677,6 +1680,61 @@
           alert('Error finding missing payments: ' + err.message);
        } finally {
           if (btn) btn.innerHTML = '<span>⚠️ Find Missing</span>';
+       }
+    }
+
+    window.findDuplicatePayments = async function() {
+       const btn = document.querySelector('button[onclick="findDuplicatePayments()"]');
+       if (btn) btn.innerHTML = '<span>⏳ Searching...</span>';
+       
+       try {
+          if (!supabase) throw new Error("Supabase is not initialized.");
+          const { data, error } = await supabase.from('payments').select('*').in('payment_status', ['PAID', 'VERIFIED', 'SUCCESS']);
+          if (error) throw error;
+          
+          const emailCounts = {};
+          const payments = data || [];
+          payments.forEach(p => {
+             const em = (p.email || '').toLowerCase().trim();
+             if (em) {
+                if (!emailCounts[em]) emailCounts[em] = [];
+                emailCounts[em].push(p);
+             }
+          });
+          
+          const duplicates = [];
+          for (let em in emailCounts) {
+             if (emailCounts[em].length > 1) {
+                 duplicates.push({ email: em, records: emailCounts[em] });
+             }
+          }
+          
+          if (duplicates.length === 0) {
+             alert('✅ No duplicate payments found! Every student has exactly one payment.');
+          } else {
+             let msg = `⚠️ FOUND ${duplicates.length} STUDENTS WITH MULTIPLE PAYMENTS!\n\n`;
+             duplicates.forEach((d, idx) => {
+                msg += `${idx+1}. ${d.email} (Total ${d.records.length} payments)\n`;
+                d.records.forEach(r => {
+                   msg += `   - ID: ${r.id} | Method: ${r.payment_method || 'Manual'} | UTR: ${r.payment_utr || 'N/A'}\n`;
+                });
+                msg += '\n';
+             });
+             msg += "Tip: Find these students in the table and change one of their payment statuses to 'REJECTED' to fix the count.";
+             alert(msg);
+             
+             // Auto-fill the search box with the first duplicate email to help them
+             const searchBox = document.getElementById('searchPayments');
+             if (searchBox && duplicates.length > 0) {
+                searchBox.value = duplicates[0].email;
+                searchBox.dispatchEvent(new Event('input'));
+             }
+          }
+       } catch (err) {
+          console.error(err);
+          alert('Error finding duplicates: ' + err.message);
+       } finally {
+          if (btn) btn.innerHTML = '<span>🔍 Find Duplicates</span>';
        }
     }
 
