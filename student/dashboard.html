@@ -1516,6 +1516,13 @@
       ]);
       
       for (let index = 0; index < appsToPrint.length; index++) {
+          const currentStudent = appsToPrint[index];
+          if (index > 0) doc.addPage();
+          
+          let examDateStr = '25 June 2026';
+          let examTimeStr = '09:30 AM to 11:00 AM';
+          let durationStr = '90 Minutes';
+          
           // Outer Borders
           doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
           doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
