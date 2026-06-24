@@ -406,6 +406,9 @@
               <button onclick="sendAllHallTickets()" class="flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 h-12" title="Send to all Approved Students" style="background-color: #16a34a; color: white; min-width: 160px; justify-content: center;">
                 🚀 All Hall Tickets
               </button>
+              <button onclick="openManualAdmitCardModal()" class="flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 h-12" style="background-color: #8b5cf6; color: white; min-width: 140px; justify-content: center;" title="Generate Manual PDF">
+                🛠️ Manual Admit Card
+              </button>
             </div>
           </div>
           
@@ -1105,6 +1108,44 @@
         <button type="button" onclick="document.getElementById('resultAnswersModal').style.display='none';" style="font-size:1.5rem;color:#94a3b8;background:none;border:none;cursor:pointer;line-height:1;">&times;</button>
       </div>
       <div style="padding:1.5rem;overflow-x:auto;" id="resultAnswersContent"></div>
+    </div>
+  </div>
+
+  <!-- MANUAL ADMIT CARD MODAL -->
+  <div id="manualAdmitCardModal" style="display:none;" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-lg text-slate-800">🛠️ Generate Manual Admit Card</h3>
+        <button onclick="closeStudentModal('manualAdmitCardModal')" class="text-slate-400 hover:text-slate-600 transition-colors text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+          <input type="text" id="macName" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. John Doe">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Course Applied</label>
+          <select id="macCourse" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="M.Sc. Computer Science">M.Sc. Computer Science</option>
+            <option value="M.Sc. Computer Application">M.Sc. Computer Application</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Mobile Number</label>
+          <input type="text" id="macMobile" class="w-full border border-slate-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 9876543210">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Passport Size Photo</label>
+          <input type="file" id="macPhoto" accept="image/*" onchange="previewMacPhoto(event)" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+          <img id="macPhotoPreview" class="hidden mt-3 w-24 h-24 object-cover rounded border border-slate-200">
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+        <button onclick="closeStudentModal('manualAdmitCardModal')" class="px-5 py-2 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors">Cancel</button>
+        <button id="macGenerateBtn" onclick="generateManualAdmitCard()" class="px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+          📥 Download PDF
+        </button>
+      </div>
     </div>
   </div>
 
@@ -5584,6 +5625,332 @@
       `;
       showModal('studentDetailsModal');
     }
+
+    window.openManualAdmitCardModal = function() {
+        document.getElementById('macName').value = '';
+        document.getElementById('macMobile').value = '';
+        document.getElementById('macPhoto').value = '';
+        document.getElementById('macPhotoPreview').src = '';
+        document.getElementById('macPhotoPreview').classList.add('hidden');
+        window.macPhotoDataUrl = null;
+        document.getElementById('manualAdmitCardModal').style.display = 'flex';
+    };
+
+    window.previewMacPhoto = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            window.macPhotoDataUrl = e.target.result;
+            const img = document.getElementById('macPhotoPreview');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.generateManualAdmitCard = async function() {
+        const name = document.getElementById('macName').value.trim();
+        const course = document.getElementById('macCourse').value;
+        const mobile = document.getElementById('macMobile').value.trim();
+        const photoData = window.macPhotoDataUrl;
+
+        if (!name || !mobile || !photoData) {
+            alert("Please enter Name, Mobile, and upload a Photo.");
+            return;
+        }
+
+        const btn = document.getElementById('macGenerateBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Generating...';
+        btn.disabled = true;
+
+        try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const coursePrefix = course.includes('Science') ? 'MSC-CS' : 'MSC-CA';
+            const generatedStudentId = coursePrefix + '-2026-MANUAL-' + String(Math.floor(Math.random() * 9000) + 1000);
+
+            const examDateStr = '25 June 2026';
+            const examTimeStr = '09:30 AM to 11:00 AM';
+            const durationStr = '90 Minutes';
+            
+            // Outer Borders
+            doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
+
+            // Header Box
+            doc.setFillColor(255, 252, 230);
+            doc.rect(15, 15, 180, 25, 'F');
+            
+            const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+            try {
+                const lData = await new Promise((resolve) => {
+                    const img = new Image(); img.crossOrigin = 'Anonymous';
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width; canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                        ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = logoUrl;
+                });
+                if (lData) doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
+            } catch(e) {}
+            
+            // Header Text
+            doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+            doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+            doc.setFontSize(14); doc.setTextColor(180, 0, 0);
+            doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+            doc.setFontSize(12); doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+            doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+            doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+            
+            // Blue banner
+            doc.setFillColor(30, 58, 138); doc.rect(15, 40, 180, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+            doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
+            
+            // Title & Courses
+            doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+            doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
+            
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+            doc.line(145, 66, 145, 134); 
+            doc.line(70, 66, 70, 134);
+            
+            const rows = [
+               ["Applied Course:", (course || '').toUpperCase()],
+               ["Full Name:", name || ''],
+               ["Roll No / CET ID:", generatedStudentId || ''],
+               ["Mobile Number:", mobile || ''],
+               ["Exam Date:", examDateStr],
+               ["Reporting Time:", "09:00 AM"],
+               ["Exam Time:", examTimeStr],
+               ["Duration:", durationStr]
+            ];
+            
+            let yLine = 66;
+            rows.forEach((r, i) => {
+               doc.setFontSize(10);
+               doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
+               doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
+               yLine += 8.5;
+               if (i < 7) {
+                  doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
+               }
+            });
+            
+            // Draw Photo
+            if (photoData) {
+               try {
+                   const pData = await new Promise((resolve) => {
+                       const img = new Image(); img.crossOrigin = 'Anonymous';
+                       img.onload = () => {
+                           const canvas = document.createElement('canvas');
+                           canvas.width = img.width; canvas.height = img.height;
+                           const ctx = canvas.getContext('2d');
+                           ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                           ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                       };
+                       img.onerror = () => resolve(null);
+                       img.src = photoData;
+                   });
+                   if (pData) doc.addImage(pData, 'JPEG', 148, 69, 44, 44);
+               } catch(e) {}
+            }
+            
+            // Signature Boxes
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text("Student's Signature", 168, 128, { align: "center" });
+            doc.rect(148, 116, 44, 10);
+            
+            // Footer
+            doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            doc.text("System Generated Admit Card - Valid only with Original ID Proof", 105, 280, { align: "center" });
+            
+            // Save PDF
+            doc.save(`CET_Manual_AdmitCard_${name.replace(/\s+/g, '_')}.pdf`);
+            closeStudentModal('manualAdmitCardModal');
+            
+        } catch(err) {
+            console.error(err);
+            alert("Error generating PDF: " + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    };
+
+    window.openManualAdmitCardModal = function() {
+        document.getElementById('macName').value = '';
+        document.getElementById('macMobile').value = '';
+        document.getElementById('macPhoto').value = '';
+        document.getElementById('macPhotoPreview').src = '';
+        document.getElementById('macPhotoPreview').classList.add('hidden');
+        window.macPhotoDataUrl = null;
+        document.getElementById('manualAdmitCardModal').style.display = 'flex';
+    };
+
+    window.previewMacPhoto = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            window.macPhotoDataUrl = e.target.result;
+            const img = document.getElementById('macPhotoPreview');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.generateManualAdmitCard = async function() {
+        const name = document.getElementById('macName').value.trim();
+        const course = document.getElementById('macCourse').value;
+        const mobile = document.getElementById('macMobile').value.trim();
+        const photoData = window.macPhotoDataUrl;
+
+        if (!name || !mobile || !photoData) {
+            alert("Please enter Name, Mobile, and upload a Photo.");
+            return;
+        }
+
+        const btn = document.getElementById('macGenerateBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Generating...';
+        btn.disabled = true;
+
+        try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            const coursePrefix = course.includes('Science') ? 'MSC-CS' : 'MSC-CA';
+            const generatedStudentId = coursePrefix + '-2026-MANUAL-' + String(Math.floor(Math.random() * 9000) + 1000);
+
+            const examDateStr = '25 June 2026';
+            const examTimeStr = '09:30 AM to 11:00 AM';
+            const durationStr = '90 Minutes';
+            
+            // Outer Borders
+            doc.setDrawColor(30, 58, 138); doc.setLineWidth(1); doc.rect(10, 10, 190, 277);
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.rect(12, 12, 186, 273);
+
+            // Header Box
+            doc.setFillColor(255, 252, 230);
+            doc.rect(15, 15, 180, 25, 'F');
+            
+            const logoUrl = window.location.origin + '/images/maharaj.jpeg';
+            try {
+                const lData = await new Promise((resolve) => {
+                    const img = new Image(); img.crossOrigin = 'Anonymous';
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width; canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                        ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = logoUrl;
+                });
+                if (lData) doc.addImage(lData, 'JPEG', 20, 18, 18, 18);
+            } catch(e) {}
+            
+            // Header Text
+            doc.setFontSize(10); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
+            doc.text("Ahmednagar Jilha Maratha Vidya Prasarak Samaj's", 105, 20, { align: "center" });
+            doc.setFontSize(14); doc.setTextColor(180, 0, 0);
+            doc.text("NEW ARTS, COMMERCE AND SCIENCE COLLEGE", 105, 26, { align: "center" });
+            doc.setFontSize(12); doc.text("(AUTONOMOUS)", 105, 31, { align: "center" });
+            doc.setFontSize(9); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "normal");
+            doc.text("Laltaki Road, Ahmednagar - 414 001 (MS)", 105, 36, { align: "center" });
+            
+            // Blue banner
+            doc.setFillColor(30, 58, 138); doc.rect(15, 40, 180, 8, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "bold");
+            doc.text("Center for Advanced Studies in Applied Sciences (CASAS)", 105, 45, { align: "center" });
+            
+            // Title & Courses
+            doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+            doc.text("ADMIT CARD (HALL TICKET)", 105, 55, { align: "center" });
+            
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.rect(15, 66, 180, 68);
+            doc.line(145, 66, 145, 134); 
+            doc.line(70, 66, 70, 134);
+            
+            const rows = [
+               ["Applied Course:", (course || '').toUpperCase()],
+               ["Full Name:", name || ''],
+               ["Roll No / CET ID:", generatedStudentId || ''],
+               ["Mobile Number:", mobile || ''],
+               ["Exam Date:", examDateStr],
+               ["Reporting Time:", "09:00 AM"],
+               ["Exam Time:", examTimeStr],
+               ["Duration:", durationStr]
+            ];
+            
+            let yLine = 66;
+            rows.forEach((r, i) => {
+               doc.setFontSize(10);
+               doc.setFont("helvetica", "bold"); doc.text(r[0], 18, yLine + 5.5);
+               doc.setFont("helvetica", "normal"); doc.text(r[1], 75, yLine + 5.5);
+               yLine += 8.5;
+               if (i < 7) {
+                  doc.setLineWidth(0.2); doc.line(15, yLine, 145, yLine);
+               }
+            });
+            
+            // Draw Photo
+            if (photoData) {
+               try {
+                   const pData = await new Promise((resolve) => {
+                       const img = new Image(); img.crossOrigin = 'Anonymous';
+                       img.onload = () => {
+                           const canvas = document.createElement('canvas');
+                           canvas.width = img.width; canvas.height = img.height;
+                           const ctx = canvas.getContext('2d');
+                           ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,img.width,img.height);
+                           ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/jpeg'));
+                       };
+                       img.onerror = () => resolve(null);
+                       img.src = photoData;
+                   });
+                   if (pData) doc.addImage(pData, 'JPEG', 148, 69, 44, 44);
+               } catch(e) {}
+            }
+            
+            // Signature Boxes
+            doc.setFontSize(9); doc.setFont("helvetica", "bold");
+            doc.text("Student's Signature", 168, 128, { align: "center" });
+            doc.rect(148, 116, 44, 10);
+            
+            // Footer
+            doc.setFontSize(8); doc.setTextColor(100, 100, 100);
+            doc.text("System Generated Admit Card - Valid only with Original ID Proof", 105, 280, { align: "center" });
+            
+            // Save PDF
+            doc.save(`CET_Manual_AdmitCard_${name.replace(/\s+/g, '_')}.pdf`);
+            closeStudentModal('manualAdmitCardModal');
+            
+        } catch(err) {
+            console.error(err);
+            alert("Error generating PDF: " + err.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    };
 
     window.downloadHallTicketAdmin = async function(id) {
        const btn = event ? event.currentTarget : null;
