@@ -1591,19 +1591,19 @@
           
           // Draw Photo
           if (pData) {
-             doc.addImage(pData, 'JPEG', 150, 72, 40, 50);
-             doc.rect(150, 72, 40, 50); // photo border
+             doc.addImage(pData, 'JPEG', 150, 75, 40, 50);
+             doc.rect(150, 75, 40, 50); // photo border
           } else {
-             doc.rect(150, 72, 40, 50);
+             doc.rect(150, 75, 40, 50);
              doc.setFontSize(10); doc.setTextColor(150, 150, 150);
              doc.text("Paste Passport\nSize Photo", 170, 95, {align: "center"});
           }
           doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
-          doc.text("Photograph", 170, 127, {align:"center"});
+          doc.text("Photograph", 170, 130, {align:"center"});
           
           // Instructions
           doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(180, 0, 0);
-          doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 140);
+          doc.text("IMPORTANT INSTRUCTIONS FOR CANDIDATES:", 15, 160);
           
           doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
           const instructions = [
@@ -1616,14 +1616,13 @@
              "6. Merit List & Counseling: Merit list will be prepared immediately. Counseling begins at 01:00 PM same day.",
              "7. Provisional Admission Fee: Selected students must pay a provisional fee of Rs. 1000/- on the spot.",
              "8. Caste Certificate: Reserved category students MUST bring their original caste certificate.",
-             "9. Final Admission: Provisional admission is finalized ONLY after submitting original Marksheets and TC.",
-             "10. Valid ID Proof: Bring Aadhar Card/College ID along with this Admit Card for verification."
+             "9. Final Admission: Confirmed only after submitting the original UG marksheet and Transfer Certificate."
           ];
           
-          let yInst = 146;
+          let yInst = 168;
           instructions.forEach(ins => {
              doc.text(ins, 15, yInst);
-             yInst += 5.5;
+             yInst += 6;
           });
           
           // Bottom Signatures
