@@ -812,6 +812,7 @@
          const admitBtn = document.getElementById('premiumAdmitCardBtn');
          const headerAdmitBtn = document.getElementById('headerAdmitCardBtn');
          if (admitBtn) admitBtn.onclick = (e) => downloadAdmitCard(e);
+         if (headerAdmitBtn) headerAdmitBtn.onclick = (e) => downloadAdmitCard(e);
       } catch (e) {
          console.warn('DOM update error in renderOverview', e);
       }
