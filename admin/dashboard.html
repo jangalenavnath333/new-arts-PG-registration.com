@@ -1619,11 +1619,11 @@
           // 4. Find missing
           const missing = [];
           for (const p of razorpayPayments) {
-             const pEmail = (p.email || '').toLowerCase();
-             const pPhone = p.contact;
+             const pEmail = (p.email || '').toLowerCase().trim();
              
              // Check if not in active applications AND not already synced in payments table
-             if (!activeEmails.has(pEmail) && !activePhones.has(pPhone) && !existingOrderIds.has(p.order_id)) {
+             // We strictly use email because phone numbers might overlap with parents
+             if (pEmail && !activeEmails.has(pEmail) && !existingOrderIds.has(p.order_id)) {
                 missing.push(p);
              }
           }
@@ -2725,7 +2725,7 @@
           const stat = (s.applicationStatus || 'Submitted').toUpperCase();
           return stat === filter.toUpperCase();
       });
-      if (courseFilter) apps = apps.filter(s => {
+      if (courseFilter && !search) apps = apps.filter(s => {
           const c = (s.academicDetails && s.academicDetails.courseApplied) ? s.academicDetails.courseApplied : (s.courseApplied || '');
           return c.includes(courseFilter);
       });
