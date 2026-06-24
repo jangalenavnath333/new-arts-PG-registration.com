@@ -3408,11 +3408,9 @@
         return;
       }
       
-      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
-      const courseConfig = configObj['M.Sc. Computer Science'] || configObj;
-      const examDateStr = courseConfig.examDate || "25 June 2026";
-      const examTimeStr = courseConfig.startTime || "09:30 AM";
-      const durationStr = (courseConfig.durationMinutes || 90) + " Minutes";
+      const examDateStr = "25 June 2026";
+      const examTimeStr = "09:30 AM to 11:00 AM";
+      const durationStr = "90 Minutes";
 
       if(!confirm(`Are you sure you want to send Hall Ticket PDFs to ${selected.length} selected students?`)) return;
       
@@ -3435,10 +3433,8 @@
          if (st.email) {
             try {
                const EmailSvc = (await import('../js/email-service.js')).default;
-               const tmpl = EmailSvc.EmailTemplates.hallTicketEmail(
-                  st.fullName || st.full_name || st.name || 'Student', 
-                  st.studentId || st.student_id || st.id, 
-                  st.courseApplied || st.course_applied || 'M.Sc.'
+               const tmpl = EmailSvc.EmailTemplates.correctionNotification(
+                  st.fullName || st.full_name || st.name || 'Student'
                );
                
                const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
@@ -3470,11 +3466,9 @@
     };
 
     window.sendAllHallTickets = async function() {
-      const configObj = JSON.parse(localStorage.getItem('cetExamConfig')) || {};
-      const courseConfig = configObj['M.Sc. Computer Science'] || configObj;
-      const examDateStr = courseConfig.examDate || "25 June 2026";
-      const examTimeStr = courseConfig.startTime || "09:30 AM";
-      const durationStr = (courseConfig.durationMinutes || 90) + " Minutes";
+      const examDateStr = "25 June 2026";
+      const examTimeStr = "09:30 AM to 11:00 AM";
+      const durationStr = "90 Minutes";
 
       let allDbStudents = [];
       if(supabase) {
@@ -3502,10 +3496,8 @@
          if (st.email) {
             try {
                const EmailSvc = (await import('../js/email-service.js')).default;
-               const tmpl = EmailSvc.EmailTemplates.hallTicketEmail(
-                  st.fullName || st.full_name || st.name || 'Student', 
-                  st.studentId || st.student_id || st.id, 
-                  st.courseApplied || st.course_applied || 'M.Sc.'
+               const tmpl = EmailSvc.EmailTemplates.correctionNotification(
+                  st.fullName || st.full_name || st.name || 'Student'
                );
                
                const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
@@ -7462,10 +7454,9 @@ window.sendCorrectionNotificationToAll = async function() {
           try {
               const tmpl = EmailSvc.EmailTemplates.correctionNotification(st.fullName || st.name);
               
-              const courseConfig = configObj[st.courseApplied || st.course_applied || 'M.Sc. Computer Science'] || configObj;
-              const examDateStr = courseConfig.examDate || "25 June 2026";
-              const examTimeStr = courseConfig.startTime || "09:30 AM";
-              const durationStr = (courseConfig.durationMinutes || 90) + " Minutes";
+              const examDateStr = "25 June 2026";
+              const examTimeStr = "09:30 AM to 11:00 AM";
+              const durationStr = "90 Minutes";
 
               const base64Pdf = await window.generateBase64AdmitCard(st, examDateStr, examTimeStr, durationStr);
               let attachments = null;
