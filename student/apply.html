@@ -1574,10 +1574,15 @@
         }
 
         // 5. Keep cetApplication (singular) for receipt.html
-        // We do NOT store photoFile to prevent Mobile Safari 5MB QuotaExceededError
+        // We do NOT store photoFile inside cetApplication to prevent Mobile Safari 5MB QuotaExceededError
         try {
           let receiptApp = { ...lightApp };
           localStorage.setItem('cetApplication', JSON.stringify(receiptApp));
+          if (fileDataMap['photoFile']) {
+             localStorage.setItem('cetApplication_photo', fileDataMap['photoFile']);
+          } else {
+             localStorage.removeItem('cetApplication_photo');
+          }
         } catch (e) {
           console.warn('[Local DB] Failed to set cetApplication:', e);
         }

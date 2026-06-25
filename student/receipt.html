@@ -245,9 +245,13 @@
           document.getElementById('r_address').textContent = data.address || '—';
           
           // Photo
-          if (data.uploadedFiles && data.uploadedFiles.photoFile) {
+          let photoSrc = localStorage.getItem('cetApplication_photo');
+          if (!photoSrc && data.uploadedFiles && data.uploadedFiles.photoFile) {
+             photoSrc = data.uploadedFiles.photoFile;
+          }
+          if (photoSrc) {
             const photoEl = document.getElementById('r_photo');
-            photoEl.src = data.uploadedFiles.photoFile;
+            photoEl.src = photoSrc;
             photoEl.style.display = 'block';
           }
 
