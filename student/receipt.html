@@ -152,18 +152,28 @@
   <!-- HIDDEN BY DEFAULT (Shown via JS if data exists) -->
   <div class="receipt-box" id="receiptContent" style="display: none;">
     <div class="receipt-header">
-      <h2>New Arts, Commerce and Science College</h2>
-      <p>Department of Computer Science — CET Online Exam Portal</p>
-      <div class="badge">CET APPLICATION RECEIPT</div>
+      <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; color: #f1f5f9;">Center for Advanced Studies in Applied Sciences (CASAS)</h3>
+      <h2>Department of Computer Science</h2>
+      <div style="margin: 15px 0;">
+        <img src="../images/department logo.jpeg" alt="Department Logo" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; object-fit: contain; background: white; padding: 2px;">
+      </div>
+      <p style="font-weight: 600; color: #fff; margin-bottom: 5px; font-size: 16px;">B.Sc. (Data Science / Cloud Computing / Computer Science)</p>
+      <p style="color: #c4b5fd; font-weight: 600; font-size: 14px; margin-bottom: 15px;">CET - II for vacant seats only</p>
+      <div class="badge">CET APPLICATION FORM</div>
     </div>
 
     <div class="receipt-body">
-      <div style="text-align:center; margin-bottom:30px;">
-        <p style="font-size:12px;color:var(--mid);">Application Tracking ID</p>
-        <p id="r_id" style="font-size:24px;font-weight:700;color:var(--success);letter-spacing:2px; margin: 5px 0;">—</p>
-        <div style="margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap: wrap;">
-            <span id="r_app_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Application: Submitted</span>
-            <span id="r_pay_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Payment: Pending Verification</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div style="text-align:left;">
+          <p style="font-size:12px;color:var(--mid);">Application Tracking ID</p>
+          <p id="r_id" style="font-size:24px;font-weight:700;color:var(--success);letter-spacing:2px; margin: 5px 0;">—</p>
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap: wrap;">
+              <span id="r_app_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Application: Submitted</span>
+              <span id="r_pay_status" style="background:rgba(245,158,11,0.2);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid rgba(245,158,11,0.5);">Payment: Pending</span>
+          </div>
+        </div>
+        <div>
+          <img id="r_photo" src="" alt="Passport Photo" style="width: 100px; height: 125px; object-fit: cover; border-radius: 8px; border: 3px solid var(--primary); display: none; background: white;">
         </div>
       </div>
 
@@ -181,12 +191,7 @@
         <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">Course Applied</div><div class="info-value" id="r_course">—</div></div>
         <div class="info-item"><div class="info-label">12th Percentage</div><div class="info-value" id="r_12th">—</div></div>
         <div class="info-item"><div class="info-label">12th Maths Marks</div><div class="info-value" id="r_maths">—</div></div>
-        <div class="info-item"><div class="info-label">Caste Category</div><div class="info-value" id="r_caste">—</div></div>
-        <div class="info-item"><div class="info-label">SY Background</div><div class="info-value" id="r_sybg">—</div></div>
-        <div class="info-item"><div class="info-label">SY Marks</div><div class="info-value" id="r_symarks">—</div></div>
-        <div class="info-item"><div class="info-label">TY Status</div><div class="info-value" id="r_tystatus">—</div></div>
-        <div class="info-item"><div class="info-label">TY Background</div><div class="info-value" id="r_tybg">—</div></div>
-        <div class="info-item"><div class="info-label">TY Marks</div><div class="info-value" id="r_tymarks">—</div></div>
+        <div class="info-item" style="grid-column: 1 / -1;"><div class="info-label">Caste Category</div><div class="info-value" id="r_caste">—</div></div>
       </div>
 
       <p class="receipt-section-title">Documents Details</p>
@@ -239,17 +244,26 @@
           document.getElementById('r_dob').textContent = data.dob || '—';
           document.getElementById('r_address').textContent = data.address || '—';
           
+          // Photo
+          if (data.uploadedFiles && data.uploadedFiles.photoFile) {
+            const photoEl = document.getElementById('r_photo');
+            photoEl.src = data.uploadedFiles.photoFile;
+            photoEl.style.display = 'block';
+          }
+
           // Academic
           if (data.academicDetails) {
               document.getElementById('r_course').textContent = data.academicDetails.courseApplied || '—';
               document.getElementById('r_12th').textContent = data.academicDetails.twelfthPercent ? data.academicDetails.twelfthPercent + '%' : '—';
-              document.getElementById('r_maths').textContent = data.academicDetails.mathsMarks || '—';
+              
+              let mathsDisplay = data.academicDetails.hasMaths === 'Yes' 
+                 ? (data.academicDetails.mathsMarks ? data.academicDetails.mathsMarks + ' / 100' : 'Yes') 
+                 : 'No';
+              if (!data.academicDetails.hasMaths && data.academicDetails.mathsMarks) {
+                 mathsDisplay = data.academicDetails.mathsMarks;
+              }
+              document.getElementById('r_maths').textContent = mathsDisplay;
               document.getElementById('r_caste').textContent = data.academicDetails.casteCategory || '—';
-              document.getElementById('r_sybg').textContent = data.academicDetails.syBackground || '—';
-              document.getElementById('r_symarks').textContent = data.academicDetails.syMarks ? data.academicDetails.syMarks + '%' : '—';
-              document.getElementById('r_tystatus').textContent = data.academicDetails.tyResultStatus || '—';
-              document.getElementById('r_tybg').textContent = data.academicDetails.tyBackground || '—';
-              document.getElementById('r_tymarks').textContent = data.academicDetails.tyMarks ? data.academicDetails.tyMarks + '%' : '—';
           }
           
           // Documents
