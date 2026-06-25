@@ -114,7 +114,7 @@
     .pdf-mode .no-print { display: none !important; }
     .pdf-mode.receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; margin:0;}
     .pdf-mode .receipt-header { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: black !important; }
-    .pdf-mode .receipt-header h2, .pdf-mode .receipt-header p { color: black !important; }
+    .pdf-mode .receipt-header h2, .pdf-mode .receipt-header h3, .pdf-mode .receipt-header p, .pdf-mode .pdf-dark-text { color: black !important; }
     .pdf-mode .badge { color: black !important; background: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; }
     .pdf-mode .info-item { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
     .pdf-mode .info-label { color: #475569 !important; font-weight: 600; }
@@ -127,7 +127,7 @@
       .no-print { display: none !important; }
       .receipt-box { border: 1px solid #e2e8f0 !important; box-shadow: none !important; max-width: 100%; width: 100% !important; border-radius: 0; background: white !important; color: black !important; margin: 0; }
       .receipt-header { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; color: black !important; }
-      .receipt-header h2, .receipt-header p { color: black !important; }
+      .receipt-header h2, .receipt-header h3, .receipt-header p, .pdf-dark-text { color: black !important; }
       .badge { color: black !important; background: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; }
       .info-item { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
       .info-label { color: #475569 !important; font-weight: 600; }
@@ -152,13 +152,18 @@
   <!-- HIDDEN BY DEFAULT (Shown via JS if data exists) -->
   <div class="receipt-box" id="receiptContent" style="display: none;">
     <div class="receipt-header">
-      <h3 style="font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; color: #f1f5f9;">Center for Advanced Studies in Applied Sciences (CASAS)</h3>
-      <h2>Department of Computer Science</h2>
-      <div style="margin: 15px 0;">
-        <img src="../images/department logo.jpeg" alt="Department Logo" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; object-fit: contain; background: white; padding: 2px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:10px;">
+         <img src="../images/maharaj.jpeg" alt="College Logo" style="width: 70px; height: 70px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; object-fit: contain; background: white; padding: 2px;">
       </div>
-      <p style="font-weight: 600; color: #fff; margin-bottom: 5px; font-size: 16px;">B.Sc. (Data Science / Cloud Computing / Computer Science)</p>
-      <p style="color: #c4b5fd; font-weight: 600; font-size: 14px; margin-bottom: 15px;">CET - II for vacant seats only</p>
+      <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; color: #a5b4fc;">AHMEDNAGAR JILHA MARATHA VIDYA PRASARAK SAMAJ'S</p>
+      <h2 style="font-size: 18px; margin-bottom: 5px;">New Arts, Commerce and Science College,<br>Ahmednagar (Autonomous)</h2>
+      <h3 style="font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; color: #f1f5f9;" class="pdf-dark-text">Center for Advanced Studies in Applied Sciences (CASAS)</h3>
+      <h2 style="font-size: 15px; margin-bottom: 10px;">Department of Computer Science</h2>
+      <div style="margin: 15px 0;">
+        <img src="../images/department logo.jpeg" alt="Department Logo" style="width: 70px; height: 70px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid white; object-fit: contain; background: white; padding: 2px;">
+      </div>
+      <p style="font-weight: 600; color: #fff; margin-bottom: 5px; font-size: 14px;" class="pdf-dark-text">B.Sc. (Data Science / Cloud Computing / Computer Science)</p>
+      <p style="color: #c4b5fd; font-weight: 600; font-size: 13px; margin-bottom: 15px;" class="pdf-dark-text">CET - II for vacant seats only</p>
       <div class="badge">CET APPLICATION FORM</div>
     </div>
 
