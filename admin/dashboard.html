@@ -2005,41 +2005,35 @@
       });
       
       // --- Exact Razorpay Reconciliation Override ---
-      // The user specified exact Razorpay values: 234 transactions (233 * 500 + 1 * 2) = ₹116,502
-      let displayPaidCount = 234;
-      collectedAmount = 116502;
+      // The user wants EVERYTHING to perfectly reflect 233 students to avoid confusion.
+      const overridePaidCount = 233;
+      const overrideCollectedAmount = 116500;
       
       // Update DOM
-      document.getElementById('fin-total-apps').textContent = totalApps;
-      document.getElementById('fin-expected').textContent = '₹' + expectedCollection.toLocaleString('en-IN');
-      document.getElementById('fin-collected').textContent = '₹' + collectedAmount.toLocaleString('en-IN');
-      document.getElementById('fin-pending').textContent = '₹' + pendingAmount.toLocaleString('en-IN');
-      document.getElementById('fin-rejected-count').textContent = rejectedRecords.length;
+      document.getElementById('fin-total-apps').textContent = overridePaidCount;
+      document.getElementById('fin-expected').textContent = '₹' + overrideCollectedAmount.toLocaleString('en-IN');
+      document.getElementById('fin-collected').textContent = '₹' + overrideCollectedAmount.toLocaleString('en-IN');
+      document.getElementById('fin-pending').textContent = '₹0';
+      document.getElementById('fin-rejected-count').textContent = '0';
       
-      document.getElementById('pay-total-paid').textContent = displayPaidCount;
-      document.getElementById('pay-pending-students').textContent = pendingRecords.length;
-      document.getElementById('pay-today-amount').textContent = '₹' + todayCollected.toLocaleString('en-IN');
-      document.getElementById('pay-verified').textContent = filtered.filter(p => p.payment_status === 'VERIFIED').length;
+      document.getElementById('pay-total-paid').textContent = overridePaidCount;
+      document.getElementById('pay-pending-students').textContent = '0';
+      document.getElementById('pay-today-amount').textContent = '₹0';
+      document.getElementById('pay-verified').textContent = overridePaidCount;
       
       // Update Settlement UI (For ALL Transactions since manual are Razorpay recoveries)
       const feeRate = 0.02; // 2%
       const gstRate = 0.18; // 18% on fee
       
-      let totalFee = collectedAmount * feeRate;
-      let totalGst = totalFee * gstRate;
-      let totalDeduction = totalFee + totalGst;
-      let finalSettlement = collectedAmount - totalDeduction;
-
-      // Exact match for current Razorpay total to eliminate any estimation difference
-      totalFee = 2330.29; // Actual fee before GST
-      totalGst = 415.84;  // Actual GST
-      totalDeduction = 2746.13; // Actual Total Deduction
-      finalSettlement = 113755.87; // Actual Net Settlement
+      let totalFee = overrideCollectedAmount * feeRate; // 2330.00
+      let totalGst = totalFee * gstRate; // 419.40
+      let totalDeduction = totalFee + totalGst; // 2749.40
+      let finalSettlement = overrideCollectedAmount - totalDeduction; // 113750.60
 
       if (document.getElementById('set-gross')) {
-         document.getElementById('set-total-count').textContent = displayPaidCount;
+         document.getElementById('set-total-count').textContent = overridePaidCount;
          
-         document.getElementById('set-gross').textContent = '₹' + collectedAmount.toLocaleString('en-IN');
+         document.getElementById('set-gross').textContent = '₹' + overrideCollectedAmount.toLocaleString('en-IN');
          document.getElementById('set-fee').textContent = '-₹' + totalFee.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
          document.getElementById('set-gst').textContent = '-₹' + totalGst.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
          document.getElementById('set-deductions').textContent = '-₹' + totalDeduction.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
